@@ -1,0 +1,18 @@
+output:  aciatest.s19
+0001                         
+0002                         
+0003 f401                    CTRLA   EQU     $F401   ; ACIA.A Ctrl/Status
+0004 f403                    CTRLB   EQU     $F403   ; ACIA.B Ctrl/Status
+0005 f400                    DATAA   EQU     $F400   ; ACIA.A Data register
+0006 f402                    DATAB   EQU     $F402   ; ACIA.B Data register
+0007                         
+0008 f000                            ORG     $F000
+0009                         
+0010 f000 86 40                      LDAA    #'@'    ; load A with a char
+0011 f002 f6 f4 01           LOOP    LDAB    CTRLA   ; get ACIA status
+0012 f005 c5 02                      BITB    #2      ; wait for TX buffer empty
+0013 f007 27 f9                      BEQ     LOOP
+0014 f009 b7 f4 00                   STAA    DATAA   ; send char to port
+0015 f00c 20 f4                      BRA     LOOP    ; repeat
+0016                         
+0017                                 END
