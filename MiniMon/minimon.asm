@@ -1,14 +1,13 @@
 ; ------------------------------------------------------
 ; Minimon
 ; ------------------------------------------------------
-;  Original author ACH, Dec.1978
-;
-;  CDC 2023 : Convert back from CDC/DJC modded version
-;     to match hex listing in minimon document
-;
+;  Original author ACH, Dec.1978;
 ; ------------------------------------------------------
 ; 13 NOV 2025 : [JN] added NOP at FFF7 to remove gap to
-;             : allow conversion to binary from s19
+;             : allow easier conversion to bin from s19
+; 05 DEC 2025 : [JN] Changed ACIA(a) to be 8N2 to match
+;             : PROM. So that MiniMon can be loaded and
+;             : run from the same terminal config.
 ; ------------------------------------------------------
 ; 2 x ACIAs :-
 ;
@@ -560,7 +559,7 @@ RESET   LDS     #STACK  ; Set up stack for MINIMON
         STAA    CTRLB   ;   ACIA.B
 SWI     STS     PSTACK  ; Save callers stack pointer
 START   LDS     #STACK  ; Set up stack for MINMON
-        LDAA    #01     ; Set up:
+        LDAA    #$11    ; Set up:
         STAA    CTRLA   ;   ACIA.A
         JSR     STRING  ; Print string...
         FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
