@@ -513,15 +513,9 @@ L2      CMPA    #'R     ; Is it `R`
 L3      CMPA    #'B     ; Is it `B` ?
         BNE     L6      ; No: Skip
         JMP     BLKMOV  ;
-
-        RMB 14          ; enough room for two commands
-
 L6      CMPA    #'M     ; Is it `M` ?
         BNE     L8      ; No: Skip
         JMP     MODIFY  ;
-
-        RMB 7           ; enough room for one command
-
 L8      CMPA    #'G     ; Is it `G` ?
         BNE     L9      ; No: Skip
         JMP     GO      ;
@@ -545,6 +539,16 @@ L10     CMPA    #'D     ; Is it `D` ?
 ; this will need to relocated to fit in the original Load and Punch routines
 ;=============================================================================
 
+; Spare bytes for LOAD and PUNCH commands are as follows
+; Original LOAD command space = 36 Bytes
+; Original PUNCH command space = 47 Bytes
+; Addition space where old X and Z commands were 81 bytes
+; Additional space where the old ALTER command was = 26 Bytes
+;
+; Total free bytes = 190 bytes
+
+
+; 31 bytes
 RD_ByteFast EQU     *           ; Read ONE Character (fast)
             STX     d_RdFstX    ; Save X
             LDX     DATAA       ; X = addr of current ACIA
@@ -581,7 +585,7 @@ CMD_L       EQU     *           ; L = Load = Input an S19 file
             JSR     RD_HEX2     ; Read 2xHex = data.byte count to A
             SUBA    #2          ; Subtract 2 (to get bytes left in line)
             STAA    b_Count     ; Store byte count
-            JSR     RD_HEX4     ; Read 4xHex digit address to X
+            JSR     RD_X        ; Read 4xHex digit address to X
 .sDoByt     JSR     RD_HEX2     ; Read 2xHex digits, value to A
             DEC     b_Count     ; Decrement our byte count
             BEQ     .sChk       ; If end-of-line, go look at checksum
@@ -665,65 +669,19 @@ CMD_P       EQU     *           ; P = Punch : Output an S19 file
             RTS                 ; RETURN
 
 ; -----------------------------------------------------
-; Convert value in A to 2 x ASCII hex digits in A and B
-; X unchanged
-
-BIN2HEX     TAB                 ; Copy A to B
-            BSR     .bxNibble   ; Convert B.nibble to hex in A
-            PSHA                ; Push A as B result to STACK
-            TBA                 ; Get original back to A from B
-            PULB                ; Pop B result from Stack
-            LSRA                ; Shift A
-            LSRA                ;  Right
-            LSRA                ;   4
-            LSRA                ;    bits
-            BRA     .bxNibble   ; Convert A.nibble to hex in A
-;..dummy..  RTS                 ; BRA used instead of BSR (above)
-
-; - - - - - - - - - - - - - - - - - - - - - - - - -
-; Convert value in low 4.bits of A to Hex char in A
-
-.bxNibble   ANDA    #$0F        ; Clear high order bits
-            CMPA    #$09        ; Letter or number ?
-            BHI     .bxAscHi    ;
-            ADDA    #$30        ; Make it an ASCII number
-            RTS                 ; RETURN
-.bxAscHi    ADDA    #$37        ; Make it an ASCI letter
-            RTS                 ; RETURN
-
-; -----------------------------------------------------
-; A and B have 2 x hex digits, convert to binary and return in A
-
-HEX2BIN     BITA    #$30        ; Is A a letter ?
-            BEQ     .hNumA      ; Yes: Got to handle it
-.hShftA     ASLA                ;  No: It is a number, so
-            ASLA                ;      shift
-            ASLA                ;       left
-            ASLA                ;            4 bits
-            BITB    #$30        ; Is B a letter ?
-            BEQ     .hNumB      ; Yes: Go handle it
-.hMaskB     ANDB    #$0F        ; Clear 4 high bits in B
-            ABA                 ; Form binary character (A=A+B)
-            RTS                 ; RETURN
-.hNumA      ADDA    #$09        ; Make A a binary
-            BRA     .hShftA     ;  as before
-.hNumB      ADDB    #$09        ; Make B a binary
-            BRA     .hMaskB     ;  as before
-
-; -----------------------------------------------------
 ; Read a 2 digit HEX value, put result into X
 
 RD_HEX2     EQU     *
             JSR     RD_ByteFast ; Read a character
-            BSR     VFY_HEX     ; Is it a hex character ?
+            JSR     VHEX     ; Is it a hex character ?
             BCS     .rxPrQM     ; No: go to print `?`
-            STAA    b_Q         ; Save it
+            STAA    T_Q         ; Save it
             JSR     RD_ByteFast ; Read 2nd character
-            BSR     VFY_HEX     ; Is it a hex character ?
+            JSR     VHEX     ; Is it a hex character ?
             BCS     .rxPrQM     ; No: go to print `?`
             TAB                 ; Yes: Put it into B
-            LDAA    b_Q         ; Retrieve 1st hex char to A
-            BSR     HEX2BIN     ; Convert A:B to binary to A
+            LDAA    T_Q         ; Retrieve 1st hex char to A
+            JSR     BINARY      ; Convert A:B to binary to A
             TAB                 ; B=A
             ADDB    b_Csum      ; Add this value
             STAB    b_Csum      ; to the Checksum (for S19)
@@ -737,49 +695,33 @@ RD_HEX2     EQU     *
 ; RD_HEX4   = Read 4.hex digit address value into X
 ; RD_HEX4_S = As above, but print a SPACE first
 
-RD_HEX4_S   JSR     PR_SP       ; Print a space
-RD_HEX4     BSR     RD_HEX2     ; Read 2 digit hex val into A
-            STAA    d_Hx4X      ; Save high.byte
-            BSR     RD_HEX2     ; Read 2 digit hex val into A
-            STAA    d_Hx4X+1    ; Save low.byte
-            LDX     d_Hx4X      ; Load 4 digit hex val into X
-            RTS                 ; RETURN
+;RD_HEX4_S   JSR     PR_SP       ; Print a space
+;RD_HEX4     BSR     RD_HEX2     ; Read 2 digit hex val into A
+;            STAA    d_Hx4X      ; Save high.byte
+;            BSR     RD_HEX2     ; Read 2 digit hex val into A
+;            STAA    d_Hx4X+1    ; Save low.byte
+;            LDX     d_Hx4X      ; Load 4 digit hex val into X
+;            RTS                 ; RETURN
 
-PR_QM     LDAA #'?
-PR_BYTE   LDAA    #$3F    ; Put '?' character in A
-        JSR     PR_A    ; Print it
-        RTS             ; RETURN
+PR_QM       LDAA #'?              ; Put '?' character in A
+PR_BYTE     JSR     PR_A    ; Print it
+            RTS             ; RETURN
 
 ASK_Addrs   BSR     ASK_Start
             JSR     STRING   ; Print string...
             FCC     " Stop:"
             FCB     $FF         ; End-Of-String
-            BSR     RD_HEX4_S   ; Read 4 digit HEX addr value
+            JSR     RD_X        ; Read 4 digit HEX addr value
             STX     d_STOP      ; Save it
             RTS                 ; RETURN
 
 ASK_Start   JSR     STRING      ; Print string...
             FCC     " Start:"
             FCB     $FF         ; End-Of-String
-            BSR     RD_HEX4_S   ; Read 4 digit HEX addr value
+            JSR     RD_X        ; Read 4 digit HEX addr value
             STX     d_START     ; Save it
             RTS
 
-; -----------------------------------------------------
-; Check A contains a HEX character,  Set C.bit on fail
-
-VFY_HEX     CMPA    #$2F        ; A < 30 ?
-            BLE     .vNoHex     ;  not hex
-            CMPA    #$39        ; A > 39 ?
-            BHI     .vNoNum     ;  Not a Numeral
-.vIsHex     CLC                 ; It's OK (clear C bit)
-            RTS                 ; RETURN
-.vNoNum     CMPA    #$40        ; A < 41 ?
-            BLE     .vNoHex     ;  not hex
-            CMPA    #$46        ; A <= 46
-            BLE     .vIsHex     ;  then it is hex
-.vNoHex     SEC                 ; Set C bit
-            RTS                 ; RETURN
 
 ; -----------------------------------------------------
 ; Print value in A as 2 hex digits, Preserve B
@@ -787,7 +729,7 @@ VFY_HEX     CMPA    #$2F        ; A < 30 ?
 
 PR_HEX2     PSHB                ; Save B to STACK
             PSHA                ; Save A to STACK
-            JSR     BIN2HEX     ; Convert A to ASCII in A & B
+            JSR     ASCII       ; Convert A to ASCII in A & B
             PSHB                ; Save B (2nd byte) to STACK
             BSR     PR_BYTE     ; Print byte in A
             PULA                ; Get 2nd byte into A from STACK

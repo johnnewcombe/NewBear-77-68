@@ -11,7 +11,7 @@ BINARY  FC31 - Converts A:B to binary?
     Q Is this correct?
 ZIN     FC49 - Reads a 4 digit hex value from ACIA(a) and puts it into A.
     Q Is this correct or is it 2 digit hex value?
-RD_X    FC65 - Read 4 hex digits alue from ACIA(a) and put value into X.
+RD_X    FC65 - Read 4 hex digits value from ACIA(a) and put value into X.
 STRING  FC76 - Prints a string. The string should follow JSR and be terminated with $FF.
 GETADD  FC89 - Get Address, read 4 digit hex value.
 ASCII   FC9E - Convert value in A to 2 x ASCII hex digits in A and B.
