@@ -1,0 +1,2168 @@
+output:  galaxy.s19
+0001                         ;------------------------------------------
+0002                         ; 6800 code for Scelbi Galaxy game lifted
+0003                         ; from .pdf document & ocr of same
+0004                         ; with I/O to CDC/DJC DEMON monitor
+0005                         ;
+0006                         ; MODIFY I/O ROUTINES AT THE END FOR YOUR SYSTEM
+0007                         ;
+0008                         ;   CDC 11-July-2023
+0009                         ;       . Assigned labels to messages and changed references 
+0010                         ;       . to message addresses in code to use those labels.
+0011                         ;       . Message characters put in ASCII WITHOUT the high bit set.
+0012                         ;       . Make labels for subsitution points in messages.
+0013                         ;       . Change INPUT and PRINT routines to use DEMON SWI calls
+0014                         ;       . Change NOPs after CHICKEN! message to jump back to DEMON
+0015                         ;
+0016                         ;   CDC 12-July-2023
+0017                         ;       . Cosmetic changes to some messages ( Change 1 to | )
+0018                         ;       . More use of labels for Hex adress references
+0019                         ;
+0020                         ;   CDC 13-July-2023
+0021                         ;       . Added Ctrl+C = Quit back to monitor to input routine
+0022                         ;       . More work on removing use of high bit in ASCII chars
+0023                         ;
+0024                         ;   CDC 14-July-2023
+0025                         ;       . Departing more from original code...
+0026                         ;       .  Changed Space station from >1< to ]O[
+0027                         ;       .  Changed Ship from <*> to <o>
+0028                         ;
+0029                         ;   CDC 18-July-2023
+0030                         ;       . Fixed bug in course table for direction 5.0 
+0031                         ;
+0032                         ;   Apart from some text chars not having
+0033                         ;   high bit set in definitions
+0034                         ;   and our I/O and `Chicken!` exit jump
+0035                         ;   code hex on listing matches original listing...
+0036                         ;   https://archive.org/details/Scelbi-Galaxy-Game-for-the-6800-Robert-Findley-1977
+0037                         ;    or
+0038                         ;   https://ia803208.us.archive.org/28/items/
+0039                         ;       Scelbi-Galaxy-Game-for-the-6800-Robert-Findley-1977/
+0040                         ;       Scelbi%27s_Galaxy_Game_for_the_6800_Robert_Findley_1977.pdf
+0041                         ;
+0042                         ;------------------------------------------
+0043                         ; Some definitions...
+0044 0000                    DATA_BASE   EQU     $0000   ; General data
+0045 0080                    GLXY_MSGE   EQU     $0080   ; Galaxy line message
+0046 00c0                    GLXY_BASE   EQU     $00C0   ; Galaxy data
+0047 0100                    TEXT_BASE   EQU     $0100   ; Main message area
+0048 0500                    CODE_BASE   EQU     $0500   ; Main code area
+0049 0eff                    STACK_TOP   EQU     $0EFF   ; Top of stack area
+0050 0f80                    IOIF_BASE   EQU     $0F80   ; I/O interface to monitor
+0051                         
+0052 000d                    cCR         EQU     $0D     ; Carriage-return
+0053 000a                    cLF         EQU     $0A     ; Line-feed
+0054 0000                    cEOS        EQU     $00     ; End-of-string
+0055 0003                    cCtrlC      EQU     $03     ; Control+C
+0056                         
+0057 005d                    cStation1   EQU     ']      ; Spacestation left char (was '>)
+0058 004f                    cStation2   EQU     'O      ; Spacestation middle char (was '1)
+0059 005b                    cStation3   EQU     '[      ; Spacestation right char (was '<)
+0060                         
+0061 003c                    cShip1      EQU     '<      ; Ship left char
+0062 006f                    cShip2      EQU     'o      ; Ship middle char (was '*)
+0063 003e                    cShip3      EQU     '>      ; Ship right char
+0064                         
+0065 002b                    cAlien      EQU     '+      ; Alien ship is 3 of these (was +++)
+0066 002a                    cStar       EQU     '*      ; Star char (was '*)
+0067                         
+0068                         ;------------------------------------------
+0069                         ; Data
+0070 0000                                ORG     DATA_BASE
+0071                         
+0072 0000 02 00              Course1x0   FDB     $0200
+0073 0002 02 ff              Course1x5   FDB     $02FF
+0074 0004 02 fe              Course2x0   FDB     $02FE
+0075 0006 01 fe              Course2x5   FDB     $01FE
+0076 0008 00 fe              Course3x0   FDB     $00FE
+0077 000a ff fe              Course3x5   FDB     $FFFE
+0078 000c fe fe              Course4x0   FDB     $FEFE
+0079 000e fe ff              Course4x5   FDB     $FEFF
+0080 0010 fe 00              Course5x0   FDB     $FE00   ; Bug was that this was set to $FF00
+0081 0012 fe 01              Course5x5   FDB     $FE01
+0082 0014 fe 02              Course6x0   FDB     $FE02
+0083 0016 ff 02              Course6x5   FDB     $FF02
+0084 0018 00 02              Course7x0   FDB     $0002
+0085 001a 01 02              Course7x5   FDB     $0102
+0086 001c 02 02              Course8x0   FDB     $0202
+0087 001e 02 01              Course8x5   FDB     $0201
+0088                         
+0089                         ;------------------------------------------
+0090                         
+0091 0020                    PNTR1       RMB     2
+0092 0022                    PNTR2       RMB     2
+0093 0024                    PNTR3       RMB     2
+0094                         
+0095 0026                    STORE1      EQU     *       ; Msb stored AFTER Lsb !...
+0096 0026                    Store1LSB   RMB     1
+0097 0027                    Store1MSB   RMB     1       
+0098 0028                    STORE2      EQU     *      
+0099 0028                    Store2LSB   RMB     1
+0100 0029                    Store2MSB   RMB     1       
+0101 002a                    STORE3      EQU     *      
+0102 002a                    Store3LSB   RMB     1
+0103 002b                    Store3MSB   RMB     1       
+0104 002c                    STORE4      EQU     *      
+0105 002c                    Store4LSB   RMB     1
+0106 002d                    Store4MSB   RMB     1       
+0107 002e                    STORE5      EQU     *      
+0108 002e                    Store5LSB   RMB     1
+0109 002f                    Store5MSB   RMB     1  
+0110                         
+0111 0030                    CNTR        RMB     1       ; Temp counter storage
+0112                         
+0113 0031                    CI          RMB     1       ; Crossing indicator 
+0114                         
+0115 0032                    CF          RMB     1       ; Crossing flag 
+0116 0033                    RNM         RMB     2       ; Random number storage 
+0117 0035                    CQC         RMB     1       ; Current quadrant’s contents 
+0118 0036                    SLOSS       RMB     1       ; Sector location of space ship 
+0119 0037                    SOLSS       RMB     7       ; Sector location of stars 
+0120 003e                    SLSS        RMB     1       ; Sector location of space station 
+0121 003f                    SLAS1       RMB     1       ; Sect. loc. of alien ship no. 1 
+0122 0040                    SLAS2       RMB     1       ; Sect. loc. of alien ship no. 2 
+0123 0041                    SLAS3       RMB     1       ; Sect. loc. of alien ship no. 3
+0124 0042                    DVME        RMB     2       ; Energy in main supply 
+0125 0044                    DVSE        RMB     2       ; Energy in shields 
+0126 0046                    VASE1       RMB     2       ; Alien ship no. 1 energy 
+0127 0048                    VASE2       RMB     2       ; Alien ship no. 2 energy 
+0128 004a                    VASE3       RMB     2       ; Alien ship no. 3 energy 
+0129 004c                    CQLSS       RMB     1       ; Quadrant loc. of space ship 
+0130 004d                    NTR         RMB     1       ; Number of torpedoes 
+0131 004e                    NSS         RMB     1       ; Number of space stations 
+0132 004f                    NAS         RMB     1       ; Number of alien ships 
+0133 0050                    NSR         RMB     1       ; Number of star dates left 
+0134 0051                    DGT1ST      RMB     1       ; Digit storage for 
+0135 0052                    DGT2ND      RMB     1       ;  Binary to decimal and 
+0136 0053                    DGT3RD      RMB     1       ;   Decimal to binary 
+0137 0054                    DGT4TH      RMB     1       ;    Conversion 
+0138 0055                    DGT5TH      RMB     1       ; 
+0139                         
+0140                         ;------------------------------------------
+0141                         ; Table of pointers etc - Sec 5-2, 5-3
+0142                         
+0143 0056 00 26              PSTR1       FCB     $00,$26
+0144 0058 00 2f              PSTR51      FCB     $00,$2F
+0145 005a 00 36              PSLOSS      FCB     $00,$36
+0146 005c 00 37              PSOLSS      FCB     $00,$37
+0147 005e 00 3e              PSLSS       FCB     $00,$3E
+0148 0060 00 3f              PSLAS1      FCB     $00,$3F
+0149 0062 00 40              PSLAS2      FCB     $00,$40
+0150 0064 00 41              PSLAS3      FCB     $00,$41
+0151 0066 00 42              PDVME       FCB     $00,$42
+0152 0068 00 44              PDVSE       FCB     $00,$44
+0153 006a 00 46              PVASE1      FCB     $00,$46
+0154 006c 00 48              PVASE2      FCB     $00,$48
+0155 006e 00 4a              PVASE3      FCB     $00,$4A
+0156 0070 00 4c              PCQLSS      FCB     $00,$4C
+0157 0072 00 51              PDG1ST      FCB     $00,$51
+0158 0074 00 55              PDG5TH      FCB     $00,$55
+0159                         
+0160                         
+0161                         ; -----------------------------------------
+0162 0080                                ORG     GLXY_MSGE
+0163                         
+0164 0080                    MSGGAL      EQU     *
+0165                         ; From S19 file & listing...
+0166                         ;X          FCB     $BD,$BA,$B1,$A0,$B0,$B0,$B7,$A0 ; 0080
+0167                         ;X          FCB     $B1,$A0,$B0,$B0,$B5,$A0,$B1,$A0 ; 0088
+0168                         ;X          FCB     $B0,$B0,$B0,$A0,$B1,$A0,$B1,$B0 ; 0090
+0169                         ;X          FCB     $B4,$A0,$B1,$A0,$B1,$B0,$B2,$A0 ; 0098
+0170                         ;X          FCB     $B1,$A0,$B0,$B0,$B0,$A0,$B1,$A0 ; 00A0
+0171                         ;X          FCB     $B0,$B0,$B0,$A0,$B1,$A0,$B0,$B0 ; 00A8
+0172                         ;X          FCB     $B0,$A0,$B1,$00,$00,$00,$00,$00 ; 00B0
+0173                         ;
+0174                         ; Same stuff but with high bit removed... (and '1's changed to '|')
+0175 0080 0d 0a                            FCB     cCR,cLF                         ; 0080
+0176 0082 7c 20 78 78 78 20                FCC     "| xxx | xxx | xxx | xxx | xxx | xxx | xxx | xxx |"
+     7c 20 78 78 78 20
+     7c 20 78 78 78 20
+     7c 20 78 78 78 20
+     7c 20 78 78 78 20
+     7c 20 78 78 78 20
+     7c 20 78 78 78 20
+     7c 20 78 78 78 20
+     7c
+0177 00b3 00                 MsgGalEnd     FCB     cEOS                            ; 00B3
+0178 00b4 00 00 00 00                      FCB     $00,$00,$00,$00                 ; 00B4;
+0179                         
+0180                         ; -----------------------------------------
+0181                         ; Book says: 00C0 -> 00FF reserved for Galaxy Content table...
+0182 00c0                                ORG     GLXY_BASE
+0183 00c0                    GALSTART    RMB     $40
+0184 00ff                    GALEND      EQU     *-1
+0185 0100                    GALAFTER    EQU     *
+0186                         
+0187                         ;------------------------------------------
+0188                         ; Messages
+0189                         
+0190 0100                                ORG     TEXT_BASE
+0191                         
+0192 0100                    MSG01   EQU     *   ; $0100
+0193 0100 0d 0a                      FCB     cCR,cLF
+0194 0102 44 4f 20 59 4f 55          FCC     "DO YOU WANT TO GO ON A SPACE VOYAGE? "
+     20 57 41 4e 54 20
+     54 4f 20 47 4f 20
+     4f 4e 20 41 20 53
+     50 41 43 45 20 56
+     4f 59 41 47 45 3f
+     20
+0195 0127 00                         FCB     cEOS
+0196                         
+0197 0128                    MSG02   EQU     *   ; was at $0128
+0198 0128 0d 0a                      FCB     cCR,cLF
+0199 012a 59 4f 55 20 4d 55          FCC     "YOU MUST DESTROY "
+     53 54 20 44 45 53
+     54 52 4f 59 20
+0200 013b 78 78 20 41 4c 49  Msg02a  FCC     "xx ALIEN SHIPS IN "
+     45 4e 20 53 48 49
+     50 53 20 49 4e 20
+0201 014d 78 78 20 53 54 41  Msg02b  FCC     "xx STARDATES WITH "
+     52 44 41 54 45 53
+     20 57 49 54 48 20
+0202 015f 78 20 53 50 41 43  Msg02c  FCC     "x SPACE STATIONS"
+     45 20 53 54 41 54
+     49 4f 4e 53
+0203 016f 00                         FCB     cEOS
+0204                         
+0205 0170                    MSG03   EQU     *   ; was at $0170
+0206 0170 0d 0a                      FCB     cCR,cLF
+0207 0172 20 2d 31 2d 2d 32          FCC     " -1--2--3--4--5--6--7--8-"
+     2d 2d 33 2d 2d 34
+     2d 2d 35 2d 2d 36
+     2d 2d 37 2d 2d 38
+     2d
+0208 018b 00                         FCB     cEOS
+0209                         
+0210 018c                    MSG04   EQU     *   ; was at $018c
+0211 018c 0d 0a                      FCB     cCR,cLF
+0212 018e 38                 Msg04a  FCC     "8"
+0213 018f 20 20 20 20 20 20  Msg04b  FCC     "                        "
+     20 20 20 20 20 20
+     20 20 20 20 20 20
+     20 20 20 20 20 20
+0214 01a7 00                 End04   FCB     cEOS
+0215                         
+0216 01a8                    MSG05   EQU     *   ; was at $01a8
+0217 01a8 20 53 54 41 52 44          FCC     " STARDATE  30"
+     41 54 45 20 20 33
+     30
+0218 01b5 78 78              Msg05a  FCC     "xx"
+0219 01b7 00                         FCB     cEOS
+0220                         
+0221 01b8                    MSG06   EQU     *   ; was at $01b8
+0222 01b8 20 43 4f 4e 44 49          FCC     " CONDITION "
+     54 49 4f 4e 20
+0223 01c3 78 78 78 78 78     Msg06a  FCC     "xxxxx"
+0224 01c8 00                         FCB     cEOS
+0225                         
+0226 01c9                    MSG07   EQU     *   ; was at $01c9
+0227 01c9 20 51 55 41 44 52          FCC     " QUADRANT  "
+     41 4e 54 20 20
+0228 01d4 78 2c 78           Msg07a  FCC     "x,x"
+0229 01d7 00                         FCB     cEOS
+0230                         
+0231 01d8                    MSG08   EQU     *   ; was at $01d8
+0232 01d8 20 53 45 43 54 4f          FCC     " SECTOR    "
+     52 20 20 20 20
+0233 01e3 78 2c 78           Msg08a  FCC     "x,x"
+0234 01e6 00                         FCB     cEOS
+0235                         
+0236 01e7                    MSG09   EQU     *   ; was at $01e7
+0237 01e7 20 45 4e 45 52 47          FCC     " ENERGY    "
+     59 20 20 20 20
+0238 01f2 78 78 78 78        Msg09a  FCC     "xxxx"
+0239 01f6 00                         FCB     cEOS
+0240                         
+0241 01f7                    MSG10   EQU     *   ; was at $01f7
+0242 01f7 20 54 4f 52 50 45          FCC     " TORPEDOES "
+     44 4f 45 53 20
+0243 0202 78 78              Msg10a  FCC     "xx"
+0244 0204 00                         FCB     cEOS
+0245                         
+0246 0205                    MSG11   EQU     *   ; was at $0205
+0247 0205 20 53 48 49 45 4c          FCC     " SHIELDS   "
+     44 53 20 20 20
+0248 0210 78 78 78 78        Msg11a  FCC     "xxxx"
+0249 0214 00                         FCB     cEOS
+0250                         
+0251 0215                    MSG12   EQU     *   ; was at $0215
+0252 0215 0d 0a                      FCB     cCR,cLF
+0253 0217 43 4f 4d 4d 41 4e          FCC     "COMMAND?"
+     44 3f
+0254 021f 00                         FCB     cEOS
+0255                         
+0256 0220                    MSG13   EQU     *   ; was at $0220
+0257 0220 0d 0a                      FCB     cCR,cLF
+0258 0222 43 4f 55 52 53 45          FCC     "COURSE (1-8.5)? "
+     20 28 31 2d 38 2e
+     35 29 3f 20
+0259 0232 00                         FCB     cEOS
+0260                         
+0261 0233                    MSG14   EQU     *   ; was at $0233
+0262 0233 0d 0a                      FCB     cCR,cLF
+0263 0235 57 41 52 50 20 46          FCC     "WARP FACTOR (0.1-7.7)? "
+     41 43 54 4f 52 20
+     28 30 2e 31 2d 37
+     2e 37 29 3f 20
+0264 024c 00                         FCB     cEOS
+0265                         
+0266 024d                    MSG15   EQU     *   ; $024D
+0267 024d 0d 0a                      FCB     cCR,cLF
+0268 024f 4c 2e 52 2e 20 53          FCC     "L.R. SCAN FOR"
+     43 41 4e 20 46 4f
+     52
+0269 025c 00                         FCB     cEOS
+0270                         
+0271 025d                    MSG16   EQU     *   ; was at $025D
+0272 025d 0d 0a                      FCB     cCR,cLF
+0273 025f 4d 49 53 53 49 4f          FCC     "MISSION FAILED,"
+     4e 20 46 41 49 4c
+     45 44 2c
+0274 026e 20 59 4f 55 20 48          FCC     " YOU HAVE RUN OUT OF STARDATES"
+     41 56 45 20 52 55
+     4e 20 4f 55 54 20
+     4f 46 20 53 54 41
+     52 44 41 54 45 53
+0275 028c 00                         FCB     cEOS
+0276                         
+0277 028d                    MSG17   EQU     *   ; was at $028D
+0278 028d 0d 0a                      FCB     cCR,cLF
+0279 028f 4b 41 2d 42 4f 4f          FCC     "KA-BOOM, YOU CRASHED INTO A STAR. "
+     4d 2c 20 59 4f 55
+     20 43 52 41 53 48
+     45 44 20 49 4e 54
+     4f 20 41 20 53 54
+     41 52 2e 20
+0280 02b1 59 4f 55 52 20 53          FCC     "YOUR SHIP IS DESTROYED"
+     48 49 50 20 49 53
+     20 44 45 53 54 52
+     4f 59 45 44
+0281 02c7 00                         FCB     cEOS
+0282                         
+0283 02c8                    MSG18   EQU     *   ; $02C8
+0284 02c8 0d 0a                      FCB     cCR,cLF
+0285 02ca 59 4f 55 20 4d 4f          FCC     "YOU MOVED OUT OF THE GALAXY, YOUR SHIP"
+     56 45 44 20 4f 55
+     54 20 4f 46 20 54
+     48 45 20 47 41 4c
+     41 58 59 2c 20 59
+     4f 55 52 20 53 48
+     49 50
+0286 02f0 20 49 53 20 4c 4f          FCC     " IS LOST..LOST"
+     53 54 2e 2e 4c 4f
+     53 54
+0287 02fe 00                         FCB     cEOS
+0288                         
+0289 02ff                    MSG19   EQU     *   ; was at $02FF
+0290 02ff 0d 0a                      FCB     cCR,cLF
+0291 0301 4c 4f 53 53 20 4f          FCC     "LOSS OF ENERGY "
+     46 20 45 4e 45 52
+     47 59 20
+0292 0310 78 78 78 78        Msg19a  FCC     "xxxx"
+0293 0314 00                         FCB     cEOS
+0294                         
+0295 0315                    MSG20   EQU     *   ; was at $0315
+0296 0315 0d 0a                      FCB     cCR,cLF
+0297 0317 44 41 4e 47 45 52          FCC     "DANGER-SHIELD ENERGY 000"
+     2d 53 48 49 45 4c
+     44 20 45 4e 45 52
+     47 59 20 30 30 30
+0298 032f 00                         FCB     cEOS
+0299                         
+0300 0330                    MSG21   EQU     *   ; was at $0330
+0301 0330 0d 0a                      FCB     cCR,cLF
+0302 0332 53 48 49 45 4c 44          FCC     "SHIELD ENERGY TRANSFER = "
+     20 45 4e 45 52 47
+     59 20 54 52 41 4e
+     53 46 45 52 20 3d
+     20
+0303 034b 00                         FCB     cEOS
+0304                         
+0305 034c                    MSG22   EQU     *   ; was at $034C
+0306 034c 0d 0a                      FCB     cCR,cLF
+0307 034e 4e 4f 54 20 45 4e          FCC     "NOT ENOUGH ENERGY"
+     4f 55 47 48 20 45
+     4e 45 52 47 59
+0308 035f 00                         FCB     cEOS
+0309                         
+0310 0360                    MSG23   EQU     *   ; was at $0360
+0311 0360 0d 0a                      FCB     cCR,cLF
+0312 0362 54 4f 52 50 45 44          FCC     "TORPEDO TRAJECTORY(1-8.5) : "
+     4f 20 54 52 41 4a
+     45 43 54 4f 52 59
+     28 31 2d 38 2e 35
+     29 20 3a 20
+0313 037e 00                         FCB     cEOS
+0314                         
+0315 037f                    MSG24   EQU     *   ; was at $037F
+0316 037f 0d 0a                      FCB     cCR,cLF
+0317 0381 41 4c 49 45 4e 20          FCC     "ALIEN SHIP DESTROYED"
+     53 48 49 50 20 44
+     45 53 54 52 4f 59
+     45 44
+0318 0395 00                         FCB     cEOS
+0319                         
+0320 0396                    MSG25   EQU     *   ; was at $0396
+0321 0396 0d 0a                      FCB     cCR,cLF
+0322 0398 59 4f 55 20 4d 49          FCC     "YOU MISSED! ALIEN SHIP RETALIATES"
+     53 53 45 44 21 20
+     41 4c 49 45 4e 20
+     53 48 49 50 20 52
+     45 54 41 4c 49 41
+     54 45 53
+0323 03b9 00                         FCB     cEOS
+0324                         
+0325 03ba                    MSG26   EQU     *   ; was at $03BA
+0326 03ba 0d 0a                      FCB     cCR,cLF
+0327 03bc 53 50 41 43 45 20          FCC     "SPACE STATION DESTROYED"
+     53 54 41 54 49 4f
+     4e 20 44 45 53 54
+     52 4f 59 45 44
+0328 03d3 00                         FCB     cEOS
+0329                         
+0330 03d4                    MSG27   EQU     *   ; was at $03D4
+0331 03d4 0d 0a                      FCB     cCR,cLF
+0332 03d6 43 4f 4e 47 52 41          FCC     "CONGRATULATIONS, YOU HAVE ELIMINATED"
+     54 55 4c 41 54 49
+     4f 4e 53 2c 20 59
+     4f 55 20 48 41 56
+     45 20 45 4c 49 4d
+     49 4e 41 54 45 44
+0333 03fa 20 41 4c 4c 20 4f          FCC     " ALL OF THE ALIEN SHIPS"
+     46 20 54 48 45 20
+     41 4c 49 45 4e 20
+     53 48 49 50 53
+0334 0411 00                         FCB     cEOS
+0335                         
+0336 0412                    MSG28   EQU     *   ; $0412
+0337 0412 0d 0a                      FCB     cCR,cLF
+0338 0414 54 52 41 43 4b 49          FCC     "TRACKING: "
+     4e 47 3a 20
+0339 041e 78 2c 78           Msg28a  FCC     "x,x"
+0340 0421 00                         FCB     cEOS
+0341                         
+0342 0422                    MSG29   EQU     *   ; was at $0422
+0343 0422 0d 0a                      FCB     cCR,cLF
+0344 0424 47 41 4c 41 58 59          FCC     "GALAXY DISPLAY"
+     20 44 49 53 50 4c
+     41 59
+0345 0432 00                         FCB     cEOS
+0346                         
+0347 0433                    MSG30   EQU     *   ; was at $0433
+0348 0433 0d 0a                      FCB     cCR,cLF
+0349 0435 50 48 41 53 4f 52          FCC     "PHASOR ENERGY TO FIRE = "
+     20 45 4e 45 52 47
+     59 20 54 4f 20 46
+     49 52 45 20 3d 20
+0350 044d 00                         FCB     cEOS
+0351                         
+0352 044e                    MSG31   EQU     *   ; was at $044E
+0353 044e 0d 0a                      FCB     cCR,cLF
+0354 0450 41 4c 49 45 4e 20          FCC     "ALIEN SHIP AT SECTOR "
+     53 48 49 50 20 41
+     54 20 53 45 43 54
+     4f 52 20
+0355 0465 78 2c 78 3a 20     Msg31a  FCC     "x,x: "
+0356 046a 00                         FCB     cEOS
+0357                         
+0358 046b                    MSG32   EQU     *   ; $046B
+0359 046b 45 4e 45 52 47 59          FCC     "ENERGY = "
+     20 3d 20
+0360 0474 78 78 78 78        Msg32a  FCC     "xxxx"
+0361 0478 00                         FCB     cEOS
+0362                         
+0363 0479                    MSG33   EQU     *   ; was at $0479
+0364 0479 0d 0a                      FCB     cCR,cLF
+0365 047b 4e 4f 20 41 4c 49          FCC     "NO ALIEN SHIPS! WASTED SHOT"
+     45 4e 20 53 48 49
+     50 53 21 20 57 41
+     53 54 45 44 20 53
+     48 4f 54
+0366 0496 00                         FCB     cEOS
+0367                         
+0368 0497                    MSG34   EQU     *   ; was at $0497
+0369 0497 0d 0a                      FCB     cCR,cLF
+0370 0499 41 42 41 4e 44 4f          FCC     "ABANDON SHIP! NO ENERGY LEFT"
+     4e 20 53 48 49 50
+     21 20 4e 4f 20 45
+     4e 45 52 47 59 20
+     4c 45 46 54
+0371 04b5 00                         FCB     cEOS
+0372                         
+0373 04b6                    MSG35   EQU     *   ; was at $04B6
+0374 04b6 0d 0a                      FCB     cCR,cLF
+0375 04b8 4e 4f 20 54 4f 52          FCC     "NO TORPEDOES"
+     50 45 44 4f 45 53
+0376 04c4 00                         FCB     cEOS
+0377                         
+0378 04c5                    MSG36   EQU     *   ; was at $04C5 : Long Range scan (`1`s changed to `|`s)
+0379 04c5 0d 0a                      FCB     cCR,cLF
+0380 04c7 7c 20                      FCC     "| "
+0381 04c9 30 30 30 20 7c 20  Msg36a  FCC     "000 | "
+0382 04cf 30 30 30 20 7c 20  Msg36b  FCC     "000 | "
+0383 04d5 30 30 30 20 7c     Msg36c  FCC     "000 |"
+0384 04da 00                         FCB     cEOS
+0385                         
+0386 04db                    MSG37   EQU     *   ; was at $04DB
+0387 04db 0d 0a                      FCB     cCR,cLF
+0388                         ;xx   x FCC     "LAST"      ;??? "SPACE STATION DESTROYED"
+0389 04dd 4c 41 53 54 20 53          FCC     "LAST SPACE STATION GONE" ; Replace message, using up last of mem up to $04ff
+     50 41 43 45 20 53
+     54 41 54 49 4f 4e
+     20 47 4f 4e 45
+0390 04f4 00                         FCB     cEOS
+0391                         
+0392 04f5                    MSG38   EQU     *   ; was at $04E2
+0393 04f5 0d 0a                      FCB     cCR,cLF
+0394 04f7 43 48 49 43 4b 45          FCC     "CHICKEN!"
+     4e 21
+0395 04ff 00                         FCB     cEOS
+0396                         
+0397 04ff                    LastMsgEnd EQU *-1
+0398                         
+0399                         ;------------------------------------------
+0400                         ;------------------------------------------
+0401 0500                                ORG     CODE_BASE
+0402                         ;------------------------------------------
+0403                         
+0404 0500 8e 0e ff           GALAXY      LDS         #STACK_TOP  ; Set stack pointer to stack area
+0405 0503 7e 09 72                       JMP         START       ; Jump to start of Galaxy program 
+0406                         
+0407                         ;------------------------------------------
+0408                         ; Print message pointed to by X...
+0409                         
+0410 0506 a6 00              MSG         LDAA        0,X 
+0411 0508 27 06                          BEQ         MSG1 
+0412 050a bd 0f 89                       JSR         PRINT 
+0413 050d 08                             INX 
+0414 050e 20 f6                          BRA         MSG 
+0415 0510 39                 MSG1        RTS 
+0416                         
+0417                         ;------------------------------------------
+0418                         ; Bit rotate...
+0419 0511 47                 ROTR4       ASRA                    ; Shift A right 1 bit
+0420 0512 47                 ROTR3       ASRA                    ; Shift A right 1 bit
+0421 0513 47                             ASRA                    ; Shift A right 1 bit
+0422 0514 47                             ASRA                    ; Shift A right 1 bit
+0423 0515 39                             RTS
+0424                         
+0425                         ;------------------------------------------
+0426                         ; Random number generator
+0427                           
+0428 0516 96 33              RN          LDAA        RNM
+0429 0518 49                             ROLA 
+0430 0519 98 33                          EORA        RNM 
+0431 051b 46                             RORA 
+0432 051c 7c 00 34                       INC         RNM+$1
+0433 051f 9b 34                          ADDA        RNM+$1
+0434 0521 28 03                          BVC         SKIP 
+0435 0523 7a 00 34                       DEC         RNM+$1
+0436 0526 97 33              SKIP        STAA        RNM
+0437 0528 39                             RTS 
+0438                         
+0439                         ;------------------------------------------
+0440                         ; Binary / Decimal conversions
+0441                         ;
+0442                         ; The Galaxy program performs a number of operations involving 
+0443                         ; the conversion of numbers from binary to decimal and vice versa for 
+0444                         ; inputting and outputting numbers. The next trio of subroutines performs
+0445                         ; the conversion of double precision binary whole numbers to 
+0446                         ; and from decimal, and also checks that digits entered on the keyboard
+0447                         ; fall within the range of the ASCII code for digits, namely BO 
+0448                         ; through B9. The binary-to-decimal routine, labeled BINDEC, converts
+0449                         ; a single or double precision binary number to its decimal 
+0450                         ; equivalent up to five digits long, and stores the result in locations 51 
+0451                         ; through 55 on page 00. Accumulator B is set to 01 for a single precision
+0452                         ; number, and 02 for a double precision number, and the index 
+0453                         ; register is set to the least significant byte of the number to be converted
+0454                         ; before the BINDEC subroutine is called. The decimal-to-binary 
+0455                         ; subroutine, labeled DCBN, converts the decimal values stored 
+0456                         ; in locations 51 through 54 on page 00 to the equivalent double precision
+0457                         ; binary number which is saved in location 28 for the least significant half,
+0458                         ; and 29 on page 00 for the most significant half of the binary value.
+0459                         ; The FNUM subroutine checks the memory location indicated by the index
+0460                         ; register for a valid ASCII digit, and returns with 
+0461                         ; the N flag reset if it is a valid digit, or set if it is not. 
+0462                         ;
+0463                         ; X=Address of number to convert
+0464                         ; B=01 for X -> single precision
+0465                         ; B=02 for X -> double precision
+0466                         ;
+0467                         ; Noe: Many 2-byte values in this program are in LSB:MSB ofter
+0468                         
+0469 0529 df 20              BINDEC      STX         PNTR1       ; Save pointer temporarily
+0470 052b de 72                          LDX         PDG1ST      ; Set pointer to start of decimal table
+0471 052d 6f 00                          CLR         $00,X       ; Clear digit table...
+0472 052f 6f 01                          CLR         $01,X 
+0473 0531 6f 02                          CLR         $02,X 
+0474 0533 6f 03                          CLR         $03,X 
+0475 0535 6f 04                          CLR         $04,X 
+0476 0537 de 20                          LDX         PNTR1       ; Set pointer to binary value
+0477 0539 a6 00                          LDAA        0,X         ; Get LSB
+0478 053b 5a                             DECB                    ; Single precision ?
+0479 053c 27 02                          BEQ         BNDC        ; Yes: most significanl half = 0
+0480 053e e6 01                          LDAB        $01,X       ; No: get most significant hals
+0481 0540 97 26              BNDC        STAA        STORE1      ; Store LSB
+0482 0542 d7 27                          STAB        STORE1+$1   ; Store MSB
+0483 0544 ce 10 27                       LDX         #$1027      ; Set up value for 10K
+0484 0547 df 28                          STX         STORE2      ; Store for subtract routine
+0485 0549 8d 21                          BSR         BD          ; Calculate 5th digit 
+0486 054b d7 55                          STAB        DGT5TH      ; Store value of 5th digit
+0487 054d ce e8 03                       LDX         #$E803      ; Binary value for 1K
+0488 0550 df 28                          STX         STORE2      ; Store for subtract routine
+0489 0552 8d 18                          BSR         BD          ; Calculate 4th digit
+0490 0554 d7 54                          STAB        DGT4TH      ; Store value of 4th digit
+0491 0556 ce 64 00                       LDX         #$6400      ; Binary value for 100
+0492 0559 df 28                          STX         STORE2      ; Store for subtract routine
+0493 055b 8d 0f                          BSR         BD          ; Calculate 3rd digit
+0494 055d d7 53                          STAB        DGT3RD      ; Store value of 3rd digit
+0495 055f 86 0a                          LDAA        #$0A        ; LS half value of 10 decimal
+0496 0561 97 28                          STAA        STORE2      ; Store for subtract routine
+0497 0563 8d 07                          BSR         BD          ; Calculate 2nd digit
+0498 0565 d7 52                          STAB        DGT2ND      ; Store value of 2nd digit
+0499 0567 96 26                          LDAA        STORE1      ; Get unit value
+0500 0569 97 51                          STAA        DGT1ST      ; Store value of 1st digit
+0501 056b 39                             RTS                     ; Return to calling program
+0502                         
+0503 056c 5f                 BD          CLRB                    ; Clear decimal digit counter
+0504 056d 5c                 BD1         INCB                    ; Increment decimal digit
+0505 056e 96 26                          LDAA        STORE1      ; Fetch the least significant half 
+0506 0570 90 28                          SUBA        STORE2      ; Subtract LS half of constant
+0507 0572 97 26                          STAA        STORE1      ; Save LS half of result
+0508 0574 96 27                          LDAA        STORE1+$1   ; Fetch most significant half
+0509 0576 92 29                          SBCA        STORE2+$1   ; Subtract MS half of constant
+0510 0578 97 27                          STAA        STORE1+$1   ; Save MS half of result
+0511 057a 24 f1                          BCC         BD1         ; If greater than 0, continue subtraction
+0512 057c 96 26                          LDAA        STORE1      ; Else, restore binary value
+0513 057e 9b 28                          ADDA        STORE2      ; Add LS half back to result
+0514 0580 97 26                          STAA        STORE1      ; Restore result in memory
+0515 0582 96 27                          LDAA        STORE1+$1   ; Fetch MS half of result
+0516 0584 99 29                          ADCA        STORE2+$1   ; Add MS half back to result
+0517 0586 97 27                          STAA        STORE1+$1   ; Restore result in memory
+0518 0588 5a                             DECB                    ; Decrement decimal digit to correct
+0519 0589 39                             RTS                     ; Return
+0520                         
+0521 058a 7f 00 29           DCBN        CLR         STORE2+$1   ; Clear MS half of result 
+0522 058d 96 51                          LDAA        DGT1ST      ; Fetch units digit
+0523 058f 97 28                          STAA        STORE2      ; Store in work area
+0524 0591 d6 52                          LDAB        DGT2ND      ; Fetch ten’s digit
+0525 0593 27 07                          BEQ         DC1         ; Digit = 0? Yes, do 100’s digit
+0526 0595 ce 0a 00                       LDX         #$0A00      ; Binary value of 10
+0527 0598 df 26                          STX         STORE1      ; To be added B times
+0528 059a 8d 17                          BSR         TOBN        ; Add 10’s digit
+0529                         
+0530 059c d6 53              DC1         LDAB        DGT3RD      ; Get 3rd digit
+0531 059e 27 07                          BEQ         DC2         ; Digit = 0? Yes, do 1000’s digit
+0532 05a0 ce 64 00                       LDX         #$6400      ; Binary value of 100
+0533 05a3 df 26                          STX         STORE1      ; To be added B times
+0534 05a5 8d 0c                          BSR         TOBN        ; Add 100’s digit
+0535 05a7 d6 54              DC2         LDAB        DGT4TH      ; Get 4th digit
+0536 05a9 27 07                          BEQ         DC3         ; Digit = 0? Yes, finished
+0537 05ab ce e8 03                       LDX         #$E803      ; Binary value of 1000
+0538 05ae df 26                          STX         STORE1      ; To be added B times
+0539 05b0 8d 01                          BSR         TOBN        ; Add 1000’s digit
+0540 05b2 39                 DC3         RTS                     ; Return, binary value in STORE1
+0541                         
+0542 05b3 ce 00 28           TOBN        LDX         #STORE2     ; Set pointer to binary value
+0543 05b6 bd 08 02                       JSR         TO1         ; Add value to STORE1
+0544 05b9 5a                             DECB                    ; Multiplier =0?
+0545 05ba 26 f7                          BNE         TOBN        ; No, continue
+0546 05bc 39                             RTS                     ; Yes, return 
+0547                         
+0548 05bd a6 00              FNUM        LDAA        0,X         ; Fetch ASCII character
+0549 05bf 81 30                          CMPA        #'0         ; Is character a number? ( was $B0 )
+0550 05c1 2b 04                          BMI         FNUM1       ; No, return with N flag set
+0551 05c3 80 3a                          SUBA        #$3A        ; Valid number, return with ( was $BA )
+0552 05c5 8b 80                          ADDA        #$80        ; N flag reset ( was $80 )
+0553 05c7 39                 FNUM1       RTS                     ; Return
+0554                         
+0555                         
+0556 05c8 de 5c              NWQD        LDX         PSOLSS      ; Set pointer to star table
+0557 05ca 86 c0                          LDAA        #$C0        ; Clear code in A
+0558 05cc c6 0b                          LDAB        #$0B        ; Counter in B
+0559 05ce a7 00              CLR1        STAA        0,X         ; Clear object location table
+0560 05d0 08                             INX                     ; Increment table pointer
+0561 05d1 5a                             DECB                    ; Decrement counter
+0562 05d2 26 fa                          BNE         CLR1        ; Not done? Clear more
+0563                         
+0564 05d4 d6 35                          LDAB        CQC         ; Else get quadrant contents
+0565 05d6 c4 07                          ANDB        #$07        ; Get number of stars 
+0566 05d8 27 04                          BEQ         NWQD1       ; If none, check space station
+0567 05da de 5c                          LDX         PSOLSS      ; Set pointer to star table 
+0568 05dc 8d 31                          BSR         LOCSET      ; Set up star locations 
+0569                         
+0570 05de 96 35              NWQD1       LDAA        CQC         ; Get quadrant contents 
+0571 05e0 bd 05 12                       JSR         ROTR3       ; Move to space station position
+0572 05e3 16                             TAB                     ; Set up for LOCSET
+0573 05e4 c4 01                          ANDB        #$01        ; Any space stations?
+0574 05e6 27 04                          BEQ         NWQD2       ; No, check alien ships
+0575 05e8 de 5e                          LDX         PSLSS       ; Fetch space station table location
+0576 05ea 8d 23                          BSR         LOCSET      ; Set position if present
+0577                         
+0578 05ec 96 35              NWQD2       LDAA        CQC         ; Get quadrant contents 
+0579 05ee bd 05 11                       JSR         ROTR4       ; Position alien count
+0580 05f1 16                             TAB                     ; Put count in B
+0581 05f2 c4 03                          ANDB        #$03        ; Mask for count
+0582 05f4 27 16                          BEQ         LLAS        ; No aliens, skip positioning
+0583 05f6 de 60                          LDX         PSLAS1      ; Set pointer to alien ship location
+0584 05f8 8d 15                          BSR         LOCSET      ; Assign alien ship locations
+0585                         
+0586 05fa 8d 10              LDAS        BSR         LLAS        ; Get random numbers  
+0587 05fc de 6a                          LDX         PVASE1      ; Pointer to alien ship no. 1 shields
+0588 05fe 8d 06                          BSR         LAS         ; Store alien ship no. 1 energy
+0589 0600 de 6c                          LDX         PVASE2      ; Pointer to alien ship no. 2 shields
+0590 0602 8d 02                          BSR         LAS         ; Store alien ship no. 2 energy
+0591 0604 de 6e                          LDX         PVASE3      ; Pointer to alien ship no. 3 shields
+0592                         
+0593 0606 a7 00              LAS         STAA        0,X         ; Store least significant half value
+0594 0608 84 03                          ANDA        #$03        ; Mask for most significant half 
+0595 060a a7 01                          STAA        $01,X       ; Store most significant half 
+0596 060c 7e 05 16           LLAS        JMP         RN          ; Get random and return 
+0597                         
+0598 060f df 20              LOCSET      STX         PNTR1       ; Store table pointer 
+0599 0611 8d f9                          BSR         LLAS        ; Fetch random location 
+0600 0613 84 3f                          ANDA        #$3F        ; Mask off most significant bits 
+0601 0615 8d 0b                          BSR         MATCH       ; New location match others? 
+0602 0617 27 f8                          BEQ         LOCSET+$2   ; Yes, find new location (recode***)
+0603 0619 de 20                          LDX         PNTR1       ; Fetch table pointer 
+0604 061b a7 00                          STAA        0,X         ; Store random location 
+0605 061d 08                             INX                     ; Table pointer to next object 
+0606 061e 5a                             DECB                    ; Decrement object counter 
+0607 061f 26 ee                          BNE         LOCSET      ; Counter not =0, do next 
+0608 0621 39                             RTS 
+0609                         
+0610 0622 de 5c              MATCH       LDX         PSOLSS      ; Set pointer to star table 
+0611 0624 a1 00              MATCH2      CMPA        0,X         ; Same sector location? 
+0612 0626 27 06                          BEQ         MATCH1      ; Yes, match, return 
+0613 0628 08                             INX                     ; Advance table pointer 
+0614 0629 9c 66                          CPX         PDVME       ; End of table? 
+0615                         ;x          BNE         MATCH2      ; No, check next 
+0616                         ;x          INX                     ; 
+0617                         ;x          DEX                     ; Yes, reset Z flag 
+0618 062b 7e 0e 82                       JMP         PATCH       ; (in listing, chapter 5... p.87)
+0619 062e 39                 MATCH1      RTS                     ; Return 
+0620                         
+0621                         
+0622 062f 96 4c              QCNT        LDAA        CQLSS       ; Fetch current quadrant 
+0623 0631 8a c0                          ORAA        #$C0        ; Form pointer to galaxy 
+0624 0633 bd 09 51                       JSR         ATINX1      ; Set pointer to quadrant 
+0625 0636 a6 00                          LDAA        0,X         ; Fetch quadrant contents 
+0626 0638 97 35                          STAA        CQC         ; Store new quadrant contents 
+0627 063a 39                             RTS                     ; Return 
+0628                         
+0629 063b ce 88 13           LOAD        LDX         #$8813      ; Store double precision value 5000 (LowByteFirst))
+0630 063e df 42                          STX         DVME        ; In main energy store 
+0631 0640 ce 00 00                       LDX         #$0000      ; Set shields to zero 
+0632 0643 df 44                          STX         DVSE        ; 
+0633 0645 86 0a                          LDAA        #$0A        ; Load ten torpedoes on board 
+0634 0647 97 4d                          STAA        NTR         ; 
+0635 0649 39                             RTS                     ; Return 
+0636                         ;---
+0637                         
+0638 064a ce 02 5d           TIME        LDX         #MSG16      ; Stardates time run out - player loses 
+0639                         
+0640 064d bd 05 06           DONE        JSR         MSG         ; 
+0641 0650 7e 05 00                       JMP         GALAXY      ; Print message and start a new game
+0642                         ;                                   ; STRANGE: Original list has 7E 09 72
+0643                         ;                                   ; as code for this JMP GALAXY !!!!!!!
+0644                         
+0645 0653 ce 02 c8           LOST        LDX         #MSG18      ; Out of known galaxy (was $02C8)
+0646 0656 20 f5                          BRA         DONE        ; Player loses 
+0647                         
+0648 0658 ce 02 8d           WPOUT       LDX         #MSG17      ; Smashed into star 
+0649 065b 20 f0                          BRA         DONE        ; Player loses 
+0650                         
+0651 065d ce 04 97           EOUT        LDX         #MSG34      ; Out of energy 
+0652 0660 20 eb                          BRA         DONE        ; Abandon ship 
+0653                         
+0654                         ;---
+0655                         
+0656 0662 df 20              DIGPRT      STX         PNTR1       ; Save message digit location pointer 
+0657 0664 9f 22                          STS         PNTR2       ; Save stack pointer temporarily 
+0658 0666 9e 20                          LDS         PNTR1       ; Set stack pointer to 1st digit location 
+0659 0668 de 72                          LDX         PDG1ST      ; Set index to 1st digit 
+0660 066a a6 00              DGPRT1      LDAA        0,X         ; Get digit from storage 
+0661 066c 08                             INX                     ; Advance index to next digit 
+0662 066d 8a 30                          ORAA        #$30        ; Form ASCII code (was $B0)
+0663 066f 36                             PSHA                    ; Store in message 
+0664 0670 5a                             DECB                    ; Decrement digit counter 
+0665 0671 26 f7                          BNE         DGPRT1      ; Not =0? Continue 
+0666 0673 9e 22                          LDS         PNTR2       ; Equals 0, restore stack pointer 
+0667 0675 39                             RTS                     ; And return 
+0668                         
+0669                         ;---
+0670                         
+0671 0676 ce 01 8f           ROWSET      LDX         #Msg04b     ; Set pointer to row message 
+0672 0679 86 20                          LDAA        #$20        ; Clear with ASCII space (was $A0)
+0673 067b a7 00              RCLR        STAA        0,X         ; Store space character 
+0674 067d 08                             INX                     ; Advance pointer 
+0675 067e 8c 01 a7                       CPX         #End04     ; Message cleared? 
+0676 0681 26 f8                          BNE         RCLR        ; No, clear next 
+0677 0683 17                             TBA                     ;  
+0678 0684 8a 30                          ORAA        #$30        ; Form ASCII code for row (was $B0)
+0679 0686 b7 01 8e                       STAA        Msg04a      ; Store in message (was $018E)
+0680 0689 5a                             DECB                    ; Set up row number for checkout 
+0681 068a de 5a                          LDX         PSLOSS      ; Set pointer to object location table 
+0682 068c 8d 52                          BSR         RWPNT       ; Fetch space ship location 
+0683 068e 26 0c                          BNE         STR         ; In this row? 
+0684 0690 86 3c                          LDAA        #cShip1     ; Yes, store space ship (was $BC)
+0685 0692 a7 00                          STAA        0,X         ;
+0686 0694 86 6f                          LDAA        #cShip2     ;  (was $AA)
+0687 0696 a7 01                          STAA        $01,X       ; 
+0688 0698 86 3e                          LDAA        #cShip3     ;  (was $BE)
+0689 069a a7 02                          STAA        $02,X       ; Code for printout 
+0690                         
+0691 069c de 5c              STR         LDX         PSOLSS 
+0692 069e df 22                          STX         PNTR2       ; Set a star table pointer 
+0693 06a0 8d 3e              STR1        BSR         RWPNT       ; Is star in this row? 
+0694 06a2 26 04                          BNE         NXSTR       ; No, pointer to next star 
+0695 06a4 86 2a                          LDAA        #cStar      ; Yes, store star code  (was $AA)
+0696 06a6 a7 01                          STAA        $01,X       ; In proper location 
+0697 06a8 7c 00 23           NXSTR       INC         PNTR2+$1    ; Increment star table pointer 
+0698 06ab de 22                          LDX         PNTR2       ; Put new pointer in index 
+0699 06ad 9c 5e                          CPX         PSLSS       ; End of star table? 
+0700 06af 26 ef                          BNE         STR1        ; No, check next star 
+0701 06b1 8d 2d                          BSR         RWPNT       ; Space station in this row? 
+0702 06b3 26 0c                          BNE         AS          ; No, look for alien ships 
+0703 06b5 86 5d                          LDAA        #cStation1  ; Yes, store space station (was $BE)
+0704 06b7 a7 00                          STAA        0,X         ; 
+0705 06b9 86 4f                          LDAA        #cStation2  ; (was $B1)
+0706 06bb a7 01                          STAA        $01,X       ; 
+0707 06bd 86 5b                          LDAA        #cStation3  ; (was $BC) 
+0708 06bf a7 02                          STAA        $02,X       ; Code for printout 
+0709 06c1 de 60              AS          LDX         PSLAS1 
+0710 06c3 df 22                          STX         PNTR2       ; Set alien ship table pointer 
+0711 06c5 8d 19              AS1         BSR         RWPNT       ; Alien ship in this row? 
+0712 06c7 26 08                          BNE         NXAS        ; No, look for next ship 
+0713 06c9 86 2b                          LDAA        #cAlien     ; Yes, store code for alien  (was $AB)
+0714 06cb a7 00                          STAA        0,X
+0715 06cd a7 01                          STAA        $01,X 
+0716 06cf a7 02                          STAA        $02,X       ; Ship printout 
+0717 06d1 7c 00 23           NXAS        INC         PNTR2+$1    ; Advance alien ship table pointer 
+0718 06d4 de 22                          LDX         PNTR2       ; Get new pointer 
+0719 06d6 9c 66                          CPX         PDVME       ; End of table? 
+0720 06d8 26 eb                          BNE         AS1         ; No, try next alien 
+0721 06da ce 01 8c                       LDX         #MSG04      ; Set pointer to print short range scan & 
+0722 06dd 7e 05 06                       JMP         MSG         ; Return 
+0723                         
+0724 06e0 a6 00              RWPNT       LDAA        0,X         ; Fetch entry location 
+0725 06e2 2b 1d                          BMI         RWPNT1      ; No, return 
+0726 06e4 bd 05 12                       JSR         ROTR3       ; Position row entry 
+0727 06e7 84 07                          ANDA        #$07        ; Separate row entry 
+0728 06e9 11                             CBA                     ; Is row = current row? 
+0729 06ea 26 15                          BNE         RWPNT1      ; No, return 
+0730 06ec a6 00                          LDAA        0,X         ; Yes, fetch column location 
+0731 06ee 84 07                          ANDA        #$07        ; Separate column location 
+0732 06f0 97 26                          STAA        STORE1      ; Save column 
+0733 06f2 48                             ASLA                    ; Multiply by two 
+0734 06f3 9b 26                          ADDA        STORE1      ; 
+0735 06f5 8b 8f                          ADDA        #$8F        ; Form pointer to row message 
+0736 06f7 7f 00 20                       CLR         PNTR1 
+0737 06fa 7c 00 20                       INC         PNTR1       ; Set up pointer storage to page 01 
+0738 06fd bd 09 54                       JSR         ATINX       ; Set index pointer from A 
+0739 0700 4f                             CLRA                    ; Set zero flag 
+0740 0701 39                 RWPNT1      RTS                     ; Return 
+0741                         
+0742                         ;---
+0743                         
+0744 0702 ce 01 d4           QUAD        LDX         #Msg07a     ; Store temp, quadrant 
+0745 0705 df 20                          STX         PNTR1       ; Message pointer 
+0746 0707 ce 00 4c                       LDX         #CQLSS      ; Index to quadrant location storage 
+0747 070a 8d 06                          BSR         TWO         ; Put digits in message 
+0748 070c ce 01 c9                       LDX         #MSG07      ; Index to quadrant message 
+0749 070f 7e 05 06                       JMP         MSG         ; Print quadrant message and return 
+0750                         
+0751 0712 a6 00              TWO         LDAA        0,X         ; Fetch row and column 
+0752 0714 16                             TAB                     ; Save row and column 
+0753 0715 de 20                          LDX         PNTR1       ; Get message pointer 
+0754 0717 bd 05 12           T1          JSR         ROTR3       ; Position row number 
+0755 071a 84 07                          ANDA        #$07        ; Mask off other bits 
+0756 071c 8b 31                          ADDA        #$31        ; Form ASCII code (was $B1)
+0757 071e a7 00                          STAA        0,X         ; Store in message 
+0758 0720 c4 07                          ANDB        #$07        ; Separate column number 
+0759 0722 cb 31                          ADDB        #$31        ; Form ASCII code (was $B1)
+0760 0724 e7 02                          STAB        $02,X       ; 
+0761 0726 39                             RTS 
+0762                         
+0763                         ;---
+0764                         
+0765 0727 c6 13              NTN         LDAB        #$13        ; Set counter 19 dashes 
+0766 0729 86 0d              NT1         LDAA        #$0D        ; ( was $8D ) 
+0767 072b 8d 0c                          BSR         NT3         ; Print carriage return
+0768 072d 86 0a                          LDAA        #$0A        ; ( was $8A )
+0769 072f 8d 08                          BSR         NT3         ; Print line feed 
+0770 0731 86 2d              NT2         LDAA        #'-         ; Dash ( was $AD )
+0771 0733 8d 04                          BSR         NT3         ; Print 
+0772 0735 5a                             DECB                    ; Decrement counter. =0? 
+0773 0736 26 f9                          BNE         NT2         ; No, print more dashes 
+0774 0738 39                             RTS                     ; Yes, return 
+0775 0739 7e 0f 89           NT3         JMP         PRINT       ; Print and RETURN
+0776                         
+0777 073c 16                 QDSET       TAB                     ; Fetch quadrant contents 
+0778 073d bd 05 11                       JSR         ROTR4       ; Position alien ship number 
+0779 0740 84 03                          ANDA        #$03        ; Mask alien ship number 
+0780 0742 8a 30                          ORAA        #$30        ; Form ASCII digit ( was $B0 )
+0781 0744 a7 00                          STAA        0,X         ; Store in message 
+0782 0746 17                             TBA                     ; Fetch quadrant contents 
+0783 0747 bd 05 12                       JSR         ROTR3       ; Position space ship number 
+0784 074a 84 01                          ANDA        #$01        ; Mask space ship number 
+0785 074c 8a 30                          ORAA        #$30        ; Form ASCII digit ( was $B0 )
+0786 074e a7 01                          STAA        $01,X       ; Store space ship in message 
+0787 0750 c4 07                          ANDB        #$07        ; Mask star number 
+0788 0752 ca 30                          ORAB        #$30        ; Form ASCII digit ( was $B0 )
+0789 0754 e7 02                          STAB        $02,X       ; Store in message 
+0790 0756 39                             RTS                     ; Return 
+0791                         
+0792 0757 4f                 CLC1        CLRA                    ; Clear column contents 
+0793 0758 20 14                          BRA         LR3         ; Print 000 quadrant 
+0794                         
+0795 075a 4f                 CLC2        CLRA                    ; Clear column contents 
+0796 075b 20 2f                          BRA         LR4         ; Print 000 quadrant 
+0797                         
+0798 075d 7e 09 51           LR5         JMP         ATINX1 
+0799 0760 8a c0              LRR         ORAA        #$C0 
+0800 0762 16                             TAB                     ; Set pointer to galaxy 
+0801 0763 97 26                          STAA        STORE1      ; Save pointer 
+0802 0765 c4 07                          ANDB        #$07        ; First column? 
+0803 0767 27 ee                          BEQ         CLC1        ; Yes, first column zero 
+0804 0769 4a                             DECA                    ; No, back one column 
+0805 076a 8d f1                          BSR         LR5         ; Set quadrant pointer 
+0806 076c a6 00                          LDAA        0,X         ; Fetch quadrant contents 
+0807 076e ce 04 c9           LR3         LDX         #Msg36a     ; Set pointer to left quadrant  (was $04C9)
+0808 0771 8d c9                          BSR         QDSET       ; Set quadrant contents 
+0809 0773 96 26                          LDAA        STORE1      ; Get pointer 
+0810 0775 8d e6                          BSR         LR5         ; Set quadrant pointer 
+0811 0777 a6 00                          LDAA        0,X         ; Fetch quadrant contents 
+0812 0779 ce 04 cf                       LDX         #Msg36b     ; Set pointer to middle quadrant (was $04CF)
+0813 077c 8d be                          BSR         QDSET       ; Set quadrant contents 
+0814 077e 96 26                          LDAA        STORE1 
+0815 0780 16                             TAB                     ; Fetch quadrant location 
+0816 0781 c4 07                          ANDB        #$07 
+0817 0783 c1 07                          CMPB        #$07        ; Is quadrant in last column? 
+0818 0785 27 d3                          BEQ         CLC2        ; Yes, right column =0 
+0819 0787 4c                             INCA                    ; Set to right quadrant 
+0820 0788 8d d3                          BSR         LR5         ; Set quadrant pointer 
+0821 078a a6 00                          LDAA        0,X         ; Fetch quadrant contents 
+0822 078c ce 04 d5           LR4         LDX         #Msg36c     ; Index to right quadrant  (was $04D5)
+0823 078f bd 07 3c                       JSR         QDSET       ; Set quadrant contents 
+0824 0792 ce 04 c5           LRP         LDX         #MSG36      ; Set pointer to long range row message 
+0825 0795 7e 05 06           LR6         JMP         MSG         ; Print and return 
+0826                         
+0827                         ; The depletion of energy from the space ship’s main storage bank 
+0828                         ; and its shields is an important function in this program. The following
+0829                         ; group of subroutines is called to delete the energy from the ship, 
+0830                         ; and to check the energy level of the ship. The subroutine labeled 
+0831                         ; ELOS deletes the amount of energy contained in the index register 
+0832                         ; from the ship’s protective shields. The least significant half of the 
+0833                         ; energy to be deleted must be stored in the most significant half of 
+0834                         ; the index register, and the most significant half of the energy must 
+0835                         ; be stored in the least significant half of the index register. By switching
+0836                         ; the two eight bit values around in this manner, the STX instruction
+0837                         ; will store the energy in the desired order in memory (the least 
+0838                         ; significant half in the lower address of the pair of memory locations). 
+0839                         ; The amount of energy deleted is first output to the display device to 
+0840                         ; inform the operator of the loss. The shield energy level is checked, 
+0841                         ; and if sufficient, the energy is removed from the shield. If the level 
+0842                         ; is not high enough to absorb the loss, the remaining shield energy is 
+0843                         ; transferred to the main supply, and the loss is taken from the main 
+0844                         ; storage bank. If at this time the main supply is not enough, the ship 
+0845                         ; is out of energy, and the game is over. Otherwise, since the shield 
+0846                         ; energy is zero, the warning message is output and an additional 25 
+0847                         ; percent of the energy loss is depleted from the main supply as a 
+0848                         ; penalty. The listing of ELOS and its supporting subroutines is shown 
+0849                         ; next. 
+0850                         
+0851 0798 df 2a              ELOS        STX         STORE3      ; Save energy value 
+0852 079a ce 00 2a                       LDX         #STORE3     ; Set pointer to value to be converted
+0853 079d c6 02                          LDAB        #$02        ; Double precision conversion
+0854 079f bd 05 29                       JSR         BINDEC      ; Convert to BCD for message
+0855 07a2 ce 03 13                       LDX         #Msg19a+3   ; Set pntr to least signif digit of energy 
+0856 07a5 c6 04                          LDAB        #$04        ; Set digit counter
+0857 07a7 bd 06 62                       JSR         DIGPRT      ; Put digit in message
+0858 07aa ce 02 ff                       LDX         #MSG19      ; Set pointer to energy loss message
+0859 07ad 8d e6                          BSR         LR6         ; Print energy loss message
+0860 07af de 2a                          LDX         STORE3      ; Restore value for routines
+0861 07b1 df 26                          STX         STORE1      ; To follow
+0862                         
+0863 07b3 8d 23              ELS1        BSR         CKSD        ; Is shield energy sufficient?
+0864 07b5 24 32                          BCC         FMSD        ; Yes, delete from shields and return 
+0865                         
+0866 07b7 de 44              SDO1        LDX         DVSE        ; Move shield energy to main storage
+0867 07b9 df 26                          STX         STORE1      ; Remove energy from shields
+0868 07bb 8d 2c                          BSR         FMSD        ; Fetch energy to be deleted
+0869 07bd 8d 41                          BSR         TOMN        ; Move shield energy to main storage
+0870 07bf de 2a                          LDX         STORE3      ; 
+0871 07c1 df 26                          STX         STORE1      ; Store for routines
+0872                         
+0873 07c3 8d 17              SDO         BSR         CKMN        ; Energy enough?
+0874 07c5 25 53                          BCS         EOUT1       ; No, ship out of energy
+0875 07c7 8d 24                          BSR         FMMN        ; Yes, take from main
+0876 07c9 ce 03 15                       LDX         #MSG20      ; Print WARNING!
+0877 07cc 8d c7                          BSR         LR6         ; DANGER - SHIELD ENERGY 000
+0878 07ce c6 02                          LDAB        #$02        ; Divide energy loss by 2 twice
+0879 07d0 8d 3d                          BSR         DVD         ; To divide by 4
+0880 07d2 8d 08                          BSR         CKMN        ; Enough main energy for penalty?
+0881 07d4 25 44                          BCS         EOUT1       ; No, out of energy message
+0882 07d6 20 15                          BRA         FMMN        ; Yes, take penalty and return
+0883                         
+0884 07d8 de 68              CKSD        LDX         PDVSE       ; Check shield energy level
+0885 07da 20 02                          BRA         CK1         ; Against requested level
+0886                         
+0887 07dc de 66              CKMN        LDX         PDVME       ; Check main energy level 
+0888                         
+0889 07de a6 01              CK1         LDAA        $01,X       ; Fetch most significant half
+0890 07e0 91 27                          CMPA        STORE1+$1   ; Is most significant half =0?
+0891 07e2 26 35                          BNE         ELOS1       ; No, return with flags set up
+0892 07e4 a6 00              CK2         LDAA        0,X         ; If > =, return with C flag set
+0893 07e6 91 26                          CMPA        STORE1      ; If less than, C flag reset
+0894 07e8 39                             RTS                     ; Return
+0895                         
+0896 07e9 de 68              FMSD        LDX         PDVSE       ; Set pointer to shield energy
+0897 07eb 20 02                          BRA         FM1         ; Subtract energy from shields
+0898                         
+0899 07ed de 66              FMMN        LDX         PDVME       ; Set pointer to main storage 
+0900                         
+0901 07ef a6 00              FM1         LDAA        0,X         ; Fetch least significant half of energy
+0902 07f1 90 26                          SUBA        STORE1      ; Subtract least significant half of loss
+0903 07f3 a7 00                          STAA        0,X         ; Return to storage
+0904 07f5 a6 01                          LDAA        $01,X       ; Fetch most significant half of energy
+0905 07f7 92 27                          SBCA        STORE1+$1   ; Subtract most significant half of loss 
+0906 07f9 a7 01                          STAA        $01,X       ; Return to storage
+0907 07fb 39                             RTS                     ;  
+0908                          
+0909 07fc de 68              TOSD        LDX         PDVSE       ; Set pointer to shield energy
+0910 07fe 20 02                          BRA         TO1         ; Add energy to shields
+0911                         
+0912 0800 de 66              TOMN        LDX         PDVME       ; Set pointer to main energy 
+0913 0802 a6 00              TO1         LDAA        0,X         ; Fetch least significant half of energy 
+0914 0804 9b 26                          ADDA        STORE1      ; Add least significant half of loss
+0915 0806 a7 00                          STAA        0,X         ; Return to storage
+0916 0808 a6 01                          LDAA        $01,X       ; Fetch most significant half of energy 
+0917 080a 99 27                          ADCA        STORE1+$1   ; Add most significant half of loss
+0918 080c a7 01                          STAA        $01,X       ; Return to storage
+0919 080e 39                             RTS                     ; 
+0920                         
+0921 080f 5d                 DVD         TSTB                    ; Divide the double
+0922 0810 76 00 27                       ROR         STORE1+$1   ;  precision value
+0923 0813 76 00 26                       ROR         STORE1      ;   by two the number
+0924 0816 5a                             DECB                    ;    of times indicated in B
+0925 0817 26 f6                          BNE         DVD         ; 
+0926 0819 39                 ELOS1       RTS                     ; Return
+0927 081a 7e 06 5d           EOUT1       JMP         EOUT        ; 
+0928                         
+0929                         
+0930                         ; The removal of energy from the main supply for the execution of 
+0931                         ; commands, firing phasors and torpedoes, and moving through the 
+0932                         ; galaxy is provided by the ELOM subroutine. The amount of energy 
+0933                         ; to be removed is stored in the index register (as described in the 
+0934                         ; ELOS subroutine) when the ELOM subroutine is called. If the main 
+0935                         ; energy bank contains enough energy, the energy is deleted, and the 
+0936                         ; subroutine returns to the calling program. If there is not enough 
+0937                         ; energy, the shield energy is transferred to the main storage bank in 
+0938                         ; an effort to provide for the loss. If this does not provide sufficient 
+0939                         ; energy, the game is over. However, if the transfer does produce the 
+0940                         ; energy needed in the main supply, the energy will be removed; and 
+0941                         ; since the shield energy has been reduced to zero, an additional 25 
+0942                         ; percent of the energy loss will be deleted from the main supply as a 
+0943                         ; penalty.
+0944                         
+0945 081d 8d bd              ELOM        BSR         CKMN        ; Enough energy in main?
+0946 081f 24 cc                          BCC         FMMN        ; Yes, take from main and return
+0947 0821 de 26                          LDX         STORE1      ; No, save value of energy loss
+0948 0823 df 2a                          STX         STORE3      ; Transfer shield energy and try again
+0949 0825 7e 07 b7                       JMP         SDO1        ; 
+0950                         
+0951                         
+0952                         ; The amount of energy transferred to or from the shields and the 
+0953                         ; energy to be fired by the phasor is entered by the operator. The EIN 
+0954                         ; subroutine is called to input these energy values. The first entry is 
+0955                         ; checked to determine whether it is a minus sign, used in the shield 
+0956                         ; entry. Location 55 on page 00 will be all zeros if the value is to be 
+0957                         ; positive, and non-zero for a negative entry. Each digit entered is 
+0958                         ; checked for validity, and then the ASCII code is masked off, resulting
+0959                         ; in the BCD digits being stored in locations 54 through 51. The 
+0960                         ; units digit is stored in location 51. Four digits must be entered by 
+0961                         ; the operator when this routine is called. If the input is found to be 
+0962                         ; invalid, the routine returns with the N flag set to T.’ If the input is 
+0963                         ; valid, the N flag is reset upon returning to the calling program. 
+0964                         
+0965 0828 de 74              EIN         LDX         PDG5TH      ; Set pointer to start of digit store
+0966 082a 6f 00                          CLR         0,X         ; Clear sign indicator 
+0967 082c bd 0f 80                       JSR         INPUT       ; Get first character 
+0968 082f 81 2d                          CMPA        #'-         ; Negative sign?  (was $AD)
+0969 0831 26 05                          BNE         EN2         ; No, check digit 
+0970 0833 a7 00                          STAA        0,X         ; Make negative indicator not =0 
+0971 0835 bd 0f 80           EN1         JSR         INPUT       ; Get next character 
+0972 0838 09                 EN2         DEX                     ; Advance storage pointer 
+0973 0839 a7 00                          STAA        0,X         ; Store digit 
+0974 083b bd 05 bd                       JSR         FNUM        ; Valid digit? 
+0975 083e 2b 0a                          BMI         EIN1        ; No, return with N flag set 
+0976 0840 a6 00                          LDAA        0,X         ; Yes, fetch digit 
+0977 0842 84 0f                          ANDA        #$0F        ; Mask off ASCII bits 
+0978 0844 a7 00                          STAA        0,X         ; Save BCD value 
+0979 0846 9c 72                          CPX         PDG1ST      ; End of input? 
+0980 0848 26 eb                          BNE         EN1         ; No, fetch next digit 
+0981 084a 39                 EIN1        RTS                     ; Yes, return 
+0982                         
+0983                         
+0984                         ; When the space ship destroys an alien ship or space station, the 
+0985                         ; result is the elimination of the alien ship or space station from the 
+0986                         ; galaxy. The subroutine DLET is called to perform this function. 
+0987                         ; First, the sector location of the object is cleared by storing a CO in 
+0988                         ; the data table at the location indicated by the index register. From 
+0989                         ; this location, the identity of the object to be deleted is ascertained. 
+0990                         ; A pointer is then formed indicating the location of the quadrant in 
+0991                         ; the galaxy content table from which the object is to be removed. If 
+0992                         ; the object was a space station, it is removed from the galaxy and the 
+0993                         ; number of space stations is decremented. If this value goes to zero, a 
+0994                         ; warning message is output to inform the operator that the last space 
+0995                         ; station has been destroyed. If an alien ship is destroyed, it is removed 
+0996                         ; from the galaxy and its count is decremented. When the number of 
+0997                         ; alien ships reaches zero, the game is over and the operator has successfully
+0998                         ; completed the mission.
+0999                         
+1000 084b 86 c0              DLET        LDAA        #$C0        ; Load with clear character 
+1001 084d a7 00                          STAA        0,X         ; Clear object from table
+1002 084f df 22                          STX         PNTR2       ; Save table location
+1003 0851 96 4c                          LDAA        CQLSS       ; Get quadrant location
+1004 0853 8b c0                          ADDA        #$C0        ; Form galaxy table pointer
+1005 0855 bd 09 51                       JSR         ATINX1      ; Place pointer in index
+1006 0858 df 24                          STX         PNTR3       ; Set table pointer
+1007 085a de 22                          LDX         PNTR2       ; Fetch table location
+1008 085c bd 09 59                       JSR         COMPAR      ; Space station hit? 
+1009 085f 26 15                          BNE         DLAS        ; No, delete alien ship 
+1010 0861 de 24                          LDX         PNTR3       ; Fetch galaxy pointer
+1011 0863 a6 00                          LDAA        0,X         ; Get quadrant contents
+1012 0865 84 37                          ANDA        #$37        ; Delete space station
+1013 0867 a7 00                          STAA        0,X         ; Restore quadrant in galaxy 
+1014 0869 97 35                          STAA        CQC         ; Place new contents
+1015 086b 7a 00 4e                       DEC         NSS         ; Decrement number of space stations
+1016 086e 26 1b                          BNE         DLET1       ; If more left, return
+1017 0870 ce 04 db                       LDX         #MSG37      ; If number of space stations =0,
+1018 0873 7e 05 06                       JMP         MSG         ;  print warning message & return
+1019                         
+1020 0876 de 24              DLAS        LDX         PNTR3       ; Fetch galaxy pointer 
+1021 0878 a6 00                          LDAA        0,X         ; Get quadrant contents
+1022 087a 80 10                          SUBA        #$10        ; Delete 1 alien ship from quadrant
+1023 087c a7 00                          STAA        0,X         ; Restore to galaxy
+1024 087e 97 35                          STAA        CQC         ; Save new contents
+1025 0880 7a 00 4f                       DEC         NAS         ; Decrement number of alien ships 
+1026 0883 26 06                          BNE         DLET1       ; More aliens, return
+1027 0885 ce 03 d4                       LDX         #MSG27      ; All aliens destroyed!
+1028 0888 7e 06 4d                       JMP         DONE        ; Print CONGRATULATIONS,
+1029 088b 39                 DLET1       RTS                     ; Start new game
+1030                         
+1031                         
+1032                         ; The final group of subroutines to be presented deals with the 
+1033                         ; movement of the space ship through the galaxy, and the tracking of 
+1034                         ; the torpedo within the quadrant. Moving an object through the 
+1035                         ; galaxy is performed with the use of a table referred to as the 
+1036                         ; COURSE TABLE. The course table, presented next, is located at the 
+1037                         ; beginning of page 00, and contains 16 pairs of row and column dis¬ 
+1038                         ; placement values. There is one pair of displacement values for each 
+1039                         ; possible direction of movement. The first value of each pair is the 
+1040                         ; column displacement; the second value is the row displacement. 
+1041                         ; The entries in the course table are made up of the binary values 2, 1, 
+1042                         ; 0, -1, and -2. A displacement of 1 advances the object one half of a 
+1043                         ; sector for each sector move made. So, for example, if the course was 
+1044                         ; chosen as 8.5, the displacement value for the column is two, and for 
+1045                         ; the row is one. This means that for every column moved to the right, 
+1046                         ; the object would move one half of a row down. A move is made by 
+1047                         ; the program by separating the row and column location of the object 
+1048                         ; to be moved, rotating each to the left once, and using the adjusted 
+1049                         ; values to calculate the move. Then, for each sector move made, the 
+1050                         ; row and column displacement is added to the adjusted row and 
+1051                         ; column location. When the move is completed, the adjusted values 
+1052                         ; are rotated to the right once, and then combined to give a new sector 
+1053                         ; location to the object. By using this method it is possible for the 
+1054                         ; direction of travel to be broken down to every 22 l A degrees. 
+1055                         
+1056                         ;---
+1057                         
+1058                         ; The subroutine DRCT is called to input the course direction from 
+1059                         ; the operator through the input device. The two digits defining the 
+1060                         ; move are checked for validity when entered, and then used to form a 
+1061                         ; pointer to the course table. If the input is valid, the routine returns 
+1062                         ; with the Z flag reset, and the pointer stored in location 20 on page 
+1063                         ; 00. If invalid, the Z flag is set before returning. The ACTV subroutine
+1064                         ; is then called to fetch the displacement values from the course 
+1065                         ; table, and store the column displacement in location 2D and the row 
+1066                         ; displacement in location 2C. It then sets up the adjusted row and 
+1067                         ; column values, and stores them in locations 2E and 2F respectively. 
+1068                         ;
+1069                         ; The subroutine labeled TRK is called to make the individual sector
+1070                         ; moves. First, the quadrant crossing flag is cleared. The column 
+1071                         ; displacement is then added to the adjusted column location, and a 
+1072                         ; quadrant crossing to the left or right is checked. If the crossing did 
+1073                         ; occur, the crossing flag is set, and the adjusted column is corrected to 
+1074                         ; indicate the new column value. The crossing is then checked for a 
+1075                         ; move out of the galaxy, which would be indicated by the TRK subroutine
+1076                         ; returning with the Z flag set. If the move is not out of the 
+1077                         ; galaxy, the new quadrant location is stored at location 4C on page 
+1078                         ; 00. The row displacement is then added to the adjusted row location, 
+1079                         ; and a quadrant crossing up and down is checked. If a quadrant is 
+1080                         ; crossed, the crossing flag is set and a move out of the galaxy is 
+1081                         ; checked. If the crossing is out of the galaxy, the routine returns with 
+1082                         ; the Z flag set. Otherwise, the new quadrant location is stored at location
+1083                         ; 4C, and the routine returns with the Z flag reset. The final subroutine
+1084                         ; of this group is called RWCM, and is called to restore the adjusted row
+1085                         ; and column locations to the single byte used to define the 
+1086                         ; final location of the object moved.
+1087                         
+1088                                     
+1089 088c bd 0f 80           DRCT        JSR         INPUT       ; Input first course number 
+1090 088f 81 31                          CMPA        #$31        ; Is input less than 1? (was $B1)
+1091                         ;x        x BCS         ZRET        ; ***************replaced...        
+1092 0891 2d 25                          BLT         ZRET        ; Yes, illegal input 
+1093 0893 81 39                          CMPA        #$39        ; Is input greater than 8? (was $B9)
+1094                         ;x        x BCC         ZRET        ; *************** replaced...
+1095 0895 2c 21                          BGE         ZRET        ; Yes, illegal input 
+1096 0897 84 0f                          ANDA        #$0F        ; No, mask off ASCII bits 
+1097 0899 48                             ASLA                    ; If good times 2 
+1098 089a 16                             TAB                     ; And save in B
+1099 089b 86 2e                          LDAA        #'.         ; (was $AE)
+1100 089d bd 0f 89                       JSR         PRINT       ; Print decimal point 
+1101 08a0 bd 0f 80                       JSR         INPUT       ; Input second course number 
+1102 08a3 81 30                          CMPA        #'0         ; Is digit zero? (was $B0)
+1103 08a5 27 04                          BEQ         CR1         ; Yes, continue process 
+1104 08a7 81 35                          CMPA        #'5         ; No, is digit =5? (was $B5)
+1105 08a9 26 0d                          BNE         ZRET        ; No, return with Z flag set 
+1106 08ab 84 01              CR1         ANDA        #$01        ; Mask off all but first bit 
+1107 08ad 1b                             ABA                     ; Add first number input 
+1108 08ae 48                             ASLA                    ; 
+1109 08af 80 04                          SUBA        #$04        ; And form pointer to course table 
+1110 08b1 97 21                          STAA        PNTR1+$1    ; Save pointer in temporary storage
+1111 08b3 4f                             CLRA                    ;  
+1112 08b4 97 20                          STAA        PNTR1       ; Clear least significant byte of pointer
+1113 08b6 4c                             INCA                    ; Reset Z flag 
+1114 08b7 39                             RTS                     ; Before returning 
+1115 08b8 4f                 ZRET        CLRA                    ; Set Z flag 
+1116 08b9 39                             RTS                     ; And return 
+1117                         
+1118 08ba 9f 22              ACTV        STS         PNTR2       ; Save stack pointer temporarily 
+1119 08bc 9e 58                          LDS         PSTR51      ; Set stack to storage area 
+1120 08be 96 36                          LDAA        SLOSS       ; Get present location 
+1121 08c0 16                             TAB                     ; Save temporarily 
+1122 08c1 c4 07                          ANDB        #$07        ; Mask out column 
+1123 08c3 58                             ASLB                    ; Multiply by 2 
+1124 08c4 37                             PSHB                    ; Store adjusted column 
+1125 08c5 84 38                          ANDA        #$38        ; Mask out row 
+1126 08c7 44                             LSRA                    ; 
+1127 08c8 44                             LSRA                    ; Set up times 2 value 
+1128 08c9 36                             PSHA                    ; Save adjusted row 
+1129 08ca de 20                          LDX         PNTR1       ; Get displacement table pointer 
+1130 08cc a6 00                          LDAA        0,X         ; Get column movement 
+1131 08ce 36                             PSHA                    ; Store column displacement < 
+1132 08cf a6 01                          LDAA        $01,X       ; Get row movement 
+1133 08d1 36                             PSHA                    ; Store row displacement 
+1134 08d2 9e 22                          LDS         PNTR2       ; Restore stack pointer
+1135 08d4 39                             RTS                     ; 
+1136                         
+1137 08d5 7f 00 32           TRK         CLR         CF          ; Clear quadrant crossing flag 
+1138 08d8 96 2f                          LDAA        STORE5+$1   ; Get adjusted column 
+1139 08da 9b 2d                          ADDA        STORE4+$1   ; Add column move 
+1140 08dc 97 2f                          STAA        STORE5+$1   ; Save temporarily current column 
+1141 08de 2a 12                          BPL         NOBK        ; If no left crossing, branch 
+1142 08e0 84 0f                          ANDA        #$0F        ; Left crossing correction 
+1143 08e2 97 2f                          STAA        STORE5+$1   ; And save new adjusted column 
+1144 08e4 7c 00 32                       INC         CF          ; Indicate left crossing 
+1145 08e7 96 4c                          LDAA        CQLSS       ; And decrement current column 
+1146 08e9 84 07                          ANDA        #$07        ; Is CQC =0? 
+1147 08eb 27 56                          BEQ         TRK1        ; Yes, return with Z set 
+1148 08ed 7a 00 4c                       DEC         CQLSS       ; No, decrement CQC 
+1149 08f0 20 17                          BRA         RMV         ; Do row move 
+1150                         
+1151 08f2 81 10              NOBK        CMPA        #$10        ; Quadrant crossing right 
+1152 08f4 25 13                          BCS         RMV         ; No, do row move 
+1153 08f6 84 0f                          ANDA        #$0F        ; Yes, correct and 
+1154 08f8 97 2f                          STAA        STORE5+$1   ; Save new adjusted column 
+1155 08fa 7c 00 32                       INC         CF          ; Indicate crossing by making 
+1156                         ;                                   ; Crossing flag non-zero 
+1157 08fd 96 4c                          LDAA        CQLSS       ; Fetch current quadrant location 
+1158 08ff 84 07                          ANDA        #$07        ; Separate column entry 
+1159 0901 4c                             INCA                    ; Increment column entry 
+1160 0902 81 08                          CMPA        #$08        ; Move out of galaxy 
+1161 0904 27 3d                          BEQ         TRK1        ; Yes, return with flags set 
+1162 0906 7c 00 4c                       INC         CQLSS       ; No, increment quadrant column 
+1163                         
+1164 0909 96 2e              RMV         LDAA        STORE5      ; Get adjusted row value 
+1165 090b 9b 2c                          ADDA        STORE4      ; Add movement 
+1166 090d 97 2e                          STAA        STORE5      ; Save new adjusted row 
+1167 090f 2a 14                          BPL         NOUP        ; If not up, jump 
+1168 0911 84 0f                          ANDA        #$0F        ; Move up one quadrant, correct 
+1169 0913 97 2e                          STAA        STORE5      ; And save new adjusted value 
+1170 0915 7c 00 32                       INC         CF          ; Make crossing flag non-zero 
+1171 0918 96 4c                          LDAA        CQLSS       ; Decrement quadrant row 
+1172 091a 16                             TAB                     ; Save temporarily 
+1173 091b 84 38                          ANDA        #$38        ; Is quadrant row =0? 
+1174 091d 27 24                          BEQ         TRK1        ; Yes, return with Z flag set 
+1175 091f c0 08                          SUBB        #$08        ; No, decrement current quadrant row 
+1176 0921 d7 4c                          STAB        CQLSS       ; Save new current quadrant 
+1177 0923 20 1a                          BRA         CKX         ; Then perform crossing logic 
+1178                         
+1179                         
+1180 0925 81 10              NOUP        CMPA        #$10        ; Quadrant crossing down? 
+1181 0927 25 16                          BCS         CKX         ; No, check for crossing flag 
+1182 0929 84 0f                          ANDA        #$0F        ; Yes, correct and 
+1183 092b 97 2e                          STAA        STORE5      ; Save new adjusted row 
+1184 092d 7c 00 32                       INC         CF          ; Indicate crossing 
+1185 0930 96 4c                          LDAA        CQLSS       ; Then increment quadrant row
+1186 0932 16                             TAB                     ; Save temporarily
+1187 0933 84 38                          ANDA        #$38        ; Separate row entry
+1188 0935 8b 08                          ADDA        #$08        ; Increment row value 
+1189 0937 81 40                          CMPA        #$40        ; Out of galaxy?
+1190 0939 27 08                          BEQ         TRK1        ; Yes, return with Z flag set
+1191 093b cb 08                          ADDB        #$08        ; No, increment row
+1192 093d d7 4c                          STAB        CQLSS       ; Save new current quadrant
+1193                         
+1194 093f 26 02              CKX         BNE         TRK1        ; Return with Z flag reset
+1195 0941 86 01                          LDAA        #$01        ; If not, reset it
+1196 0943 39                 TRK1        RTS                     ; 
+1197                         
+1198 0944 96 2f              RWCM        LDAA        STORE5+$1   ; Fetch adjusted column 
+1199 0946 44                             LSRA                    ; Adjust position
+1200 0947 84 07                          ANDA        #$07        ; Form column value
+1201 0949 d6 2e                          LDAB        STORE5      ; Fetch row
+1202 094b 58                             ASLB                    ; Position row value
+1203 094c 58                             ASLB                    ; 
+1204 094d c4 38                          ANDB        #$38        ; Form row value
+1205 094f 1b                             ABA                     ; Form row and column byte
+1206 0950 39                             RTS                     ; Return
+1207                          
+1208 0951 7f 00 20           ATINX1      CLR         PNTR1       ; Clear M.S. half of pointer for page 00 
+1209 0954 97 21              ATINX       STAA        PNTR1+$1    ; Store A in least significant half of pntr 
+1210 0956 de 20                          LDX         PNTR1       ; Load pointer into index register 
+1211 0958 39                             RTS                     ; Return
+1212                         
+1213 0959 df 20              COMPAR      STX         PNTR1       ; Store index value 
+1214 095b 96 21                          LDAA        PNTR1+$1    ; Fetch low portion of the address 
+1215 095d 81 3e                          CMPA        #$3E        ; Set flags for address relative to SLSS
+1216 095f 39                             RTS                     ; Return with results
+1217                         
+1218 0960 96 35              WASTE       LDAA        CQC         ; Fetch quadrant contents
+1219 0962 84 30                          ANDA        #$30        ; Mask out alien ship count
+1220 0964 27 01                          BEQ         WASTE1      ; If none, wasted shot
+1221 0966 39                             RTS                     ; Otherwise, return
+1222 0967 33                 WASTE1      PULB                    ; Remove unwanted address
+1223 0968 33                             PULB                    ; From stack
+1224 0969 ce 04 79                       LDX         #MSG33      ; Set pointer to wasted shot message
+1225 096c bd 05 06                       JSR         MSG         ; Print message
+1226 096f 7e 0b 39                       JMP         CMND        ; Input new command
+1227                         
+1228                         ;---------
+1229                         
+1230 0972 ce 01 00           START       LDX         #MSG01      ; Set pointer to initial message 
+1231 0975 bd 05 06                       JSR         MSG         ; Print introduction
+1232 0978 bd 05 16                       JSR         RN          ; Increment random number 
+1233 097b bd 0f 80                       JSR         INPUT       ; Input character
+1234 097e 97 34                          STAA        RNM+$1      ; Store input to randomize
+1235 0980 81 4e                          CMPA        #'N         ; Character = N? Yes, stop game (was $CE)
+1236 0982 26 09                          BNE         OVER        ; No, set up galaxy
+1237                         
+1238 0984 ce 04 f5                       LDX         #MSG38      ; Print “CHICKEN" (was at $04E2)
+1239 0987 bd 05 06                       JSR         MSG         ; 
+1240                         
+1241                         ; User defined end of program...    ; ( 3 x NOP in original listing )...
+1242 098a bd 0f 8c                       JSR         USREXIT     ; Call user exit code
+1243                         ;---
+1244 098d c6 c0              OVER        LDAB        #$C0        ; Set pointer to galaxy storage
+1245 098f d7 26                          STAB        STORE1      ; Save in temporary storage
+1246                         
+1247 0991 bd 05 16           GLXSET      JSR         RN          ; Fetch random number
+1248 0994 84 7f                          ANDA        #$7F        ; Form pointer to 
+1249 0996 c6 0f                          LDAB        #$0F        ; Galaxy table from
+1250 0998 d7 20                          STAB        PNTR1       ; Random number
+1251 099a bd 09 54                       JSR         ATINX       ; Set index to galaxy table
+1252 099d e6 00                          LDAB        0,X         ; Get galaxy entry
+1253 099f 96 26                          LDAA        STORE1      ; 
+1254 09a1 bd 09 51                       JSR         ATINX1      ; Set index to galaxy content table
+1255 09a4 e7 00                          STAB        0,X         ; Set index to galaxy content table
+1256 09a6 7c 00 26                       INC         STORE1      ; Galaxy contents complete?
+1257 09a9 26 e6                          BNE         GLXSET      ; No, fetch more sectors
+1258                         
+1259 09ab 7f 00 4e           GLXCK       CLR         NSS         ; Clear space station count
+1260 09ae 7f 00 4f                       CLR         NAS         ; Clear alien ship count
+1261 09b1 ce 00 c0                       LDX         #GALSTART   ; Pointer to galaxy content table ( was $00C0 )
+1262                         
+1263 09b4 a6 00              GLXCK1      LDAA        0,X         ; Fetch quadrant contents
+1264 09b6 16                             TAB                     ; Save in ‘B’ accumulator
+1265 09b7 84 08                          ANDA        #$08        ; Mask space station
+1266 09b9 9b 4e                          ADDA        NSS         ; Add to space station total
+1267 09bb 97 4e                          STAA        NSS         ; Save space station total
+1268 09bd c4 30                          ANDB        #$30        ; Mask alien ship
+1269 09bf 54                             LSRB                    ;  position 
+1270 09c0 54                             LSRB                    ; 
+1271 09c1 db 4f                          ADDB        NAS         ; Add to alien ship total 
+1272 09c3 d7 4f                          STAB        NAS         ; Save alien ship total 
+1273 09c5 08                             INX                     ; Increment galaxy content pointer 
+1274 09c6 8c 01 00                       CPX         #GALAFTER   ; End of table? ( was $0100 )
+1275 09c9 26 e9                          BNE         GLXCK1      ; No, continue adding 
+1276 09cb 96 4e                          LDAA        NSS         ; Fetch space station total 
+1277 09cd 44                             LSRA                    ; 
+1278 09ce 44                             LSRA                    ; 
+1279 09cf 44                             LSRA                    ; Position total to right 
+1280 09d0 97 4e                          STAA        NSS         ; Store total 
+1281 09d2 81 07                          CMPA        #$07        ; Too many space stations? 
+1282 09d4 2a 0a                          BPL         SSPLS       ; Yes, delete 1 
+1283 09d6 81 02                          CMPA        #$02        ; Too few? 
+1284 09d8 2a 33                          BPL         CAS         ; No, O.K., check alien ships 
+1285 09da c6 08              SSMNS       LDAB        #$08        ; Yes, form mask to 
+1286 09dc d7 26                          STAB        STORE1      ; 
+1287 09de 20 1f                          BRA         MNS         ; Add one space station 
+1288                         
+1289 09e0 c6 f7              SSPLS       LDAB        #$F7        ; Form and store mask to 
+1290 09e2 d7 26                          STAB        STORE1      ; 
+1291 09e4 20 04                          BRA         PLS         ; Delete one space station 
+1292 09e6 c6 cf              ASPLS       LDAB        #$CF        ; Form mask to delete 
+1293 09e8 d7 26                          STAB        STORE1      ; One alien ship 
+1294                                     
+1295 09ea bd 05 16           PLS         JSR         RN          ; Fetch random number 
+1296 09ed 8a c0                          ORAA        #$C0        ; Form galaxy table pointer 
+1297 09ef bd 09 51                       JSR         ATINX1      ; Place pointer in index 
+1298 09f2 96 26                          LDAA        STORE1      ; Fetch mask 
+1299 09f4 a4 00                          ANDA        0,X         ; Delete from galaxy 
+1300 09f6 a7 00              PLS1        STAA        0,X         ; Store new quadrant contents 
+1301 09f8 7e 09 ab                       JMP         GLXCK       ; Check galaxy again 
+1302                         
+1303 09fb c6 10              ASMNS       LDAB        #$10        ; Form mask to add 
+1304 09fd d7 26                          STAB        STORE1      ; One alien ship 
+1305                         
+1306 09ff bd 05 16           MNS         JSR         RN          ; Fetch random number 
+1307 0a02 8a c0                          ORAA        #$C0        ; Form galaxy table pointer 
+1308 0a04 bd 09 51                       JSR         ATINX1      ; Place pointer in index 
+1309 0a07 96 26                          LDAA        STORE1      ; Fetch mask 
+1310 0a09 aa 00                          ORAA        0,X         ; Add one alien ship to quadrant 
+1311 0a0b 20 e9                          BRA         PLS1        ; Check galaxy again 
+1312                         
+1313 0a0d 96 4f              CAS         LDAA        NAS         ; Fetch alien ship total 
+1314 0a0f 44                             LSRA                    ; 
+1315 0a10 44                             LSRA                    ; Position 
+1316 0a11 97 4f                          STAA        NAS         ; Save total 
+1317 0a13 81 20                          CMPA        #$20        ; Too many alien ships? 
+1318 0a15 2a cf                          BPL         ASPLS       ; Yes, delete one alien ship 
+1319 0a17 81 0a                          CMPA        #$0A        ; Too few? 
+1320 0a19 2b e0                          BMI         ASMNS       ; Yes, add one alien ship 
+1321 0a1b 86 05                          LDAA        #$05        ; Set up five more stardates
+1322 0a1d 9b 4f                          ADDA        NAS         ; Than alien ships 
+1323 0a1f 97 50                          STAA        NSR         ; Save number of stardates
+1324 0a21 ce 00 50                       LDX         #NSR        ; Convert binary value
+1325 0a24 c6 01                          LDAB        #$01        ; Set precision counter 
+1326 0a26 bd 05 29                       JSR         BINDEC      ; Convert stardate value
+1327 0a29 ce 01 4e                       LDX         #Msg02b+1   ; Pointer to stardate count right ( was $014E )
+1328 0a2c c6 02                          LDAB        #$02        ; Set precision counter
+1329 0a2e bd 06 62                       JSR         DIGPRT      ; Put digits in starting message
+1330 0a31 ce 00 4f                       LDX         #NAS        ; Pointer to alien ship value
+1331 0a34 c6 01                          LDAB        #$01        ; Set precision counter 
+1332 0a36 bd 05 29                       JSR         BINDEC      ; Convert alien ship value
+1333 0a39 ce 01 3c                       LDX         #Msg02a+1   ; Pointer to alien ship count right ( was $013C )
+1334 0a3c c6 02                          LDAB        #$02        ; Set precision counter 
+1335 0a3e bd 06 62                       JSR         DIGPRT      ; Put digits in starting message
+1336 0a41 96 4e                          LDAA        NSS         ; Get number of space stations
+1337 0a43 8a 30                          ORAA        #$30        ; Form ASCII digit (was $B0)
+1338 0a45 b7 01 5f                       STAA        Msg02c      ; Store in starting message ( was $015F )
+1339 0a48 ce 01 28                       LDX         #MSG02      ; Pointer to start of message
+1340 0a4b bd 05 06                       JSR         MSG         ; Print starting message
+1341 0a4e bd 05 16                       JSR         RN          ; Fetch starting quadrant
+1342 0a51 84 3f                          ANDA        #$3F        ; Mask off MSB’s 
+1343 0a53 97 4c                          STAA        CQLSS       ; Save current quadrant location 
+1344 0a55 bd 06 2f                       JSR         QCNT        ; Fetch current quadrant contents
+1345 0a58 bd 06 3b                       JSR         LOAD        ; Set initial conditions
+1346 0a5b bd 05 c8                       JSR         NWQD        ; Set quadrant contents location
+1347 0a5e de 5a                          LDX         PSLOSS      ; Pointer to sector location storage
+1348 0a60 c6 01                          LDAB        #$01        ; Set precision counter
+1349 0a62 bd 06 0f                       JSR         LOCSET      ; Set initial space ship location
+1350                         
+1351                         
+1352                         ; The next routine, which immediately follows the galaxy setup 
+1353                         ; routine, is the short range scan. The location of each of the objects 
+1354                         ; contained in the current quadrant is displayed as illustrated in the 
+1355                         ; sample short range scan in Chapter One. By the use of the ROWSET, 
+1356                         ; BINDEC, DIGPRT, and MSG subroutines, each line of the scan is 
+1357                         ; prepared and output to the display device. This routine is entered 
+1358                         ; following the galaxy setup to display the initial quadrant; then after 
+1359                         ; each move by the space ship either within the quadrant or when a 
+1360                         ; new quadrant is entered, and in response to a command to display 
+1361                         ; a short range scan. 
+1362                         
+1363 0a65 ce 01 70           SRSCN       LDX         #MSG03      ; Set pointer for short range scan 
+1364 0a68 bd 05 06                       JSR         MSG         ; Print initial row
+1365 0a6b c6 01                          LDAB        #$01        ; Set row number one
+1366 0a6d bd 06 76                       JSR         ROWSET      ; Set up row for printout
+1367 0a70 86 32                          LDAA        #$32        ; 
+1368 0a72 90 50                          SUBA        NSR         ; Calculate stardate number
+1369 0a74 97 26                          STAA        STORE1      ; Save temporarily
+1370 0a76 de 56                          LDX         PSTR1       ; Set pointer to binary value
+1371 0a78 c6 01                          LDAB        #$01        ; Set precision counter
+1372 0a7a bd 05 29                       JSR         BINDEC      ; Convert to current stardate 
+1373 0a7d ce 01 b6                       LDX         #Msg05a+1   ; Set pointer to stardate message (was $01B6)
+1374 0a80 c6 02                          LDAB        #$02        ; Set counter to number of digits 
+1375 0a82 bd 06 62                       JSR         DIGPRT      ; Put digits in stardate message
+1376 0a85 ce 01 a8                       LDX         #MSG05      ; Set pointer to message
+1377 0a88 8d 24                          BSR         SRSCN1      ; Print stardate message
+1378                         
+1379 0a8a c6 02                          LDAB        #$02        ; Set row number two
+1380 0a8c bd 06 76                       JSR         ROWSET      ; Set up row for printout
+1381 0a8f 96 35                          LDAA        CQC         ; Fetch current quadrant contents
+1382 0a91 ce 01 c3                       LDX         #Msg06a     ; Set pointer to condition message ( was $01C3 )
+1383 0a94 84 30                          ANDA        #$30        ; Alien ship in quadrant? 
+1384 0a96 26 19                          BNE         RED         ; Yes, condition red
+1385 0a98 86 47                          LDAA        #'G        ; No, condition green (was $C7)
+1386 0a9a a7 00                          STAA        0,X         ; Fill in ‘GREEN’ in
+1387 0a9c 86 52                          LDAA        #'R         ;  condition message  ( was $D2 )
+1388 0a9e a7 01                          STAA        $01,X       ; 
+1389 0aa0 86 45                          LDAA        #'E         ; (was $C5)
+1390 0aa2 a7 02                          STAA        $02,X       ; 
+1391                         ;x          LDAA        #'E         ; (was $C5)
+1392 0aa4 01                             NOP                     ; 2nd E is
+1393 0aa5 01                             NOP                     ;  Same as previous char, so no need to reload
+1394 0aa6 a7 03                          STAA        $03,X       ; 
+1395 0aa8 86 4e                          LDAA        #'N         ; (was $CE)
+1396 0aaa a7 04                          STAA        $04,X       ; 
+1397 0aac 20 11                          BRA         CND         ; Output condition message
+1398 0aae 7e 05 06           SRSCN1      JMP         MSG         ; 
+1399                         
+1400 0ab1 86 52              RED         LDAA        #'R         ; Condition red (was $D2)
+1401 0ab3 a7 00                          STAA        0,X         ; 
+1402 0ab5 86 45                          LDAA        #'E         ; Fill in ‘RED’ in (was $C5)
+1403 0ab7 a7 01                          STAA        $01,X       ;  condition message 
+1404 0ab9 86 44                          LDAA        #'D         ; (was $C4)
+1405 0abb a7 02                          STAA        $02,X       ; 
+1406 0abd 6f 03                          CLR         $03,X       ; 
+1407                         
+1408 0abf ce 01 b8           CND         LDX         #MSG06      ; Set pointer to condition message
+1409 0ac2 8d ea                          BSR         SRSCN1      ; Print condition message
+1410                         
+1411 0ac4 c6 03                          LDAB        #$03        ; Set row number three 
+1412 0ac6 bd 06 76                       JSR         ROWSET      ; Set up for printout
+1413 0ac9 bd 07 02                       JSR         QUAD        ; Print current quadrant
+1414                         
+1415 0acc c6 04                          LDAB        #$04        ; Set row number four
+1416 0ace bd 06 76                       JSR         ROWSET      ; Set up for printout
+1417 0ad1 ce 01 e3                       LDX         #Msg08a     ; Set up sector message (was $01E3)
+1418 0ad4 df 20                          STX         PNTR1       ; Pointer in storage
+1419 0ad6 de 5a                          LDX         PSLOSS      ; Pointer to current sector
+1420 0ad8 bd 07 12                       JSR         TWO         ; Put two digits in message
+1421 0adb ce 01 d8                       LDX         #MSG08      ; Set pointer to sector message
+1422 0ade 8d ce                          BSR         SRSCN1      ; Print sector message
+1423                         
+1424 0ae0 c6 05                          LDAB        #$05        ; Set row number five 
+1425 0ae2 bd 06 76                       JSR         ROWSET      ; Set up row for printout
+1426 0ae5 de 66                          LDX         PDVME       ; Set pointer to main energy 
+1427 0ae7 c6 02                          LDAB        #$02        ; Set precision counter 
+1428 0ae9 bd 05 29                       JSR         BINDEC      ; Convert to decimal 
+1429 0aec ce 01 f5                       LDX         #Msg09a+3   ; Message pointer 
+1430 0aef c6 04                          LDAB        #$04        ; Counter for four digits 
+1431 0af1 bd 06 62                       JSR         DIGPRT      ; Put digits in message 
+1432 0af4 ce 01 e7                       LDX         #MSG09      ; Set pointer to energy message 
+1433 0af7 8d b5                          BSR         SRSCN1      ; Print energy message 
+1434 0af9 c6 06                          LDAB        #$06        ; Set row number six 
+1435 0afb bd 06 76                       JSR         ROWSET      ; Set up for printout 
+1436 0afe ce 00 4d                       LDX         #NTR        ; Pointer to torpedo count 
+1437 0b01 c6 01                          LDAB        #$01        ; Precision =1 
+1438 0b03 bd 05 29                       JSR         BINDEC      ; Convert to decimal 
+1439 0b06 ce 02 03                       LDX         #Msg10a+1   ; Set pointer to torpedo message 
+1440 0b09 c6 02                          LDAB        #$02        ; Counter to number of digits 
+1441 0b0b bd 06 62                       JSR         DIGPRT      ; Put number of torpedoes in message 
+1442 0b0e ce 01 f7                       LDX         #MSG10      ; 
+1443 0b11 bd 0a ae                       JSR         SRSCN1      ; Print torpedo message 
+1444                         
+1445 0b14 c6 07                          LDAB        #$07        ; Set row number seven 
+1446 0b16 bd 06 76                       JSR         ROWSET      ; Set up row for printout 
+1447 0b19 de 68                          LDX         PDVSE       ; Set pointer to shield energy 
+1448 0b1b c6 02                          LDAB        #$02        ; And set precision for 
+1449 0b1d bd 05 29                       JSR         BINDEC      ;  binary to decimal conversion
+1450 0b20 ce 02 13                       LDX         #Msg11a+3   ; Set pointer to shield energy message (was $0213)
+1451 0b23 c6 04                          LDAB        #$04        ; Set digit count 
+1452 0b25 bd 06 62                       JSR         DIGPRT      ; Put digits in memory 
+1453 0b28 ce 02 05                       LDX         #MSG11      ; Set pointer to shield message 
+1454 0b2b bd 05 06                       JSR         MSG         ; Print shield message 
+1455                         
+1456 0b2e c6 08                          LDAB        #$08        ; Set row number eight 
+1457 0b30 bd 06 76                       JSR         ROWSET      ; Set up row for printout 
+1458 0b33 ce 01 70                       LDX         #MSG03      ; Set pointer to final row 
+1459 0b36 bd 05 06                       JSR         MSG         ; Print final row 
+1460                         
+1461                         
+1462                         ; The commands, input by the operator to direct the operation of 
+1463                         ; the space ship, are controlled by the COMMAND INPUT routine, 
+1464                         ; labeled CMND. This routine (which immediately follows the short 
+1465                         ; range scan) begins by deleting ten units of energy from the main 
+1466                         ; storage bank to simulate the loss of energy resulting from the operation
+1467                         ; of the ship’s control panel. The second byte of the random number
+1468                         ; storage is then decremented to increase the random number 
+1469                         ; generator’s overall randomness. The command request message is 
+1470                         ; then output to the display device, followed by a call to the input 
+1471                         ; routine to receive the command from the input device. If the character
+1472                         ; input matches one of the ASCII codes (indicating a valid command),
+1473                         ; the proper routine is entered to perform the command. If the 
+1474                         ; character is not a valid command entry, the program simply requests 
+1475                         ; the command input again.
+1476                         
+1477 0b39 ce 0a 00           CMND        LDX         #$0A00      ; Delete ten units of energy 
+1478 0b3c df 26                          STX         STORE1      ; For each command
+1479 0b3e bd 08 1d                       JSR         ELOM        ;
+1480 0b41 7a 00 34                       DEC         RNM+$1      ; Randomize random number 
+1481                         
+1482 0b44 ce 02 15           CMD         LDX         #MSG12      ; Set pointer to command message 
+1483 0b47 bd 05 06                       JSR         MSG         ; Request command input 
+1484 0b4a bd 0f 80                       JSR         INPUT       ; Input command 
+1485                         
+1486 0b4d 81 30                          CMPA        #'0         ; Ship movement? ( was $B0 )
+1487 0b4f 26 03                          BNE         NCRSE       ; No, try next
+1488 0b51 7e 0c 4c                       JMP         CRSE        ; Yes, input course
+1489 0b54 81 31              NCRSE       CMPA        #'1         ; Short range scan? ( was $B1 )
+1490 0b56 26 03                          BNE         NSRSCN      ; No, try next
+1491 0b58 7e 0a 65                       JMP         SRSCN       ; Yes, display quadrant 
+1492 0b5b 81 32              NSRSCN      CMPA        #'2         ; Long range scan? ( was $B2 )
+1493 0b5d 26 03                          BNE         NLRSCN      ; No, try next 
+1494 0b5f 7e 0b 7e                       JMP         LRSCN       ; Yes, print long range scan 
+1495 0b62 81 33              NLRSCN      CMPA        #'3         ; Galaxy printout?( was $B3 )
+1496 0b64 26 03                          BNE         NGXPRT      ; No, try next 
+1497 0b66 7e 0b d3                       JMP         GXPRT       ; Yes, print galaxy
+1498 0b69 81 34              NGXPRT      CMPA        #'4         ; Shield energy? ( was $B4 )
+1499 0b6b 26 03                          BNE         NSHEN       ; No, try next
+1500 0b6d 7e 0c 13                       JMP         SHEN        ; Yes, adjust shields
+1501 0b70 81 35              NSHEN       CMPA        #'5         ; Phasor control? ( was $B5 )
+1502 0b72 26 03                          BNE         NPHSR       ; No, try next 
+1503 0b74 7e 0d b8                       JMP         PHSR        ; Yes, fire phasors
+1504 0b77 81 36              NPHSR       CMPA        #'6         ; Torpedo shot? ( was $B6 )
+1505 0b79 26 c9                          BNE         CMD         ; No, illegal command, try again
+1506 0b7b 7e 0d 32                       JMP         TRPD        ; Yes, shoot torpedo
+1507                         
+1508                         
+1509                         ; The long range scan routine outputs the contents of the current 
+1510                         ; quadrant and the eight quadrants which immediately surround it. 
+1511                         ; The number of alien ships, space stations, and stars in each of these 
+1512                         ; quadrants is displayed as described in the first chapter. A message 
+1513                         ; is output first indicating the current quadrant location of the space ship.
+1514                         ; The contents of the three quadrants in the row above the 
+1515                         ; current quadrant are then output by calling the LRR subroutine. 
+1516                         ; If this top row is outside the galaxy, the contents will be output as 
+1517                         ; all zeros by use of the RWC routine. The row containing the current 
+1518                         ; quadrant is then output, followed by the row below the current 
+1519                         ; quadrant. If this bottom row is outside the galaxy, its contents will 
+1520                         ; be displayed as all zeros. A dividing line of dashes is output between 
+1521                         ; each row. At the completion, the routine returns to input a new 
+1522                         ; command. The long range scan routine begins at the label LRSCN. 
+1523                         
+1524 0b7e ce 02 4d           LRSCN       LDX         #MSG15      ; Set pointer to long range message 
+1525 0b81 bd 05 06                       JSR         MSG         ; Print long range scan 
+1526 0b84 bd 07 02                       JSR         QUAD        ; Print quadrant location 
+1527 0b87 8d 25                          BSR         LRSCN1      ; Print row of dashes 
+1528 0b89 96 4c                          LDAA        CQLSS       ; Fetch current quadrant 
+1529 0b8b 16                             TAB                     ; Save temporarily 
+1530 0b8c c4 38                          ANDB        #$38        ; Current quadrant in row no. 1? 
+1531 0b8e 27 21                          BEQ         RWC1        ; Yes, top row clear 
+1532 0b90 80 08                          SUBA        #$08        ; Indicate row -1 
+1533 0b92 bd 07 60                       JSR         LRR         ; Set up and print top row 
+1534                         
+1535 0b95 8d 17              LR1         BSR         LRSCN1      ; Print separating row 
+1536 0b97 96 4c                          LDAA        CQLSS       ; Fetch current quadrant 
+1537 0b99 bd 07 60                       JSR         LRR         ; Set up and print middle row 
+1538 0b9c 8d 10                          BSR         LRSCN1      ; Print separating row 
+1539 0b9e 96 4c                          LDAA        CQLSS       ; Fetch current quadrant 
+1540 0ba0 81 38                          CMPA        #$38        ; Current quadrant in row no. 8? 
+1541 0ba2 24 12                          BCC         RWC2        ; Yes, bottom row clear 
+1542 0ba4 8b 08                          ADDA        #$08        ; No, set quadrant row +1 
+1543 0ba6 bd 07 60                       JSR         LRR         ; Set and print bottom row 
+1544 0ba9 8d 03              LR2         BSR         LRSCN1      ; Print bottom border 
+1545 0bab 7e 0b 39                       JMP         CMND        ; Input next command 
+1546 0bae 7e 07 27           LRSCN1      JMP         NTN         ; 
+1547                         
+1548 0bb1 8d 08              RWC1        BSR         RWC         ; Print clear row 
+1549 0bb3 7e 0b 95                       JMP         LR1         ; Continue long range scan 
+1550                         
+1551 0bb6 8d 03              RWC2        BSR         RWC         ; Print clear row 
+1552 0bb8 7e 0b a9                       JMP         LR2         ; Finish long range scan 
+1553                         
+1554 0bbb ce 04 c9           RWC         LDX         #Msg36a     ; Set pointer to left quadrant (was $04C9)
+1555 0bbe 4f                             CLRA                    ; Set zero entry 
+1556 0bbf bd 07 3c                       JSR         QDSET       ; Set quadrant contents 
+1557 0bc2 ce 04 cf                       LDX         #Msg36b     ; Set pointer to middle quadrant (was $04CF)
+1558 0bc5 4f                             CLRA                    ; Set zero entry 
+1559 0bc6 bd 07 3c                       JSR         QDSET       ; Set quadrant contents 
+1560 0bc9 ce 04 d5                       LDX         #Msg36c     ; Set pointer to right quadrant (was $04D5)
+1561 0bcc 4f                             CLRA                    ; Set zero entry 
+1562 0bcd bd 07 3c                       JSR         QDSET       ; Set quadrant contents 
+1563 0bd0 7e 07 92                       JMP         LRP         ; Print long range row 
+1564                         
+1565                          
+1566                         ; The galaxy display routine produces an output of the entire galaxy 
+1567                         ; contents to the display device in a format similar to that of the long 
+1568                         ; range scan. The display is used to provide the operator with a map 
+1569                         ; from which a course may be charted for the mission. The contents of 
+1570                         ; a complete row are set up in the galaxy printout message on page 00 
+1571                         ; by calling the QDSET subroutine, and then the row is output to the 
+1572                         ; display device. A dividing line of dashes is output between each row. 
+1573                         ; When the output is finished, the routine returns to the command input
+1574                         ; routine.
+1575                         
+1576 0bd3 ce 04 22           GXPRT       LDX         #MSG29      ; 
+1577 0bd6 bd 05 06                       JSR         MSG         ; Print GALAXY DISPLAY
+1578 0bd9 c6 31                          LDAB        #$31        ; Set number chars to print
+1579 0bdb bd 07 29                       JSR         NT1         ; Print border 
+1580 0bde ce 00 c0                       LDX         #GALSTART   ; Set pointer to galaxy ( was $00C0 )
+1581 0be1 df 20                          STX         PNTR1       ; Store temporarily
+1582 0be3 ce 00 84           GL1         LDX         #MSGGAL+4   ; Set up message pointer ( was $0084 )
+1583 0be6 df 22                          STX         PNTR2       ; Store temporarily
+1584 0be8 de 20              GL2         LDX         PNTR1       ; Fetch galaxy pointer
+1585 0bea 8c 01 00                       CPX         #GALAFTER   ; End of printout? ( was $0100 )
+1586 0bed 27 21                          BEQ         GL3         ; Yes, input next command
+1587 0bef a6 00                          LDAA        0,X         ; Get quadrant contents 
+1588 0bf1 08                             INX                     ; Advance pointer
+1589 0bf2 df 20                          STX         PNTR1       ; Restore to memory
+1590 0bf4 de 22                          LDX         PNTR2       ; Set up message pointer
+1591 0bf6 bd 07 3c                       JSR         QDSET       ; Set quadrant contents in MSG
+1592 0bf9 86 06                          LDAA        #$06        ; 
+1593 0bfb 9b 23                          ADDA        PNTR2+$1    ; Advance message pointer
+1594 0bfd 97 23                          STAA        PNTR2+$1    ; Restore to memory
+1595 0bff 81 b4                          CMPA        #MsgGalEnd+1; This end of line? (was $B4)
+1596 0c01 26 e5                          BNE         GL2         ; No, set next quadrant 
+1597                         
+1598 0c03 ce 00 80                       LDX         #MSGGAL     ; ( was $0080 )
+1599 0c06 bd 05 06                       JSR         MSG         ; Print current line of galaxy
+1600 0c09 c6 31                          LDAB        #$31        ; 
+1601 0c0b bd 07 29                       JSR         NT1         ; Print border
+1602 0c0e 20 d3                          BRA         GL1         ; Set up next line
+1603                         
+1604 0c10 7e 0b 39           GL3         JMP         CMND        ; End, return to command input
+1605                         
+1606                          
+1607                         ; The shield routine transfers energy between the main energy 
+1608                         ; supply and the protective shields as designated by the operator. The 
+1609                         ; routine begins by requesting the operator to enter the amount of 
+1610                         ; energy to be transferred. The EIN routine is called to input the 
+1611                         ; energy from the input device. The input is then converted to its 
+1612                         ; binary value and the sign of the input is checked. If a minus sign was 
+1613                         ; entered preceeding the energy input, the energy is transferred from 
+1614                         ; the shield energy to the main energy storage. If only the four digits 
+1615                         ; are entered, the transfer of energy goes from the main supply to the 
+1616                         ; shields by jumping to the routine labeled POS. In either case, the 
+1617                         ; supply from which the energy is to be taken is checked to determine 
+1618                         ; whether there is enough energy for the transfer. If there is not 
+1619                         ; enough, a message is output to inform the operator, and the routine 
+1620                         ; returns to the command input routine. If there is sufficient energy, 
+1621                         ; the transfer will be completed and the program will return to the 
+1622                         ; command input routine. This routine begins at the label SHEN.
+1623                         
+1624 0c13 ce 03 30           SHEN        LDX         #MSG21      ; Print SHIELD ENERGY 
+1625 0c16 bd 05 06                       JSR         MSG         ;  TRANSFER =
+1626 0c19 bd 08 28                       JSR         EIN         ; Input energy amount
+1627 0c1c 2b f5                          BMI         SHEN        ; Invalid input, try again 
+1628                         
+1629 0c1e bd 05 8a                       JSR         DCBN        ; Convert to binary
+1630 0c21 de 28                          LDX         STORE2      ; Transfer binary amount for
+1631 0c23 df 26                          STX         STORE1      ;  routines to follow 
+1632 0c25 96 55                          LDAA        DGT5TH      ; Test if have sign
+1633 0c27 27 0d                          BEQ         POS         ; No, transfer main to shields
+1634 0c29 bd 07 d8                       JSR         CKSD        ; Check shield energy
+1635 0c2c 25 15                          BCS         NE          ; Not enough, print message
+1636 0c2e bd 07 e9                       JSR         FMSD        ; Subtract from shields
+1637 0c31 bd 08 00                       JSR         TOMN        ; Add to main
+1638 0c34 20 13                          BRA         SHEN1       ; Input new command
+1639                         
+1640 0c36 bd 07 dc           POS         JSR         CKMN        ; Check main energy
+1641 0c39 25 08                          BCS         NE          ; Not enough, display message
+1642 0c3b bd 07 ed                       JSR         FMMN        ; Subtract from main 
+1643 0c3e bd 07 fc                       JSR         TOSD        ; Add to shields 
+1644 0c41 20 06                          BRA         SHEN1       ; Input new command 
+1645                         
+1646 0c43 ce 03 4c           NE          LDX         #MSG22      ; Print NOT ENOUGH 
+1647 0c46 bd 05 06                       JSR         MSG         ;  ENERGY 
+1648 0c49 7e 0b 39           SHEN1       JMP         CMND        ; Input new command 
+1649                         
+1650                         ;----
+1651                         
+1652 0c4c ce 02 20           CRSE        LDX         #MSG13      ; Set pointer to course message
+1653 0c4f bd 05 06                       JSR         MSG         ; Request course input
+1654 0c52 bd 08 8c                       JSR         DRCT        ; Input course direction
+1655 0c55 27 f5                          BEQ         CRSE        ; Input error, try again
+1656                         
+1657 0c57 ce 02 33           WRP         LDX         #MSG14      ; Index to WARP message
+1658 0c5a bd 05 06                       JSR         MSG         ; Request warp input
+1659 0c5d bd 0f 80                       JSR         INPUT       ; Input warp factor digit 1
+1660 0c60 81 30                          CMPA        #'0         ; Is digit less than 0? (was $B0)
+1661 0c62 25 f3                          BCS         WRP         ; Yes, request input again
+1662 0c64 81 38                          CMPA        #'8         ; Is digit greater than 7? (was $B8)
+1663 0c66 24 ef                          BCC         WRP         ; Yes, try again
+1664 0c68 84 07                          ANDA        #$07        ; Mask off ASCII code
+1665 0c6a 48                             ASLA                    ; Position to 3rd bit
+1666 0c6b 48                             ASLA                    ; 
+1667 0c6c 48                             ASLA                    ; 
+1668 0c6d 16                             TAB                     ; Store temporarily in B
+1669 0c6e 86 ae                          LDAA        #$AE        ; Print decimal point
+1670 0c70 bd 0f 89                       JSR         PRINT       ; 
+1671 0c73 bd 0f 80                       JSR         INPUT       ; Input 2nd warp factor digit 
+1672 0c76 81 30                          CMPA        #'0         ; Is digit less than 0? (was $B0)
+1673 0c78 25 dd                          BCS         WRP         ; Yes, request input again
+1674 0c7a 81 38                          CMPA        #'8         ; Is input greater than 7? (was $B8)
+1675 0c7c 24 d9                          BCC         WRP         ; Yes, no good, try again
+1676 0c7e 84 07                          ANDA        #$07        ; Mask off ASCII code
+1677 0c80 1b                             ABA                     ; Add warp digit 1
+1678 0c81 27 d4                          BEQ         WRP         ; If 0, no good, try again
+1679 0c83 97 30                          STAA        CNTR        ; Store warp factor as counter
+1680 0c85 bd 08 ba                       JSR         ACTV        ; Fetch adjusted row and column
+1681 0c88 7f 00 31                       CLR         CI          ; Clear crossing indicator
+1682                         
+1683 0c8b bd 08 d5           MOV         JSR         TRK         ; Track one sector 
+1684 0c8e 26 03                          BNE         MOV1        ; Out of galaxy? No 
+1685 0c90 7e 06 53                       JMP         LOST        ; Yes, lost in space 
+1686                         
+1687 0c93 96 32              MOV1        LDAA        CF          ; No, quadrant crossed? 
+1688 0c95 27 10                          BEQ         CLSN        ; No, check for collision 
+1689 0c97 97 31                          STAA        CI          ; Make crossing indicator non-zero 
+1690 0c99 ce 19 00                       LDX         #$1900      ; Delete 25 units of energy 
+1691 0c9c df 26                          STX         STORE1      ; 
+1692 0c9e bd 08 1d                       JSR         ELOM        ; From main supply 
+1693 0ca1 bd 06 2f                       JSR         QCNT        ; Fetch new quadrant contents 
+1694 0ca4 bd 05 c8                       JSR         NWQD        ; Set up new quadrant 
+1695                         
+1696 0ca7 bd 09 44           CLSN        JSR         RWCM        ; Form row and column byte 
+1697 0caa bd 06 22                       JSR         MATCH       ; Collision? 
+1698 0cad 26 0e                          BNE         MVDN        ; No, complete move 
+1699 0caf bd 09 59                       JSR         COMPAR      ; What was hit? 
+1700 0cb2 27 2d                          BEQ         SSOUT       ; Space ship collision! 
+1701 0cb4 24 43                          BCC         ASOUT       ; Alien ship collision! 
+1702 0cb6 96 31                          LDAA        CI          ; Star, initial quadrant? 
+1703 0cb8 26 03                          BNE         MVDN        ; No, ignore collision 
+1704 0cba 7e 06 58                       JMP         WPOUT       ; Yes, ship wiped out! 
+1705                         
+1706 0cbd 7a 00 30           MVDN        DEC         CNTR        ; Decrement warp factor 
+1707 0cc0 26 c9                          BNE         MOV         ; Not zero, continue move 
+1708                         
+1709 0cc2 96 31                          LDAA        CI          ; Fetch crossing indicator 
+1710 0cc4 27 08                          BEQ         NOX         ; Quadrant not crossed, continue move 
+1711 0cc6 7a 00 50                       DEC         NSR         ; Decrement stardate counter 
+1712 0cc9 26 03                          BNE         NOX         ; Not zero, continue 
+1713 0ccb 7e 06 4a                       JMP         TIME        ; Ran out of time, start new game 
+1714                         
+1715 0cce bd 09 44           NOX         JSR         RWCM        ; Form row and column byte 
+1716 0cd1 97 36                          STAA        SLOSS       ; Save new sector 
+1717 0cd3 bd 06 22                       JSR         MATCH       ; Was last move a collision? 
+1718 0cd6 26 03                          BNE         NOX1        ; No, check for docking 
+1719 0cd8 bd 0d 0d                       JSR         CHNG        ; Yes, change object location 
+1720                             
+1721 0cdb bd 0d 12           NOX1        JSR         DKED        ; Check for docking 
+1722 0cde 7e 0a 65                       JMP         SRSCN       ; Do short range scan 
+1723                         
+1724 0ce1 96 31              SSOUT       LDAA        CI          ; Test if initial quadrant 
+1725 0ce3 26 d8                          BNE         MVDN        ; No, no loss 
+1726 0ce5 bd 08 4b                       JSR         DLET        ; Remove space station from galaxy 
+1727 0ce8 ce 03 ba                       LDX         #MSG26      ; 
+1728 0ceb bd 05 06                       JSR         MSG         ; Indicate loss of space station 
+1729 0cee ce 58 02                       LDX         #$5802      ; Then delete 600 units 
+1730 0cf1 df 26                          STX         STORE1      ;  of energy from sheilds 
+1731 0cf3 bd 07 98           SSO1        JSR         ELOS        ; Delete energy 
+1732 0cf6 7e 0c bd                       JMP         MVDN        ; Finish move 
+1733                         
+1734 0cf9 96 31              ASOUT       LDAA        CI          ; Test if initial quadrant 
+1735 0cfb 26 c0                          BNE         MVDN        ; No, no loss 
+1736 0cfd bd 08 4b                       JSR         DLET        ; Yes, delete alien ship 
+1737 0d00 ce 03 7f                       LDX         #MSG24      ; 
+1738 0d03 bd 05 06                       JSR         MSG         ; Print alien ship destroyed message 
+1739 0d06 ce dc 05                       LDX         #$DC05      ; Delete 1500 units of 
+1740 0d09 df 26                          STX         STORE1      ;  
+1741 0d0b 20 e6                          BRA         SSO1        ;  energy from space ship 
+1742                         
+1743 0d0d c6 01              CHNG        LDAB        #$01        ; Set number of objects counter 
+1744 0d0f 7e 06 0f                       JMP         LOCSET      ; Move object and return 
+1745                         
+1746 0d12 96 3e              DKED        LDAA        SLSS        ; Is space station in quadrant? 
+1747 0d14 2a 01                          BPL         DKED1       ; Yes, continue 
+1748 0d16 39                             RTS                     ; No, complete move 
+1749                         
+1750 0d17 84 38              DKED1       ANDA        #$38        ; Mask out row 
+1751 0d19 d6 36                          LDAB        SLOSS       ; Fetch space ship location 
+1752 0d1b c4 38                          ANDB        #$38        ; Mask out row 
+1753 0d1d 11                             CBA                     ; Same row? 
+1754 0d1e 26 0e                          BNE         DKED2       ; No, return 
+1755 0d20 96 3e                          LDAA        SLSS        ; Fetch space station location 
+1756 0d22 d6 36                          LDAB        SLOSS       ; Fetch space ship location 
+1757 0d24 cb 01                          ADDB        #$01        ; 
+1758 0d26 11                             CBA                     ; Docked on right? 
+1759 0d27 27 06                          BEQ         DKED3       ; Yes, reload 
+1760 0d29 c0 02                          SUBB        #$02        ; No, check left docking 
+1761 0d2b 11                             CBA                     ; Docked on left? 
+1762 0d2c 27 01                          BEQ         DKED3       ; Yes, reload 
+1763 0d2e 39                 DKED2       RTS                     ; No, return 
+1764 0d2f 7e 06 3b           DKED3       JMP         LOAD        ; Reload space ship and return 
+1765                         
+1766                         
+1767                         ; The torpedo routine fires a torpedo in the direction specified by 
+1768                         ; the operator in an attempt to destroy an alien ship. This routine first 
+1769                         ; checks the number of torpedoes available. If there are no torpedoes 
+1770                         ; remaining, a message in output to inform the operator, and the routine
+1771                         ; returns to the command routine. If there is a torpedo available, 
+1772                         ; the torpedo count is decremented, and 250 units of energy are depleted
+1773                         ; from the main storage bank. The DRCT subroutine is then 
+1774                         ; called to input the direction of fire for the torpedo. The ACTV subroutine
+1775                         ; then sets the adjusted row and column values for tracking the torpedo. 
+1776                         ;
+1777                         ; Once the trajectory is set up, the torpedo is moved one sector at 
+1778                         ; a time, using the TRK subroutine. If the torpedo moves out of the 
+1779                         ; quadrant, it has missed its intended target and the alien ship retaliates
+1780                         ; by firing 200 units of phasor energy back at the space ship. 
+1781                         ; Otherwise, the sector location of the torpedo is output in the tracking
+1782                         ; message so that the operator can follow the torpedo’s path. The 
+1783                         ; MATCH subroutine checks for a collision after each sector 
+1784                         ; moved. If there is no collision at this sector, the torpedo will be 
+1785                         ; tracked another sector by returning to the TR2 label in this routine. 
+1786                         ; If an alien ship has been hit, it is removed from the galaxy. If it is 
+1787                         ; the last alien ship, the mission is complete, and the program begins a 
+1788                         ; new game. If a space station is hit, it is eliminated and the alien ship 
+1789                         ; will retaliate as mentioned above. If a star is hit, the torpedo has 
+1790                         ; missed its mark and the alien ship will again retaliate for the 
+1791                         ; attempted attack. The program then returns to the command input 
+1792                         ; routine.
+1793                         
+1794 0d32 96 4d              TRPD        LDAA        NTR         ; Any torpedoes left? 
+1795 0d34 27 79                          BEQ         NTPD        ; No, print no torpedo message 
+1796 0d36 7a 00 4d                       DEC         NTR         ; Yes, delete one 
+1797 0d39 ce fa 00                       LDX         #$FA00      ; Setup 250 units 
+1798 0d3c df 26                          STX         STORE1      ; Of energy to delete 
+1799 0d3e bd 07 dc                       JSR         CKMN        ; Enough in main supply? 
+1800 0d41 24 03                          BCC         TRPD1       ; Yes, continue 
+1801 0d43 7e 0c 43                       JMP         NE          ; No, report not enough energy 
+1802                         
+1803 0d46 bd 07 ed           TRPD1       JSR         FMMN        ; Delete from main 
+1804                         
+1805 0d49 ce 03 60           TR1         LDX         #MSG23      ; 
+1806 0d4c 8d 41                          BSR         TR3         ; Print TORPEDO TRAJECTORY = 
+1807 0d4e bd 08 8c                       JSR         DRCT        ; Input direction 
+1808 0d51 27 f6                          BEQ         TR1         ; Input invalid, try again 
+1809 0d53 bd 08 ba                       JSR         ACTV        ; Form adjusted row and column 
+1810 0d56 96 4c                          LDAA        CQLSS       ; Save current quadrant 
+1811 0d58 97 30                          STAA        CNTR        ; Location in temporary storage 
+1812                         
+1813 0d5a bd 08 d5           TR2         JSR         TRK         ; Move torpedo one sector 
+1814 0d5d 27 3b                          BEQ         QOUT        ; Out of galaxy? Yes, missed 
+1815 0d5f 96 32                          LDAA        CF          ; Quadrant crossed? 
+1816 0d61 26 37                          BNE         QOUT        ; Yes, missed 
+1817 0d63 bd 09 44                       JSR         RWCM        ; 
+1818 0d66 16                             TAB                     ; No, form row and column byte 
+1819 0d67 97 26                          STAA        STORE1      ; Move to temporary storage 
+1820 0d69 ce 04 1e                       LDX         #Msg28a     ; Set up tracking message (was $041E)
+1821 0d6c bd 07 17                       JSR         T1          ; Print TRACKING: R,C 
+1822 0d6f ce 04 12                       LDX         #MSG28      ; Form message pointer 
+1823 0d72 8d 1b                          BSR         TR3         ; Print message 
+1824 0d74 96 26                          LDAA        STORE1      ; Fetch row and column byte
+1825 0d76 bd 06 22                       JSR         MATCH       ; Torpedo hit anything?
+1826 0d79 27 03                          BEQ         HIT         ; Yes, analyze
+1827 0d7b 7e 0d 5a                       JMP         TR2         ; No, continue tracking
+1828                         
+1829 0d7e bd 09 59           HIT         JSR         COMPAR      ; What was hit? A star?
+1830 0d81 25 17                          BCS         QOUT        ; Yes, missed alien ship 
+1831 0d83 27 0d                          BEQ         SSTA        ; Space station? Yes, delete space station
+1832 0d85 bd 08 4b                       JSR         DLET        ; No, delete alien ship
+1833 0d88 ce 03 7f                       LDX         #MSG24      ; Print alien ship hit message
+1834 0d8b 8d 02                          BSR         TR3         ; 
+1835 0d8d 20 26                          BRA         CMND1       ; Input new command
+1836 0d8f 7e 05 06           TR3         JMP         MSG         ; Print message and return 
+1837                         
+1838 0d92 bd 08 4b           SSTA        JSR         DLET        ; Delete space station from galaxy
+1839 0d95 ce 03 ba                       LDX         #MSG26      ; Print message of loss of
+1840 0d98 8d f5                          BSR         TR3         ;  space station
+1841                          
+1842 0d9a 96 30              QOUT        LDAA        CNTR        ; Restore current quadrant location
+1843 0d9c 97 4c                          STAA        CQLSS       ;  of the space ship
+1844 0d9e bd 09 60                       JSR         WASTE       ; See if any alien ships in quadrant 
+1845 0da1 ce 03 96                       LDX         #MSG25      ; No, print missed message
+1846 0da4 bd 05 06                       JSR         MSG         ; 
+1847 0da7 ce c8 00                       LDX         #$C800      ; Set up loss of 200 units of energy
+1848 0daa bd 07 98                       JSR         ELOS        ; Due to alien ship retaliating
+1849 0dad 20 06                          BRA         CMND1       ; Input new command
+1850                         
+1851 0daf ce 04 b6           NTPD        LDX         #MSG35      ; 
+1852 0db2 bd 05 06                       JSR         MSG         ; Print no torpedo message 
+1853 0db5 7e 0b 39           CMND1       JMP         CMND        ; Input new command 
+1854                         
+1855                         
+1856                         ; The phasor routine fires a designated amount of phasor energy at 
+1857                         ; the alien ships in the quadrant. The EIN subroutine is called to input 
+1858                         ; the energy to be fired. The amount of energy entered is then deleted 
+1859                         ; from the main storage bank. The number of alien ships in the immediate
+1860                         ; quadrant is then determined to calculate the amount of 
+1861                         ; energy to be fired at each. If there are no alien ships, a message is 
+1862                         ; output indicating the energy fired was wasted. The amount of phasor 
+1863                         ; energy to be fired at the alien ships is calculated and saved for use by 
+1864                         ; the ASPH subroutine. 
+1865                         ;
+1866                         ; The ASPH subroutine is called to fire the phasor at each of the 
+1867                         ; three possible alien ships in the quadrant. It first ascertains the 
+1868                         ; presence of the particular alien ship by looking for its row and 
+1869                         ; column location in the data table. If this location contains a CO, no 
+1870                         ; alien ship is located here and the routine simply returns. Otherwise, 
+1871                         ; this row and column location is output to inform the operator which 
+1872                         ; alien ship is about to be attacked. The distance between the space 
+1873                         ; ship and the alien ship, as defined in Chapter One, is then calculated 
+1874                         ; and the distance factor is used to determine how much of the phasor 
+1875                         ; energy actually reaches the alien ship. This energy is subtracted from 
+1876                         ; the alien ship’s shield energy, and if the result is zero or less, the alien 
+1877                         ; ship is destroyed. A message is output to inform the operator of its 
+1878                         ; destruction. If the alien ship is not destroyed, the new energy level of 
+1879                         ; the alien ship’s shields is output and, in retaliation, the alien ship 
+1880                         ; fires a phasor equal to one quarter of its shield energy at the space 
+1881                         ; ship. When the ASPH subroutine has completed its operation, it returns
+1882                         ; to the phasor routine. After all alien ships in the quadrant have 
+1883                         ; been fired upon, the phasor routine returns to the command input routine.
+1884                         
+1885 0db8 ce 04 33           PHSR        LDX         #MSG30      ; Print ‘PHASOR ENERGY TO FIRE=’
+1886 0dbb 8d d2                          BSR         TR3         ; 
+1887 0dbd bd 08 28                       JSR         EIN         ; Input energy amount
+1888 0dc0 2b f6                          BMI         PHSR        ; Input error? Try again
+1889 0dc2 bd 05 8a                       JSR         DCBN        ; Convert decimal to binary
+1890 0dc5 de 28                          LDX         STORE2      ; Move binary energy value to proper
+1891 0dc7 df 26                          STX         STORE1      ; Storage for ELOM routine
+1892 0dc9 bd 08 1d                       JSR         ELOM        ; Delete energy from main supply
+1893 0dcc bd 09 60                       JSR         WASTE       ; Check for presence of alien ships
+1894 0dcf bd 05 11           PHS1        JSR         ROTR4       ; Position alien ship number 
+1895 0dd2 80 01                          SUBA        #$01        ; 1 alien ship, full energy
+1896 0dd4 27 04                          BEQ         PH1         ; 2 alien ships, half energy
+1897 0dd6 16                             TAB                     ; 3 alien ships, Vt energy
+1898 0dd7 bd 08 0f                       JSR         DVD         ; Divide energy accordingly
+1899                         
+1900 0dda de 26              PH1         LDX         STORE1      ; Fetch energy amount
+1901 0ddc df 2c                          STX         STORE4      ; Save energy amount
+1902 0dde de 6a                          LDX         PVASE1      ; Fetch pointer to alien ship no. 1 energy
+1903 0de0 df 24                          STX         PNTR3       ; Save pointer for ASPH routine
+1904 0de2 de 60                          LDX         PSLAS1      ; Pointer to alien ship no. 1 position 
+1905 0de4 bd 0d fb                       JSR         ASPH        ; Fire phasor at alien ship no. 1
+1906 0de7 de 6c                          LDX         PVASE2      ; Fetch pointer to alien ship no. 2 energy 
+1907 0de9 df 24                          STX         PNTR3       ; Save pointer for ASPH routine 
+1908 0deb de 62                          LDX         PSLAS2      ; Pointer to alien ship no. 2 position 
+1909 0ded bd 0d fb                       JSR         ASPH        ; Fire phasor at alien ship no. 2 
+1910 0df0 de 6e                          LDX         PVASE3      ; Fetch pointer to alien ship no. 3 energy 
+1911 0df2 df 24                          STX         PNTR3       ; Save pointer for ASPH routine 
+1912 0df4 de 64                          LDX         PSLAS3      ; Pointer to alien ship no. 3 position 
+1913 0df6 bd 0d fb                       JSR         ASPH        ; Fire phasor at alien ship no. 3 
+1914 0df9 20 ba                          BRA         CMND1       ; Input new command 
+1915                         
+1916 0dfb df 22              ASPH        STX         PNTR2       ; Save position pointer 
+1917 0dfd a6 00                          LDAA        0,X         ; Fetch alien ship location 
+1918 0dff 2a 01                          BPL         ASPH1       ; Any alien ship in location? 
+1919 0e01 39                             RTS                     ; No, return 
+1920 0e02 de 2c              ASPH1       LDX         STORE4      ; Restore energy value 
+1921 0e04 df 26                          STX         STORE1      ; Move to temporary storage 
+1922 0e06 ce 04 65                       LDX         #Msg31a     ; Set up pointers (was at $0465)
+1923 0e09 df 20                          STX         PNTR1       ; To fill in alien ship location 
+1924 0e0b de 22                          LDX         PNTR2       ;  in message 
+1925 0e0d bd 07 12                       JSR         TWO         ; Set sector coordinates 
+1926 0e10 ce 04 4e                       LDX         #MSG31      ; 
+1927 0e13 bd 05 06                       JSR         MSG         ; Print ’ALIEN SHIP AT SECTOR X,Y:’ 
+1928 0e16 ce 00 36                       LDX         #SLOSS      ; Fetch sector location of the space ship 
+1929 0e19 8d 5c                          BSR         SPRC        ; Separate row and column values 
+1930 0e1b 97 28                          STAA        STORE2      ; Save row of space ship 
+1931 0e1d d7 29                          STAB        STORE2+$1   ; Save column of space ship 
+1932 0e1f de 22                          LDX         PNTR2       ; Fetch pointer to alien ship location 
+1933 0e21 8d 54                          BSR         SPRC        ; Separate row and column values 
+1934 0e23 90 28                          SUBA        STORE2      ; Create row difference 
+1935 0e25 2a 01                          BPL         PH2         ; Make absolute difference 
+1936 0e27 40                             NEGA                    ; By negating a negative value 
+1937                         
+1938 0e28 d0 29              PH2         SUBB        STORE2+$1   ; Create column difference 
+1939 0e2a 2a 01                          BPL         PH3         ; Make absolute difference 
+1940 0e2c 50                             NEGB                    ; By negating a negative value 
+1941 0e2d 1b                 PH3         ABA                     ; Add absolute differences 
+1942 0e2e 44                             LSRA                    ; Divide by 4 to 
+1943 0e2f 44                             LSRA                    ;  form the distance factor 
+1944 0e30 84 03                          ANDA        #$03        ;   of energy to reach alien ship 
+1945 0e32 16                             TAB                     ; Store in B 
+1946 0e33 27 03                          BEQ         PH4         ; Make sure not zero 
+1947 0e35 bd 08 0f                       JSR         DVD         ; Calculate energy that reached alien ship 
+1948                             
+1949 0e38 de 24              PH4         LDX         PNTR3       ; Subtract from shield energy 
+1950 0e3a bd 07 ef                       JSR         FM1         ;  of alien ship 
+1951 0e3d 2b 2d                          BMI         DSTR        ; If negative, alien ship is destroyed 
+1952 0e3f 26 04                          BNE         ALOS        ; If non-zero, print alien ship energy 
+1953 0e41 6d 00                          TST         0,X         ; Alien ship energy = 0? 
+1954 0e43 27 27                          BEQ         DSTR        ; Yes, remove from galaxy 
+1955                                 
+1956 0e45 c6 02              ALOS        LDAB        #$02        ; Set precision counter 
+1957 0e47 bd 05 29                       JSR         BINDEC      ; Convert alien ship energy to decimal 
+1958 0e4a ce 04 77                       LDX         #Msg32a+3   ; Set digits in message (was $0477)
+1959 0e4d c6 04                          LDAB        #$04        ; Set number of digits counter
+1960 0e4f bd 06 62                       JSR         DIGPRT      ; Put digits in message 
+1961 0e52 ce 04 6b                       LDX         #MSG32      ; Print energy of alien ship
+1962 0e55 bd 05 06                       JSR         MSG         ; 
+1963 0e58 de 24                          LDX         PNTR3       ; Set pointer to alien ship energy
+1964 0e5a a6 00                          LDAA        0,X         ; Transfer alien ship energy
+1965 0e5c 97 26                          STAA        STORE1      ;  to STORE1 for calculating
+1966 0e5e a6 01                          LDAA        $01,X       ;  
+1967 0e60 97 27                          STAA        STORE1+$01  ; Retaliation amount
+1968 0e62 c6 02                          LDAB        #$02        ; Divide energy by 4 as
+1969 0e64 bd 08 0f                       JSR         DVD         ;  retaliation by alien ship
+1970 0e67 de 26                          LDX         STORE1      ; Place energy into index register
+1971 0e69 7e 07 98                       JMP         ELOS        ; Remove from shield energy, return
+1972                         
+1973 0e6c ce 03 ca           DSTR        LDX         #$03CA      ; Print ‘DESTROYED’ 
+1974 0e6f bd 05 06                       JSR         MSG         ; 
+1975 0e72 de 22                          LDX         PNTR2       ; Fetch alien ship location 
+1976 0e74 7e 08 4b                       JMP         DLET        ; Remove alien ship from galaxy, return 
+1977                         
+1978 0e77 a6 00              SPRC        LDAA        0,X         ; Fetch row and column byte 
+1979 0e79 16                             TAB                     ; Save for column value 
+1980 0e7a bd 05 12                       JSR         ROTR3       ; Position row to right 
+1981 0e7d 84 07                          ANDA        #$07        ; Mask out row value 
+1982 0e7f c4 07                          ANDB        #$07        ; Mask out column value 
+1983 0e81 39                             RTS                     ; Return 
+1984                         
+1985                         ;---
+1986                         
+1987 0e82 26 03              PATCH       BNE         PATCH1
+1988 0e84 08                             INX
+1989 0e85 09                             DEX
+1990 0e86 39                             RTS
+1991 0e87 7e 06 24           PATCH1      JMP         MATCH2
+1992                         
+1993                         
+1994                         
+1995                         ;------------------------------------------
+1996                         ; I/O - System (h/w and monitor) specific
+1997                         ;------------------------------------------
+1998                         ; For CDC DEMON monitor SWI calls... (mostly in I/O stuff at end)
+1999 0000                    D_RESTART       EQU     $00     ; Reset Monitor (& Stack)
+2000 0001                    D_RD_BYTE       EQU     $01     ; Get char into A from ACIA
+2001 0004                    D_PR_BYTE       EQU     $04     ; Output char in A
+2002                         
+2003 0f80                                ORG     IOIF_BASE   ; Set address to match original listing
+2004                         
+2005 0f80 3f                 INPUT       SWI                 ; Call DEMON
+2006 0f81 01                             FCB     D_RD_BYTE   ; to read a char into A
+2007 0f82 81 03                          CMPA    #cCtrlC     ; Is it Control+C
+2008 0f84 27 06                          BEQ     USREXIT     ; Yes: QUIT back to monitor
+2009 0f86 8d 01                          BSR     PRINT       ; Echo it
+2010 0f88 39                             RTS
+2011                         
+2012                         ;-------
+2013                         
+2014 0f89                    PRINT       EQU     *
+2015 0f89 3f                             SWI                 ; Call DEMON
+2016 0f8a 04                             FCB     D_PR_BYTE   ; to print char in A
+2017 0f8b 39                             RTS
+2018                         
+2019                         ;-------
+2020                         
+2021                         ; User-defined EXIT ( Note values from JSR to get here are on stack )...
+2022 0f8c 3f                 USREXIT     SWI                   ; Call DEMON (resets stack )
+2023 0f8d 00                             FCB       D_RESTART   ;  Go back to DEMON prompt
+2024 0f8e 39                             RTS                   ; (should not get here !)
+2025                         
+2026                         ;----------------------------
+2027                         ;x Original code from book (for MIKBUG ?)...
+2028                         ;x INPUT   JSR      $E1AC 
+2029                         ;x         ORAA     #$80 
+2030                         ;x         RTS 
+2031                         ;x PRINT   PSHA 
+2032                         ;x         JSR     $E1D1 
+2033                         ;x         PULA 
+2034                         ;x         RTS 
+2035                         
+2036                         ;----------------------------
+2037                         ; and for USREXIT, this *should* work for all monitors...
+2038                         ;x USREXIT LDX     $FFFE        ; Load restart address
+2039                         ;x         JMP     0,X          ; Jump to it
+2040                         ;------------------------------------------
+2041                         ; The end
+2042                         ;------------------------------------------
+2043                         
