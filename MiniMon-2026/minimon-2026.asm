@@ -130,28 +130,30 @@ LETTB   ADDB    #$09    ; Make Acc.B a binary
 ; -----------------------------------------------------
 ; Read a 4 digit HEX value, put result into X
 
-ZIN     BSR     RD_CMD  ; Read a character
-        BSR     VHEX    ; Is it a hex character ?
-        BCS     Z_PRQM  ; No: go to print `?`
-        STAA    T_Q     ; Yes: Save Acc.A
-        BSR     RD_CMD  ; Read 2nd character
-        BSR     VHEX    ; Is it a hex character ?
-        BCS     Z_PRQM  ; No: go to print `?`
-        TAB             ; Yes: Put it into Acc.B
-        LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
-        BSR     BINARY  ; Convert A:B to binary
-        RTS             ; RETURN
-Z_PRQM  LDAA    #'?     ; Load `?` into A
-        BSR     PR_A    ; Print it
-        BRA     ZIN     ; Go back to start of hex input
+        RMB 26
+
+;ZIN     BSR     RD_CMD  ; Read a character
+;        BSR     VHEX    ; Is it a hex character ?
+;        BCS     Z_PRQM  ; No: go to print `?`
+;        STAA    T_Q     ; Yes: Save Acc.A
+;        BSR     RD_CMD  ; Read 2nd character
+;        BSR     VHEX    ; Is it a hex character ?
+;        BCS     Z_PRQM  ; No: go to print `?`
+;        TAB             ; Yes: Put it into Acc.B
+;        LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
+;        BSR     BINARY  ; Convert A:B to binary
+;        RTS             ; RETURN
+;Z_PRQM  LDAA    #'?     ; Load `?` into A
+;        BSR     PR_A    ; Print it
+;        BRA     ZIN     ; Go back to start of hex input
 
 ; -----------------------------------------------------
 ; Read 4 hex digits and put value into X
-
+;FC65
 RD_X    JSR     PRSP    ; Print a space
-        BSR     ZIN     ; Read 2 digit hex value into A
+        JSR     ZIN     ; Read 2 digit hex value into A
         STAA    T_Z     ; Save byte (most significant)
-        BSR     ZIN     ; Read 2 digit hex value into A
+        JSR     ZIN     ; Read 2 digit hex value into A
         STAA    T_Z+1   ; Save byte (least significant)
         LDX     T_Z     ; Load full 4 hex value into X
         RTS             ; RETURN
@@ -160,7 +162,8 @@ RD_X    JSR     PRSP    ; Print a space
 ; Print string FOLLOWING JSR ( terminated by $FF )
 ;  IE: It starts at the `return addr` put onto the stack by JSR
 ;  So actual return address needed is past the string
-;                       
+
+;fc76
 STRING  TSX             ; Get loc. of return addr to X
         LDX     0,X     ; Get return addr to X
         DEX             ; Point to byte before
@@ -215,20 +218,22 @@ ADD     ADDB    #$37    ; Make it an ASII letter
 
 PRX     STX     T_TMPX  ; Save X
         LDAA    T_TMPX  ; Get high order byte to A
-        BSR     ZOUT    ; Print A as 2 hex digits
+        JSR     ZOUT    ; Print A as 2 hex digits
         LDAA    T_TMPX+1 ; Get low order byte to A
-        BSR     ZOUT    ; Print A as 2 hex digits
+        JSR     ZOUT    ; Print A as 2 hex digits
         RTS             ; RETURN
 
 ; -----------------------------------------------------
 ; Print value in A as 2 hex digits
 
-ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
-        STAB    T_M     ; Save B
-        JSR     PR_A    ; Print byte in A
-        LDAA    T_M     ; Get 2nd byte into A
-        JSR     PR_A    ; Print byte in A
-        RTS             ; RETURN
+        RMB 13
+
+;ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
+;        STAB    T_M     ; Save B
+;        JSR     PR_A    ; Print byte in A
+;        LDAA    T_M     ; Get 2nd byte into A
+;        JSR     PR_A    ; Print byte in A
+;        RTS             ; RETURN
 
 ; -----------------------------------------------------
 
@@ -474,6 +479,7 @@ Is2b    CMPA    #'2     ; Is it `2` ?
         BRA     SAME    ; Set the breakpoint
 
 ; -----------------------------------------------------
+;ff63
 HEADER  JSR     STRING  ; print string...
         FCC     " CC"   ;
         FCC     " B "   ;
@@ -544,8 +550,9 @@ L10     CMPA    #'D     ; Is it `D` ?
 ; Original PUNCH command space = 47 Bytes
 ; Addition space where old X and Z commands were 81 bytes
 ; Additional space where the old ALTER command was = 26 Bytes
-;
-; Total free bytes = 190 bytes
+; Removed old ZIN releases 26 bytes
+; Removed olu ZOUT releases 13 bytes
+; Total free bytes = 229 bytes
 
 
 ; 31 bytes
@@ -582,11 +589,11 @@ CMD_L       EQU     *           ; L = Load = Input an S19 file
             CMPA    #'1         ; Is it `1` ?  ( `S1` record )
             BNE     .sRead      ; No: Wait for next `S`
             CLR     b_Csum      ; Clear checksum
-            JSR     RD_HEX2     ; Read 2xHex = data.byte count to A
+            JSR     ZIN         ; Read 2xHex = data.byte count to A
             SUBA    #2          ; Subtract 2 (to get bytes left in line)
             STAA    b_Count     ; Store byte count
             JSR     RD_X        ; Read 4xHex digit address to X
-.sDoByt     JSR     RD_HEX2     ; Read 2xHex digits, value to A
+.sDoByt     JSR     ZIN         ; Read 2xHex digits, value to A
             DEC     b_Count     ; Decrement our byte count
             BEQ     .sChk       ; If end-of-line, go look at checksum
             STAA    0,X         ; Save byte where X points
@@ -663,7 +670,7 @@ CMD_P       EQU     *           ; P = Punch : Output an S19 file
 .fOutHx2    ADDB    0,X         ; Update checksum
             PSHA                ; Push A to STACK
             LDAA    0,X         ; Load byte to be o/p
-            JSR     PR_HEX2     ; O/P byte <- X
+            JSR     ZOUT        ; O/P byte <- X
             PULA                ; Pull A off STACK
             INX                 ; Increment X
             RTS                 ; RETURN
@@ -671,14 +678,16 @@ CMD_P       EQU     *           ; P = Punch : Output an S19 file
 ; -----------------------------------------------------
 ; Read a 2 digit HEX value, put result into X
 
-RD_HEX2     EQU     *
+;RD_HEX2 This is a new ZIN and is called RD_HEX2 on GruntMon
+
+ZIN         EQU     *
             JSR     RD_ByteFast ; Read a character
-            JSR     VHEX     ; Is it a hex character ?
-            BCS     .rxPrQM     ; No: go to print `?`
+            JSR     VHEX        ; Is it a hex character ?
+            BCS     Z_PRQM      ; No: go to print `?`
             STAA    T_Q         ; Save it
             JSR     RD_ByteFast ; Read 2nd character
             JSR     VHEX     ; Is it a hex character ?
-            BCS     .rxPrQM     ; No: go to print `?`
+            BCS     Z_PRQM     ; No: go to print `?`
             TAB                 ; Yes: Put it into B
             LDAA    T_Q         ; Retrieve 1st hex char to A
             JSR     BINARY      ; Convert A:B to binary to A
@@ -686,22 +695,8 @@ RD_HEX2     EQU     *
             ADDB    b_Csum      ; Add this value
             STAB    b_Csum      ; to the Checksum (for S19)
             RTS                 ; RETURN
-.rxPrQM     JSR     PR_QM       ; Print "?"
-            BRA     RD_HEX2     ; Go back to start of hex input
-
-; -----------------------------------------------------
-; Read 4 hex digits and put value into X
-;
-; RD_HEX4   = Read 4.hex digit address value into X
-; RD_HEX4_S = As above, but print a SPACE first
-
-;RD_HEX4_S   JSR     PR_SP       ; Print a space
-;RD_HEX4     BSR     RD_HEX2     ; Read 2 digit hex val into A
-;            STAA    d_Hx4X      ; Save high.byte
-;            BSR     RD_HEX2     ; Read 2 digit hex val into A
-;            STAA    d_Hx4X+1    ; Save low.byte
-;            LDX     d_Hx4X      ; Load 4 digit hex val into X
-;            RTS                 ; RETURN
+Z_PRQM      JSR     PR_QM       ; Print "?"
+            BRA     ZIN     ; Go back to start of hex input
 
 PR_QM       LDAA #'?              ; Put '?' character in A
 PR_BYTE     JSR     PR_A    ; Print it
@@ -727,8 +722,9 @@ ASK_Start   JSR     STRING      ; Print string...
 ; Print value in A as 2 hex digits, Preserve B
 ; X unchanged by called routines
 
-PR_HEX2     PSHB                ; Save B to STACK
-            PSHA                ; Save A to STACK
+;PR_HEX2 Renamed to ZOUT as per old MiniMon
+
+ZOUT        PSHB                ; Save B to STACK
             JSR     ASCII       ; Convert A to ASCII in A & B
             PSHB                ; Save B (2nd byte) to STACK
             BSR     PR_BYTE     ; Print byte in A

@@ -206,7 +206,6 @@ PRX     STX     T_TMPX  ; Save X
 
 ; -----------------------------------------------------
 ; Print value in A as 2 hex digits
-
 ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
         STAB    T_M     ; Save B
         JSR     PR_A    ; Print byte in A
