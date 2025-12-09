@@ -1,5 +1,5 @@
 
-NAME=minimon-2025
+NAME=minimon-2026
 ASSEMBLER=../Tools/as6800
 CCS19 = ../Tools/ccs19
 
