@@ -25,7 +25,8 @@ REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBRO
 PRSP    FD4D - Prints a space.
 BLKMOV  FD62 - Invokes the BLOCK MOVE command.
 SUB     FDD6 - Subtract uses T_X 16 bit data area at F0E6.
-CMD_Z   FDE2 - Invokes the RELATIVE OFFSET CALCULATION, use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
+CMD_Z   FDE2 - Invokes the 8 bit RELATIVE OFFSET CALCULATION, use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
+CMD_X   FE1C - Invokes the 16 bit RELATIVE OFFSET CALCULATION, use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
 PRP     FE33 - Prints he string " P ".
 PRD     FE3B - Prints he string " D ".
 MODIFY  FE43 - Invokes the MODIFY command.

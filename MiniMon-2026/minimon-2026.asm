@@ -232,55 +232,13 @@ ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
 
 ; -----------------------------------------------------
 
-PUNCH   JSR     GETADD  ; Prompt for boundary addresses
-        LDX     #$0000  ; Zero X
-LOOP    BSR     ASCII   ; ..wait
-        INX             ;   approximately
-        BNE     LOOP    ;    5 seconds
-        BSR     BEGIN   ; Start of record
-        LDX     T_STRT  ; Set X to start of data
-        DEX             ;   to be punched
-WRITE   INX             ; point at next data byte
-        LDAA    0,X     ; Get data byte to A
-        JSR     PR_A    ; Punch (print) it
-        CPX     T_STOP  ; Was that the last byte ?
-        BNE     WRITE   ; No: do the next one
-        BSR     RD_A    ; Wait for input
-        JMP     START   ; (RETURN)
-BEGIN   LDAA    #'S     ; Punch 2 x `S` chars
-        JSR     PR_A    ;  to indicate start of
-        JSR     PR_A    ;   data block on tape
-BIN     LDAA    #$11    ; Set up ACIA for
-        STAA    CTRLA   ; 8.data, 2.stop, /.16 clock
-        RTS             ; RETURN
+PUNCH
+        RMB 47
 
 ; -----------------------------------------------------
-
 LOAD
-        RMB 34
-;        JSR     GETADD  ; Prompt for boundary addresses
-;        L_NXT   BSR     RD_A    ; Begin to read data
-;        CMPA    #'S     ;  until 2 x `S` characters
-;        BNE     L_NXT   ;   have
-;        BSR     RD_A    ;    been
-;        CMPA    #'S     ;     read
-;        BNE     L_NXT   ;
-;        BSR     BIN     ; Set up ACIA for binary data
-;        LDX     T_STRT  ; Set X to start of data
-;        DEX             ;  to be punched
-;READ    INX             ; point at next data byte
-;        BSR     RD_A    ; Read a byte into A
-;        STAA    0,X     ; Store it
-;        CPX     T_STOP  ; Was that the last byte ?
-;        BNE     READ    ; No: do the next one
-;        JMP     START   ; (RETURN)
+        RMB 36          ; spare byes
 
-; -----------------------------------------------------
-;       There is a gap in the MINMON listing here
-;       Next free byte is FD29, RD_A starts at FD2B
-;       So...
-        NOP             ; FD29
-        NOP             ; FD2A
 ; -----------------------------------------------------
 ; Read byte from ACIA.A to A
 ;FD2B
@@ -373,43 +331,10 @@ SUB     LDX     #T_X    ; Point X to start of T_X data
         SBCB    2,X     ; B = B - T_Y (high)
         RTS             ; RETURN
 
-; -----------------------------------------------------
-CMD_Z   BSR     PRP     ; Print " P " for PC
-        JSR     ZIN     ; Get PC address
-        STAA    T_P     ; Save it
-        BSR     PRD     ; Print " D " for Destination
-        JSR     ZIN     ; Get Destination address
-        SUBA    T_P     ; Destination minus PC to A
-        BLS     BACK    ; Go to `Backwards` process ?
-FORWRD  SUBA    #$02    ; Destination minus 2 to A
-        BMI     ERROR   ; If Destination > 127 : ERROR
-PRINT   STAA    T_P     ; Save Destination
-        JSR     STRING  ; Print string...
-        FCC     " R="   ;
-        FCB     $FF     ; End-of-string
-        LDAA    T_P     ; Get Destination to A
-        JSR     ZOUT    ; Print it (in hex)
-STARTC  JMP     START   ; Return to MINIMON
-BACK    SUBA    #$02    ; Destination minus 2 to A
-        BMI     PRINT   ; If Destination >= 128 : goto PRINT
-ERROR   JSR     STRING  ; Print string...
-        FCC     " RAN"  ;
-        FCC     "GE!"   ;
-        FCB     #$FF    ; End-of-string
-        BRA     STARTC  ; Effecively `JMP START`
+        RMB 81          ; previously X and Z commands
 
 ; -----------------------------------------------------
-CMD_X   BSR     PRP     ; Print " P " for PC
-        JSR     RD_X    ; Get PC address to X (16.bit)
-        STX     T_Y     ; Store it
-        BSR     PRD     ; Print " D " for Destination
-        JSR     RD_X    ; Get Destination address
-        STX     T_X     ; Store it
-        JSR     SUB     ; X = T_X minus T_Y
-        BMI     BACK    ; Go to `Backwards` process ?
-        BRA     FORWRD  ; Go to `Forwards` process
-
-; -----------------------------------------------------
+;FE33
 PRP     JSR     STRING  ; Print string...
         FCC     " P "   ;
         FCB     $FF     ; End-of-string
@@ -472,22 +397,10 @@ NEWLINE STX     T_SAVE  ; Save X
         JSR     PRX     ; Print X
         RTS             ; RETURN
 
-; -----------------------------------------------------
 
-ALTER   JSR     RD_X    ; Get address to X (16.bit)
-A_NEW   CLR     T_R     ; T_R = 0
-        BSR     NEWLINE ; Print newline starting with X value
-        JSR     PRSP    ; print a space
-A_GET   JSR     ZIN     ; Get Destination address
-        STAA    0,X     ; Store Acc.A in addr pointed to by X
-        INX             ; X = X + 1
-        LDAA    T_R     ; A = T_R
-        CMPA    #$26    ; At end of line ?
-        BLE     A_GET   ; No - Carry on
-        BRA     A_NEW   ; Yes - Print a new line
+        RMB 26          ; previously the ALTER command
 
-; -----------------------------------------------------
-
+;FEC2
 GO      JSR     RD_X    ; Get address to X (16.bit)
         JSR     RD_CMD  ; Right address ?
         LDAA    T_Z+1   ; T_Z.low to A
@@ -598,20 +511,17 @@ L2      CMPA    #'R     ; Is it `R`
         BNE     L3      ; No: Skip
         JMP     REGPRT  ;
 L3      CMPA    #'B     ; Is it `B` ?
-        BNE     L4      ; No: Skip
-        JMP     BLKMOV  ;
-L4      CMPA    #'Z     ; Is it `Z` ?
-        BNE     L5      ; No: Skip
-        JMP     CMD_Z   ;
-L5      CMPA    #'X     ; Is it `X` ?
         BNE     L6      ; No: Skip
-        JMP     CMD_X   ;
+        JMP     BLKMOV  ;
+
+        RMB 14          ; enough room for two commands
+
 L6      CMPA    #'M     ; Is it `M` ?
-        BNE     L7      ; No: Skip
-        JMP     MODIFY  ;
-L7      CMPA    #'A     ; Is it `A` ?
         BNE     L8      ; No: Skip
-        JMP     ALTER   ;
+        JMP     MODIFY  ;
+
+        RMB 7           ; enough room for one command
+
 L8      CMPA    #'G     ; Is it `G` ?
         BNE     L9      ; No: Skip
         JMP     GO      ;
