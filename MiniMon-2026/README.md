@@ -64,3 +64,5 @@ An SREC format file consists of a series of ASCII text records. The records have
 * Address - four / six / eight hex digits as determined by the record type. The address bytes are arranged in big-endian format.
 * Data - a sequence of 2n hex digits, for n bytes of the data. For S1/S2/S3 records, a maximum of 32 bytes per record is typical since it will fit on an 80 character wide terminal screen, though 16 bytes would be easier to visually decode each byte at a specific address.
 * Checksum - two hex digits, the least significant byte of ones' complement of the sum of the values represented by the two hex digit pairs for the Byte Count, Address and Data fields. In the C programming language, the sum is converted into the checksum by: 0xFF - (sum & 0xFF)
+
+Note that the S9 terminating record is ignored by the SREC parser within the monitor and can be removed from the file if so desired. Similarly the terminating record is not created by the PUNCH command.

@@ -447,11 +447,7 @@ PUNCH       EQU     *           ; P = Punch : Output an S19 file
             CPX     T_STOP
             BNE     .fOut1
 
-;          JSR     STRING      ; Output `S9` record...
-;          FCB     C_CR,C_LF   ; c/r l/f
-;          FCB     'S,'9       ; S9 = <eof>
-;          FCB     $FF         ; End-Of-String
-
+            ; Note that the terminating record is not sent
             JSR     STARTS      ;Go to START (via `S` code)
             BRA     .fOutHx2
 
