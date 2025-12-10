@@ -3,11 +3,11 @@
 09-12-2025 JN - THIS IS A WORK IN PROGRESS !!! DO NOT USE!!!
 
 This is an updated version of MINIMON with *S Record Format* LOAD and PUNCH routines. All entry points and Lables as published in
-the MINIMO documentation have been preserved with the exception of the LOAD and PUNCH commands, see list below.
+the MINIMON documentation have been preserved with the exception of the LOAD and PUNCH commands, see list below.
 
 In order to make space for the additional code required, the ALTER and OFFSET CALCULATION commands have been removed.
 The MODIFY command has very similar functionality to ALTER making ALTER unnecessary, and the OFFSET CALCULATION routines
-(commands X and Y) have been removed as all cross-assemblers perform this calculation automatically.
+(commands X and Y) have been removed as all cross-assemblers perform these calculations automatically.
 
 The Terminal and any devices sending S19 format files should be configured for 8 Data Bits, No Parity, 2 Stop Bits.
 
