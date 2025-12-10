@@ -2,7 +2,7 @@
 
 09-12-2025 JN - THIS IS A WORK IN PROGRESS !!! DO NOT USE!!!
 
-This is an updated version of MINIMON with S19 LOAD and PUNCH routines. All entry points and Lables as published in
+This is an updated version of MINIMON with *S Record Format* LOAD and PUNCH routines. All entry points and Lables as published in
 the MINIMO documentation have been preserved with the exception of the LOAD and PUNCH commands, see list below.
 
 In order to make space for the additional code required, the ALTER and OFFSET CALCULATION commands have been removed.
@@ -27,7 +27,7 @@ ASCII   FC9E - Convert value in A to 2 x ASCII hex digits in A and B.
 PRX     FCBB - Print value in X as 4 hex digits.
 ZOUT    FCC9 - Print value in A as 2 hex digits.
 PUNCH   FDE2 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
-LOAD    FCE3 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
+LOAD    FCE6 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
 BIN     FD01 - Inistialise ACIA(a) to 8N2 (MiniMon terminal originally used 7E1 for normal interaction).
 RD_A    FD2B - Read byte from ACIA.A to A.
 REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
@@ -49,4 +49,18 @@ START   FF8F - Restarts MniMon.
 
 **Notes:**
 
+## S Record Format
 
+```text
+Record structure
+S  Type  Byte  Count  Address  Data  Checksum
+```
+
+An SREC format file consists of a series of ASCII text records. The records have the following structure from left to right:
+
+* Record start - each record begins with an uppercase letter "S" character (ASCII 0x53) which stands for "Start-of-Record".
+* Record type - single numeric digit "0" to "9" character (ASCII 0x30 to 0x39), defining the type of record. See table below.
+* Byte count - two hex digits ("00" to "FF"), indicating the number of bytes (hex digit pairs) that follow in the rest of the record (address + data + checksum). This field has a minimum value of 3 (2 for 16-bit address field plus 1 checksum byte), and a maximum value of 255 (0xFF). "00" / "01" / "02" are illegal values.
+* Address - four / six / eight hex digits as determined by the record type. The address bytes are arranged in big-endian format.
+* Data - a sequence of 2n hex digits, for n bytes of the data. For S1/S2/S3 records, a maximum of 32 bytes per record is typical since it will fit on an 80 character wide terminal screen, though 16 bytes would be easier to visually decode each byte at a specific address.
+* Checksum - two hex digits, the least significant byte of ones' complement of the sum of the values represented by the two hex digit pairs for the Byte Count, Address and Data fields. In the C programming language, the sum is converted into the checksum by: 0xFF - (sum & 0xFF)

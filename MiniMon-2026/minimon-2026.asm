@@ -12,6 +12,7 @@
 ; 2 x ACIAs :-
 ;
 
+
 CTRLA   EQU     $F401   ; ACIA.A Ctrl/Status
 CTRLB   EQU     $F403   ; ACIA.B Ctrl/Status
 DATAA   EQU     $F400   ; ACIA.A Data register
@@ -223,13 +224,31 @@ PRX     STX     T_TMPX  ; Save X
 ; -----------------------------------------------------
 ; Print value in A as 2 hex digits
 ;FCC9
-ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
-        STAB    T_M     ; Save B
-        JSR     PR_A    ; Print byte in A
-        LDAA    T_M     ; Get 2nd byte into A
-        JSR     PR_A    ; Print byte in A
-        RTS             ; RETURN
+;ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
+;        STAB    T_M     ; Save B
+;        JSR     PR_A    ; Print byte in A
+;        LDAA    T_M     ; Get 2nd byte into A
+;        JMP     PR_A    ; Print byte in A
 
+
+; -----------------------------------------------------
+; Print value in A as 2 hex digits, Preserve B
+; X unchanged by called routines
+; This is 1 byte shorter that ZOUT
+ZOUT        PSHB                ; Save B to STACK
+            PSHA                ; Save A to STACK
+            BSR     ASCII       ; Convert A to ASCII in A & B
+            PSHB                ; Save B (2nd byte) to STACK
+            JSR     PR_A        ; Print byte in A
+            PULA                ; Get 2nd byte into A from STACK
+            JSR     PR_A        ; Print byte in A
+            PULA                ; Recover A from STACK
+            PULB                ; Recover B from STACK
+            RTS                 ; RETURN
+
+            NOP
+            NOP
+            NOP
 
 ; second part of S19 version of ZIN
 
@@ -275,7 +294,7 @@ STARTS      JMP     START       ; Go to START
 PR_QM       LDAA #'?            ; Put '?' character in A
             JMP     PR_A        ; Print it and return via PR_As RTS
 
-            RMB 3
+
 
 
 ; -----------------------------------------------------
@@ -424,6 +443,12 @@ PUNCH       EQU     *           ; P = Punch : Output an S19 file
             DEX
             CPX     T_STOP
             BNE     .fOut1
+
+;          JSR     STRING      ; Output `S9` record...
+;          FCB     C_CR,C_LF   ; c/r l/f
+;          FCB     'S,'9       ; S9 = <eof>
+;          FCB     $FF         ; End-Of-String
+
             JSR     STARTS      ;Go to START (via `S` code)
             BRA     .fOutHx2
 
@@ -486,7 +511,21 @@ NEWLINE STX     T_SAVE  ; Save X
             INX                 ; Increment X
             RTS                 ; RETURN
 
-        RMB 15          ; previously the ALTER command
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
 
 ;FEC2
 GO      JSR     RD_X    ; Get address to X (16.bit)
@@ -618,7 +657,28 @@ L10     CMPA    #'D     ; Is it `D` ?
         BNE     START   ; No: Give up - ignore comand
         JMP     DUMP    ;
 
-        RMB 22          ; padded for .bin and .ptp files
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
 
 ; -----------------------------------------------------
         ;ORG     $FFF8   ; 6800 interrupt vectors
