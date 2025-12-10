@@ -130,30 +130,26 @@ LETTB   ADDB    #$09    ; Make Acc.B a binary
 ; -----------------------------------------------------
 ; Read a 4 digit HEX value, put result into X
 
-        RMB 26
-
-;ZIN     BSR     RD_CMD  ; Read a character
-;        BSR     VHEX    ; Is it a hex character ?
-;        BCS     Z_PRQM  ; No: go to print `?`
-;        STAA    T_Q     ; Yes: Save Acc.A
-;        BSR     RD_CMD  ; Read 2nd character
-;        BSR     VHEX    ; Is it a hex character ?
-;        BCS     Z_PRQM  ; No: go to print `?`
-;        TAB             ; Yes: Put it into Acc.B
-;        LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
-;        BSR     BINARY  ; Convert A:B to binary
-;        RTS             ; RETURN
-;Z_PRQM  LDAA    #'?     ; Load `?` into A
-;        BSR     PR_A    ; Print it
-;        BRA     ZIN     ; Go back to start of hex input
+ZIN         BSR     RD_CMD      ; Read a character
+            BSR     VHEX        ; Is it a hex character ?
+            BCS     Z_PRQM      ; No: go to print `?`
+            STAA    T_Q         ; Save it
+            BSR     RD_CMD      ; Read 2nd character
+            BSR     VHEX        ; Is it a hex character ?
+            BCS     Z_PRQM      ; No: go to print `?`
+            TAB                 ; Yes: Put it into B
+            LDAA    T_Q         ; Retrieve 1st hex char to A
+            JMP     ZIN2        ; S19 version of ZIN is longer
+Z_PRQM      JSR     PR_QM       ; Print "?"
+            JMP     ZIN      ; Go back to start of hex input
 
 ; -----------------------------------------------------
 ; Read 4 hex digits and put value into X
 ;FC65
 RD_X    JSR     PRSP    ; Print a space
-        JSR     ZIN     ; Read 2 digit hex value into A
+        BSR     ZIN     ; Read 2 digit hex value into A
         STAA    T_Z     ; Save byte (most significant)
-        JSR     ZIN     ; Read 2 digit hex value into A
+        BSR     ZIN     ; Read 2 digit hex value into A
         STAA    T_Z+1   ; Save byte (least significant)
         LDX     T_Z     ; Load full 4 hex value into X
         RTS             ; RETURN
@@ -236,31 +232,56 @@ ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
 ; -----------------------------------------------------
 ;RD_HEX2 This is a new ZIN and is called RD_HEX2 on GruntMon
 
-ZIN         JSR     RD_CMD      ; Read a character
-            JSR     VHEX        ; Is it a hex character ?
-            BCS     Z_PRQM      ; No: go to print `?`
-            STAA    T_Q         ; Save it
-            JSR     RD_CMD      ; Read 2nd character
-            JSR     VHEX        ; Is it a hex character ?
-            BCS     Z_PRQM      ; No: go to print `?`
-            TAB                 ; Yes: Put it into B
-            LDAA    T_Q         ; Retrieve 1st hex char to A
-            JSR     BINARY      ; Convert A:B to binary to A
-            TAB                 ; B=A
-            ADDB    b_Csum      ; Add this value
-            STAB    b_Csum      ; to the Checksum (for S19)
-            RTS                 ; RETURN
-Z_PRQM      JSR     PR_QM       ; Print "?"
-            BRA     ZIN     ; Go back to start of hex input
+PUNCH       EQU *
+            JMP CMD_P
+
+; -----------------------------------------------------
+; S19 format data load : Modded version of Mikbug code
+;
+LOAD        EQU     *           ; L = Load = Input an S19 file
+            JSR     STRING
+            FCC     " + "
+            FCB     $0D,$0A     ; c/r l/f
+            FCB     $FF         ; End-Of-String
+.sRead      JSR     RD_CMD ; Read+Echo, test for '.'
+            CMPA    #'S         ; Is it `S` ?
+            BNE     .sRead      ; No: Keep waiting for `S`
+            JSR     RD_CMD      ; Read+Echo, test for '.'
+            CMPA    #'9         ; Is it `9` ?  ( `S9` record )
+            BEQ     .sDone      ; Yes: End-data, Back to START
+            CMPA    #'1         ; Is it `1` ?  ( `S1` record )
+            BNE     .sRead      ; No: Wait for next `S`
+            CLR     b_Csum      ; Clear checksum
+            JSR     ZIN         ; Read 2xHex = data.byte count to A
+            SUBA    #2          ; Subtract 2 (to get bytes left in line)
+            STAA    b_Count     ; Store byte count
+            JSR     RD_X        ; Read 4xHex digit address to X
+.sDoByt     JSR     ZIN         ; Read 2xHex digits, value to A
+            DEC     b_Count     ; Decrement our byte count
+            BEQ     .sChk       ; If end-of-line, go look at checksum
+            STAA    0,X         ; Save byte where X points
+            INX                 ; Point X at next byte
+            BRA     .sDoByt     ; Go get next byte
+.sChk       INC     b_Csum      ; Add 1 to checksum
+            BEQ     .sRead      ; OK: Go read next record
+            JSR     PR_QM       ; Print "?"
+.sDone      EQU     *
+STARTS      JMP     START       ; Go to START
 
 PR_QM       LDAA #'?              ; Put '?' character in A
 PR_BYTE     JSR     PR_A    ; Print it
             RTS             ; RETURN
 
+            NOP          ; previously X and Z commands
 
-PUNCH
-LOAD
-        RMB 38
+; second part of S19 version of ZIN
+
+ZIN2        JSR     BINARY      ; Convert A:B to binary to A
+            TAB                 ; B=A
+            ADDB    b_Csum      ; Add this value
+            STAB    b_Csum      ; to the Checksum (for S19)
+            RTS                 ; RETURN
+
 
 ; -----------------------------------------------------
 ; Read byte from ACIA.A to A
@@ -562,49 +583,10 @@ L10     CMPA    #'D     ; Is it `D` ?
 ; This is the new load and save routines to be integrated into this monitor
 ; this will need to relocated to fit in the original Load and Punch routines
 ;=============================================================================
-
-; Spare bytes for LOAD and PUNCH commands are as follows
-; Original LOAD command space = 36 Bytes
-; Original PUNCH command space = 47 Bytes
-; Addition space where old X and Z commands were 81 bytes
-; Additional space where the old ALTER command was = 26 Bytes
-; Removed old ZIN releases 26 bytes
-; Removed olu ZOUT releases 13 bytes
-; Total free bytes = 229 bytes
+; Spare bytes: FD19=7, FDE2=81, EEEA=26
+; Total= 114
 
 
-; -----------------------------------------------------
-; S format data load : Modded version of Mikbug code
-;
-CMD_L       EQU     *           ; L = Load = Input an S19 file
-            JSR     STRING
-            FCC     " + "
-            FCB     $0D,$0A     ; c/r l/f
-            FCB     $FF         ; End-Of-String
-.sRead      JSR     RD_CMD ; Read+Echo, test for '.'
-            CMPA    #'S         ; Is it `S` ?
-            BNE     .sRead      ; No: Keep waiting for `S`
-            JSR     RD_CMD      ; Read+Echo, test for '.'
-            CMPA    #'9         ; Is it `9` ?  ( `S9` record )
-            BEQ     .sDone      ; Yes: End-data, Back to START
-            CMPA    #'1         ; Is it `1` ?  ( `S1` record )
-            BNE     .sRead      ; No: Wait for next `S`
-            CLR     b_Csum      ; Clear checksum
-            JSR     ZIN         ; Read 2xHex = data.byte count to A
-            SUBA    #2          ; Subtract 2 (to get bytes left in line)
-            STAA    b_Count     ; Store byte count
-            JSR     RD_X        ; Read 4xHex digit address to X
-.sDoByt     JSR     ZIN         ; Read 2xHex digits, value to A
-            DEC     b_Count     ; Decrement our byte count
-            BEQ     .sChk       ; If end-of-line, go look at checksum
-            STAA    0,X         ; Save byte where X points
-            INX                 ; Point X at next byte
-            BRA     .sDoByt     ; Go get next byte
-.sChk       INC     b_Csum      ; Add 1 to checksum
-            BEQ     .sRead      ; OK: Go read next record
-            JSR     PR_QM       ; Print "?"
-.sDone      EQU     *
-STARTS      JMP     START       ; Go to START
 
 ; -----------------------------------------------------
 ; S format data output : Modded version of Mikbug code
@@ -661,7 +643,7 @@ CMD_P       EQU     *           ; P = Punch : Output an S19 file
 ;x          FCB     'S,'9       ; S9 = <eof>
 ;x          FCB     C_EOS       ; End-Of-String
 
-            BSR     STARTS      ;Go to START (via `S` code)
+            JSR     STARTS      ;Go to START (via `S` code)
 
 ;- - - - - - - - - - - - - - - - - - - - - - - - -
 ; 1) Update checksum
@@ -676,8 +658,8 @@ CMD_P       EQU     *           ; P = Punch : Output an S19 file
             INX                 ; Increment X
             RTS                 ; RETURN
 
-; -----------------------------------------------------
-; Read a 2 digit HEX value, put result into X
+
+
 
 
 
