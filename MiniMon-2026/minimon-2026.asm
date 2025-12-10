@@ -73,7 +73,7 @@ PSTACK  RMB     2       ;   "     "     "     SWI etc
 
 ;
 ; -----------------------------------------------------
-        ORG     $EC00   ; Start of ROM based code
+        ORG     $FC00   ; Start of ROM based code
 ; -----------------------------------------------------
 RD_CMD  JSR     RD_A    ; Input one character 
         BEQ     RD_CMD  ; Ignore paper tape follower
