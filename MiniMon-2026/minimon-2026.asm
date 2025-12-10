@@ -264,7 +264,7 @@ ZIN2        JSR     BINARY      ; Convert A:B to binary to A
 ;
 LOAD        EQU     *           ; L = Load = Input an S19 file
             JSR     STRING
-            FCC     " + "
+;           FCC     " + "      ; not needed
             FCB     $0D,$0A     ; c/r l/f
             FCB     $FF         ; End-Of-String
 .sRead      JSR     RD_CMD      ; Read+Echo, test for '.'
@@ -294,6 +294,9 @@ STARTS      JMP     START       ; Go to START
 PR_QM       LDAA #'?            ; Put '?' character in A
             JMP     PR_A        ; Print it and return via PR_As RTS
 
+            NOP
+            NOP
+            NOP
 
 
 
