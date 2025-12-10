@@ -36,21 +36,21 @@ JNMI    EQU     $F0DD   ; Space for jump to NMI sub.
 JIRQ    EQU     $F0E0   ; Space for jump to IRQ sub.
 
 ; -----------------------------------------------------
-        ORG     $F0D5   ; Start of RAM variables
+        ORG     $F0DE   ; Start of RAM variables
 ; -----------------------------------------------------
 ; Note: Temp storage variables renamed to get T_ prefix
 ;       as some were sharing names with labels or registers
 ;
 ; New additions to support S19 additions
-d_RdFstX    RMB     2       ;  "  RD_ByteFast X
-d_Hx4X      RMB     2       ;  "  RDX4 PRX4
+;d_RdFstX    RMB     2       ;  "  RD_ByteFast X
+;d_Hx4X      RMB     2       ;  "  RDX4 PRX4
 d_TW        RMB     2       ;  "  S19
-d_STOP      RMB     2       ;  "  ASK_Addrs `Stop:`
+;d_STOP      RMB     2       ;  "  ASK_Addrs `Stop:`
 b_Csum      RMB     1       ;  "  S19
 b_Count     RMB     1       ;  "  S19
 b_Temp      RMB     1       ;  "  S19
-d_START     RMB     2       ;  "  ASK_Start `Start:`
-b_Q         RMB     1       ;  "  ZIN,DUMP
+;d_START     RMB     2       ;  "  ASK_Start `Start:`
+;b_Q         RMB     1       ;  "  ZIN,DUMP
 
 T_SAVE  RMB     2       ; Temp storage for NEWLINE
 T_P     RMB     1       ;   "     "     "  Z,X
@@ -218,31 +218,49 @@ ADD     ADDB    #$37    ; Make it an ASII letter
 
 PRX     STX     T_TMPX  ; Save X
         LDAA    T_TMPX  ; Get high order byte to A
-        JSR     ZOUT    ; Print A as 2 hex digits
+        BSR     ZOUT    ; Print A as 2 hex digits
         LDAA    T_TMPX+1 ; Get low order byte to A
-        JSR     ZOUT    ; Print A as 2 hex digits
+        BSR     ZOUT    ; Print A as 2 hex digits
         RTS             ; RETURN
 
 ; -----------------------------------------------------
 ; Print value in A as 2 hex digits
 
-        RMB 13
-
-;ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
-;        STAB    T_M     ; Save B
-;        JSR     PR_A    ; Print byte in A
-;        LDAA    T_M     ; Get 2nd byte into A
-;        JSR     PR_A    ; Print byte in A
-;        RTS             ; RETURN
+ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
+        STAB    T_M     ; Save B
+        JSR     PR_A    ; Print byte in A
+        LDAA    T_M     ; Get 2nd byte into A
+        JSR     PR_A    ; Print byte in A
+        RTS             ; RETURN
 
 ; -----------------------------------------------------
+;RD_HEX2 This is a new ZIN and is called RD_HEX2 on GruntMon
+
+ZIN         JSR     RD_CMD      ; Read a character
+            JSR     VHEX        ; Is it a hex character ?
+            BCS     Z_PRQM      ; No: go to print `?`
+            STAA    T_Q         ; Save it
+            JSR     RD_CMD      ; Read 2nd character
+            JSR     VHEX        ; Is it a hex character ?
+            BCS     Z_PRQM      ; No: go to print `?`
+            TAB                 ; Yes: Put it into B
+            LDAA    T_Q         ; Retrieve 1st hex char to A
+            JSR     BINARY      ; Convert A:B to binary to A
+            TAB                 ; B=A
+            ADDB    b_Csum      ; Add this value
+            STAB    b_Csum      ; to the Checksum (for S19)
+            RTS                 ; RETURN
+Z_PRQM      JSR     PR_QM       ; Print "?"
+            BRA     ZIN     ; Go back to start of hex input
+
+PR_QM       LDAA #'?              ; Put '?' character in A
+PR_BYTE     JSR     PR_A    ; Print it
+            RTS             ; RETURN
+
 
 PUNCH
-        RMB 47
-
-; -----------------------------------------------------
 LOAD
-        RMB 36          ; spare byes
+        RMB 38
 
 ; -----------------------------------------------------
 ; Read byte from ACIA.A to A
@@ -555,23 +573,6 @@ L10     CMPA    #'D     ; Is it `D` ?
 ; Total free bytes = 229 bytes
 
 
-; 31 bytes
-RD_ByteFast EQU     *           ; Read ONE Character (fast)
-            STX     d_RdFstX    ; Save X
-            LDX     DATAA       ; X = addr of current ACIA
-.rdChkF     LDAA    1,X         ; Get ACIA status byte DATAA + 1
-            ASRA                ; Shift low order bit to C
-            BCC     .rdChkF     ; Loop until C set
-            LDAA    0,X         ; Get the data byte to A
-            JSR     PR_BYTE     ; Echo character ...echo...
-            ANDA    #$7F        ; Strip off `parity` bit, if present
-            BEQ     .rdChkF     ; Ignore paper tape follower
-            CMPA    #'.         ; Was it
-            BNE     .rfDone     ;  a fullstop ?
-            JMP     START       ; Yes: Go to START
-.rfDone     LDX     d_RdFstX    ; Restore X
-            RTS                 ; RETURN
-
 ; -----------------------------------------------------
 ; S format data load : Modded version of Mikbug code
 ;
@@ -580,10 +581,10 @@ CMD_L       EQU     *           ; L = Load = Input an S19 file
             FCC     " + "
             FCB     $0D,$0A     ; c/r l/f
             FCB     $FF         ; End-Of-String
-.sRead      BSR     RD_ByteFast ; Read+Echo, test for '.'
+.sRead      JSR     RD_CMD ; Read+Echo, test for '.'
             CMPA    #'S         ; Is it `S` ?
             BNE     .sRead      ; No: Keep waiting for `S`
-            BSR     RD_ByteFast ; Read+Echo, test for '.'
+            JSR     RD_CMD      ; Read+Echo, test for '.'
             CMPA    #'9         ; Is it `9` ?  ( `S9` record )
             BEQ     .sDone      ; Yes: End-data, Back to START
             CMPA    #'1         ; Is it `1` ?  ( `S1` record )
@@ -609,12 +610,12 @@ STARTS      JMP     START       ; Go to START
 ; S format data output : Modded version of Mikbug code
 ;
 CMD_P       EQU     *           ; P = Punch : Output an S19 file
-            JSR     ASK_Addrs   ; Prompt for "Start:","Stop:"
-            LDX     d_START     ; Get start address
+            JSR     GETADD      ; Prompt for "Start:","Stop:"
+            LDX     T_STRT     ; Get start address
             STX     d_TW        ; save it to work area
-.fOut1      LDAA    d_STOP+1    ; get low order of end address
+.fOut1      LDAA    T_STOP+1    ; get low order of end address
             SUBA    d_TW+1      ; Subtract low order start
-            LDAB    d_STOP      ; ( carry not affected by LDA )
+            LDAB    T_STOP      ; ( carry not affected by LDA )
             SBCB    d_TW        ; Subtract with Carry
             BNE     .fOut2
             CMPA    #16
@@ -652,7 +653,7 @@ CMD_P       EQU     *           ; P = Punch : Output an S19 file
             PULB
             LDX     d_TW
             DEX
-            CPX     d_STOP
+            CPX     T_STOP
             BNE     .fOut1
 
 ;x          JSR     PR_STRING   ; Output `S9` record...
@@ -678,66 +679,8 @@ CMD_P       EQU     *           ; P = Punch : Output an S19 file
 ; -----------------------------------------------------
 ; Read a 2 digit HEX value, put result into X
 
-;RD_HEX2 This is a new ZIN and is called RD_HEX2 on GruntMon
-
-ZIN         EQU     *
-            JSR     RD_ByteFast ; Read a character
-            JSR     VHEX        ; Is it a hex character ?
-            BCS     Z_PRQM      ; No: go to print `?`
-            STAA    T_Q         ; Save it
-            JSR     RD_ByteFast ; Read 2nd character
-            JSR     VHEX     ; Is it a hex character ?
-            BCS     Z_PRQM     ; No: go to print `?`
-            TAB                 ; Yes: Put it into B
-            LDAA    T_Q         ; Retrieve 1st hex char to A
-            JSR     BINARY      ; Convert A:B to binary to A
-            TAB                 ; B=A
-            ADDB    b_Csum      ; Add this value
-            STAB    b_Csum      ; to the Checksum (for S19)
-            RTS                 ; RETURN
-Z_PRQM      JSR     PR_QM       ; Print "?"
-            BRA     ZIN     ; Go back to start of hex input
-
-PR_QM       LDAA #'?              ; Put '?' character in A
-PR_BYTE     JSR     PR_A    ; Print it
-            RTS             ; RETURN
-
-ASK_Addrs   BSR     ASK_Start
-            JSR     STRING   ; Print string...
-            FCC     " Stop:"
-            FCB     $FF         ; End-Of-String
-            JSR     RD_X        ; Read 4 digit HEX addr value
-            STX     d_STOP      ; Save it
-            RTS                 ; RETURN
-
-ASK_Start   JSR     STRING      ; Print string...
-            FCC     " Start:"
-            FCB     $FF         ; End-Of-String
-            JSR     RD_X        ; Read 4 digit HEX addr value
-            STX     d_START     ; Save it
-            RTS
 
 
-; -----------------------------------------------------
-; Print value in A as 2 hex digits, Preserve B
-; X unchanged by called routines
-
-;PR_HEX2 Renamed to ZOUT as per old MiniMon
-
-ZOUT        PSHB                ; Save B to STACK
-            JSR     ASCII       ; Convert A to ASCII in A & B
-            PSHB                ; Save B (2nd byte) to STACK
-            BSR     PR_BYTE     ; Print byte in A
-            PULA                ; Get 2nd byte into A from STACK
-            BSR     PR_BYTE     ; Print byte in A
-            PULA                ; Recover A from STACK
-            PULB                ; Recover B from STACK
-            RTS                 ; RETURN
-
-PR_SP       JSR     STRING      ; Print...
-            FCB     $20         ;  SPACE
-            FCB     $FF         ; End-Of-String
-            RTS                 ; RETURN
 
 ; -----------------------------------------------------
         ORG     $FFF8   ; 6800 interrupt vectors
