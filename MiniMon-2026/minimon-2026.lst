@@ -582,7 +582,7 @@ output:  minimon-2026.s19
 0581 ff86 b7 f4 03                   STAA    CTRLB   ;   ACIA.B
 0582 ff89 bf f0 fd           SWI     STS     PSTACK  ; Save callers stack pointer
 0583 ff8c 8e f0 d0           START   LDS     #STACK  ; Set up stack for MINMON
-0584 ff8f 86 11                      LDAA    #$11    ; Set up:
+0584 ff8f 86 11                      LDAA    #$11    ; Set up: 8N2
 0585 ff91 b7 f4 01                   STAA    CTRLA   ;   ACIA.A
 0586 ff94 bd fc 76                   JSR     STRING  ; Print string...
 0587 ff97 0d 0a 00 2a                FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`

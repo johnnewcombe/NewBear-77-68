@@ -581,7 +581,7 @@ RESET   LDS     #STACK  ; Set up stack for MINIMON
         STAA    CTRLB   ;   ACIA.B
 SWI     STS     PSTACK  ; Save callers stack pointer
 START   LDS     #STACK  ; Set up stack for MINMON
-        LDAA    #$11    ; Set up:
+        LDAA    #$11    ; Set up: 8N2
         STAA    CTRLA   ;   ACIA.A
         JSR     STRING  ; Print string...
         FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`

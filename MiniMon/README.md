@@ -7,10 +7,8 @@ RD_CMD  FC00 - Inputs a character from the MiniMon prompt and echos the characte
                 full stop is entered. The value is returned in A.
 PR_A    FC0F - Sends the character in A to ACIA(a). Address T_R contains the number of characters printed.character
 VHEX    FC1D - Checks that A contains a HEX character
-BINARY  FC31 - Converts A:B to binary?
-    Q Is this correct?
-ZIN     FC49 - Reads a 4 digit hex value from ACIA(a) and puts it into A.
-    Q Is this correct or is it 2 digit hex value?
+BINARY  FC31 - Converts ASCII hex digits in A and B to binary?
+ZIN     FC49 - Reads a 2 digit hex value from ACIA(a) and puts it into A.
 RD_X    FC65 - Read 4 hex digits value from ACIA(a) and put value into X.
 STRING  FC76 - Prints a string. The string should follow JSR and be terminated with $FF.
 GETADD  FC89 - Get Address, read 4 digit hex value.
