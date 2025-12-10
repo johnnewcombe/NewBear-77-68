@@ -511,19 +511,14 @@ NEWLINE STX     T_SAVE  ; Save X
             INX                 ; Increment X
             RTS                 ; RETURN
 
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
+VERSION EQU " Ver 1.0"
+
+; Prints Vesion to the console
+VER         JSR STRING
+            FCC    " 1.0.0"    ;
+            FCB     $FF     ; End-of-string
+            JMP     START
+
             NOP
             NOP
 
@@ -642,8 +637,11 @@ L2      CMPA    #'R     ; Is it `R`
         BNE     L3      ; No: Skip
         JMP     REGPRT  ;
 L3      CMPA    #'B     ; Is it `B` ?
-        BNE     L6      ; No: Skip
+        BNE     L4      ; No: Skip
         JMP     BLKMOV  ;
+L4      CMPA    #'V     ; Is it `V` ?
+        BNE     L6      ; No: Skip
+        JMP     VER     ;
 L6      CMPA    #'M     ; Is it `M` ?
         BNE     L8      ; No: Skip
         JMP     MODIFY  ;
@@ -657,13 +655,6 @@ L10     CMPA    #'D     ; Is it `D` ?
         BNE     START   ; No: Give up - ignore comand
         JMP     DUMP    ;
 
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
             NOP
             NOP
             NOP
