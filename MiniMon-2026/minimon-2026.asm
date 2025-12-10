@@ -75,6 +75,7 @@ PSTACK  RMB     2       ;   "     "     "     SWI etc
 ; -----------------------------------------------------
         ORG     $FC00   ; Start of ROM based code
 ; -----------------------------------------------------
+;FC00
 RD_CMD  JSR     RD_A    ; Input one character 
         BEQ     RD_CMD  ; Ignore paper tape follower
         BSR     PR_A    ; Echo character
@@ -85,7 +86,7 @@ END_RD  RTS             ;  No: RETURN
 
 ; -----------------------------------------------------
 ; Print character in A
-
+;FC0F
 PR_A    LDAB    CTRLA   ; Get ACIA(a) status byte
         BITB    #02     ; Is it busy ?
         BEQ     PR_A    ; Yes: Try again
@@ -95,7 +96,7 @@ PR_A    LDAB    CTRLA   ; Get ACIA(a) status byte
 
 ; -----------------------------------------------------
 ; Check A contains a HEX character,  Set C.bit on fail
-
+;FC1D
 VHEX    CMPA    #$2F    ; A < 30 ?
         BLE     NotHex  ;  not hex
         CMPA    #$39    ; A > 39 ?    
@@ -110,7 +111,7 @@ NotHex  SEC             ; Set C bit
         RTS             ; RETURN
 
 ; -----------------------------------------------------
-
+;FC31
 BINARY  BITA    #$30    ; Is it a letter ?
         BEQ     LETTA   ; Yes: Got to handle it
 RIDA    ASLA            ;  No: It is a number, so
@@ -129,7 +130,7 @@ LETTB   ADDB    #$09    ; Make Acc.B a binary
 
 ; -----------------------------------------------------
 ; Read a 4 digit HEX value, put result into X
-
+;FC49
 ZIN         BSR     RD_CMD      ; Read a character
             BSR     VHEX        ; Is it a hex character ?
             BCS     Z_PRQM      ; No: go to print `?`
@@ -174,7 +175,7 @@ ENDSTR  INS             ; Clean up stack...
         JMP     1,X     ; Jump back to caller (RETURN)
 
 ; -----------------------------------------------------
-; 
+; FC89
 GETADD  BSR     STRING  ; Print string...
         FCC     " S"    ;
         FCB     $FF     ; End-of-string
@@ -189,7 +190,7 @@ GETADD  BSR     STRING  ; Print string...
 
 ; -----------------------------------------------------
 ; Convert value in A to 2 x ASCII hex digits in A and B
-
+;FC9E
 ASCII   TAB             ; Copy A to B
         ANDA    #$F0    ; Clear low order 4 bits of A
         LSRA            ; Shift
@@ -211,7 +212,7 @@ ADD     ADDB    #$37    ; Make it an ASII letter
 
 ; -----------------------------------------------------
 ; Print value in X as 4 hex digits
-
+;FCBB
 PRX     STX     T_TMPX  ; Save X
         LDAA    T_TMPX  ; Get high order byte to A
         BSR     ZOUT    ; Print A as 2 hex digits
@@ -221,7 +222,7 @@ PRX     STX     T_TMPX  ; Save X
 
 ; -----------------------------------------------------
 ; Print value in A as 2 hex digits
-
+;FCC9
 ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
         STAB    T_M     ; Save B
         JSR     PR_A    ; Print byte in A
@@ -231,7 +232,7 @@ ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
 
 ; -----------------------------------------------------
 ;RD_HEX2 This is a new ZIN and is called RD_HEX2 on GruntMon
-
+;FCD8
 PUNCH       EQU *
             JMP CMD_P
 
@@ -293,6 +294,7 @@ RD_A    LDAA    CTRLA   ; Get ACIA.A status byte
         RTS             ; RETURN
 
 ; -----------------------------------------------------
+;FD36
 REGPRT  BSR     PRSP    ; Print a space
         LDX     PSTACK  ; Point X at user's stack
         BSR     PR2     ; Print CC
@@ -305,6 +307,7 @@ REGPRT  BSR     PRSP    ; Print a space
         JMP     START   ; (RETURN) to MINIMON
 
 ; -----------------------------------------------------
+;FD4D
 PRSP    LDAA    #$20    ; Put space character in A
         JSR     PR_A    ; Print it
         RTS             ; RETURN
@@ -319,6 +322,7 @@ PR2     INX             ; Point X to next character
         RTS             ; RETURN
 
 ; -----------------------------------------------------
+;FD62
 BLKMOV  JSR     GETADD  ; Prompt for boundary addresses
         JSR     STRING  ; Print string...
         FCC     " To"   ;
@@ -368,6 +372,7 @@ DO_DOWN LDX     T_STOP  ; Get STOP address
         BRA     DO_DOWN ; Loop back for next byte
 
 ; -----------------------------------------------------
+;FDD6
 SUB     LDX     #T_X    ; Point X to start of T_X data
         LDAA    1,X     ; A = T_X (low)
         LDAB    0,X     ; B = T_X (high)
@@ -428,7 +433,7 @@ CMD_P       EQU     *           ; P = Punch : Output an S19 file
             JSR     STARTS      ;Go to START (via `S` code)
             BRA     .fOutHx2
 
-
+;FE43
 MODIFY  JSR     RD_X    ; Get address to X
 STRT    JSR     PRSP    ; Print a space
         CLR     T_R     ; T_R = 0
@@ -487,7 +492,7 @@ NEWLINE STX     T_SAVE  ; Save X
             INX                 ; Increment X
             RTS                 ; RETURN
 
-        RMB 12          ; previously the ALTER command
+        RMB 15          ; previously the ALTER command
 
 ;FEC2
 GO      JSR     RD_X    ; Get address to X (16.bit)
@@ -500,6 +505,7 @@ GOTO    LDX     PSTACK  ; Callers stack address to X
         LDS     PSTACK  ; Set up calling programs stack
         RTI             ; RETURN-FROM-INTERRUPT (SWI)
 
+;FED9
 CONTNU  JSR     RD_CMD  ; Read a byte (test for `.`)
         CMPA    #'1     ; Is it `1` ?
         BNE     IsIt2  ; No: go test for `2`
@@ -521,6 +527,7 @@ G_Is2   LDX     T_ABYT+2 ; Get addr. of break.point 2
         BRA     GOTO    ; Run user program
 
 ; -----------------------------------------------------
+;FF07
 DUMP    JSR     GETADD  ; Prompt for boundary addresses
         LDX     T_STRT  ;
 D_NEW   JSR     NEWLINE ; Print c/r l/f nul
@@ -544,6 +551,7 @@ D_CNT   LDAA    CTRLA   ; Read ACIA status
         BRA     D_NEW   ;  on a new line
 
 ; -----------------------------------------------------
+;FF39
 BRPTSET JSR     RD_CMD  ; Read a byte (test for `.`)
         CMPA    #'1     ; Is it `1` ?
         BNE     Is2b    ; No: go test for `2`
@@ -616,7 +624,7 @@ L10     CMPA    #'D     ; Is it `D` ?
         BNE     START   ; No: Give up - ignore comand
         JMP     DUMP    ;
 
-        RMB 25          ; padded for .bin and .ptp files
+        RMB 22          ; padded for .bin and .ptp files
 
 ; -----------------------------------------------------
         ;ORG     $FFF8   ; 6800 interrupt vectors
