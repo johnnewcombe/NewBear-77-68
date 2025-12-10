@@ -617,40 +617,16 @@ output:  minimon-2026.s19
 0616 ffda 26 b0                      BNE     START   ; No: Give up - ignore comand
 0617 ffdc 7e ff 04                   JMP     DUMP    ;
 0618                         
-0619                         
-0620                         ; ============================================================================
-0621                         ; This is the new load and save routines to be integrated into this monitor
-0622                         ; this will need to relocated to fit in the original Load and Punch routines
-0623                         ;=============================================================================
-0624                         ; Spare bytes: FDE2=96, EEE8=23
-0625                         ; Total= 114
-0626                         
-0627                         
-0628                         
-0629                         
-0630                         ;- - - - - - - - - - - - - - - - - - - - - - - - -
-0631                         ; 1) Update checksum
-0632                         ; 2) Output byte pointed to by X as 2 x hex chars
-0633                         ; 3) Increment X
-0634                         ;
-0635                         ;11 bytes
-0636                         
-0637                         
-0638                         
-0639                         
-0640                         
-0641                         
-0642                         
-0643                         
-0644                         
-0645                         ; -----------------------------------------------------
-0646 fff8                            ORG     $FFF8   ; 6800 interrupt vectors
-0647                         
-0648 fff8 f0 e0                      FDB     JIRQ    ; IRQ
-0649 fffa ff 89                      FDB     SWI     ; SWI
-0650 fffc f0 dd                      FDB     JNMI    ; NMI
-0651 fffe ff 7e                      FDB     RESET   ; Reset
-0652                         ; -----------------------------------------------------
-0653                         ;       The End
-0654                         
-0655                         
+0619 ffdf                            RMB 25          ; padded for .bin and .ptp files
+0620                         
+0621                         ; -----------------------------------------------------
+0622                                 ;ORG     $FFF8   ; 6800 interrupt vectors
+0623                         
+0624 fff8 f0 e0                      FDB     JIRQ    ; IRQ
+0625 fffa ff 89                      FDB     SWI     ; SWI
+0626 fffc f0 dd                      FDB     JNMI    ; NMI
+0627 fffe ff 7e                      FDB     RESET   ; Reset
+0628                         ; -----------------------------------------------------
+0629                         ;       The End
+0630                         
+0631                         

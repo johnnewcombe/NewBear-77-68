@@ -616,34 +616,10 @@ L10     CMPA    #'D     ; Is it `D` ?
         BNE     START   ; No: Give up - ignore comand
         JMP     DUMP    ;
 
-
-; ============================================================================
-; This is the new load and save routines to be integrated into this monitor
-; this will need to relocated to fit in the original Load and Punch routines
-;=============================================================================
-; Spare bytes: FDE2=96, EEE8=23
-; Total= 114
-
-
-
-
-;- - - - - - - - - - - - - - - - - - - - - - - - -
-; 1) Update checksum
-; 2) Output byte pointed to by X as 2 x hex chars
-; 3) Increment X
-;
-;11 bytes
-
-
-
-
-
-
-
-
+        RMB 25          ; padded for .bin and .ptp files
 
 ; -----------------------------------------------------
-        ORG     $FFF8   ; 6800 interrupt vectors
+        ;ORG     $FFF8   ; 6800 interrupt vectors
 
         FDB     JIRQ    ; IRQ
         FDB     SWI     ; SWI
