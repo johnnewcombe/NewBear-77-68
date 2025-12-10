@@ -234,7 +234,7 @@ output:  minimon-2026.s19
 0233                         ;RD_HEX2 This is a new ZIN and is called RD_HEX2 on GruntMon
 0234                         
 0235 ecd8                    PUNCH       EQU *
-0236 ecd8 7e ef e0                       JMP CMD_P
+0236 ecd8 7e ef df                       JMP CMD_P
 0237                         
 0238                         ; second part of S19 version of ZIN
 0239                         
@@ -572,107 +572,98 @@ output:  minimon-2026.s19
 0571 efda 26 b0                      BNE     START   ; No: Give up - ignore comand
 0572 efdc 7e ef 04                   JMP     DUMP    ;
 0573                         
-0574                                 ; [JN] The code above ends at address FFF6 and
-0575                                 ; there is no instruction at FFF7. Vectors
-0576                                 ; start at FFF8 (see ORG statement below)
-0577                                 ; Putting a NOP at FFF7 ensures there is no gap
-0578                                 ; and allows for an easy conversion from s19 to
-0579                                 ; binary.
-0580 efdf 01                         NOP
+0574                         
+0575                         ; ============================================================================
+0576                         ; This is the new load and save routines to be integrated into this monitor
+0577                         ; this will need to relocated to fit in the original Load and Punch routines
+0578                         ;=============================================================================
+0579                         ; Spare bytes: FDE2=81, EEE8=23
+0580                         ; Total= 114
 0581                         
-0582                         ; ============================================================================
-0583                         ; This is the new load and save routines to be integrated into this monitor
-0584                         ; this will need to relocated to fit in the original Load and Punch routines
-0585                         ;=============================================================================
-0586                         ; Spare bytes: FD19=7, FDE2=81, EEEA=26
-0587                         ; Total= 114
-0588                         
-0589                         
-0590                         
-0591                         ; -----------------------------------------------------
-0592                         ; S format data output : Modded version of Mikbug code
-0593                         ;
-0594 efe0                    CMD_P       EQU     *           ; P = Punch : Output an S19 file
-0595 efe0 bd ec 89                       JSR     GETADD      ; Prompt for "Start:","Stop:"
-0596 efe3 fe f0 ef                       LDX     T_STRT     ; Get start address
-0597 efe6 ff f0 de                       STX     d_TW        ; save it to work area
-0598 efe9 b6 f0 f2           .fOut1      LDAA    T_STOP+1    ; get low order of end address
-0599 efec b0 f0 df                       SUBA    d_TW+1      ; Subtract low order start
-0600 efef f6 f0 f1                       LDAB    T_STOP      ; ( carry not affected by LDA )
-0601 eff2 f2 f0 de                       SBCB    d_TW        ; Subtract with Carry
-0602 eff5 26 04                          BNE     .fOut2
-0603 eff7 81 10                          CMPA    #16
-0604 eff9 25 02                          BCS     .fOut3
-0605 effb 86 0f              .fOut2      LDAA    #15
-0606 effd 8b 04              .fOut3      ADDA    #4
-0607 efff b7 f0 e1                       STAA    b_Count     ; FRAME COUNT THIS RECORD
-0608 f002 80 03                          SUBA    #3
-0609 f004 b7 f0 e2                       STAA    b_Temp      ; BYTE COUNT THIS RECORD
-0610 f007 bd ec 76                       JSR     STRING      ; Output this string...
-0611 f00a 0d 0a                          FCB     $0D,$0A       ; c/r l/f
-0612 f00c 53 31                          FCB     'S,'1       ; S1
-0613 f00e ff                             FCB     $FF         ; End-Of-String
-0614 f00f 5f                             CLRB                ; Clear checksum
+0582                         ; -----------------------------------------------------
+0583                         ; S format data output : Modded version of Mikbug code
+0584                         ;
+0585 efdf                    CMD_P       EQU     *           ; P = Punch : Output an S19 file
+0586 efdf bd ec 89                       JSR     GETADD      ; Prompt for "Start:","Stop:"
+0587 efe2 fe f0 ef                       LDX     T_STRT     ; Get start address
+0588 efe5 ff f0 de                       STX     d_TW        ; save it to work area
+0589 efe8 b6 f0 f2           .fOut1      LDAA    T_STOP+1    ; get low order of end address
+0590 efeb b0 f0 df                       SUBA    d_TW+1      ; Subtract low order start
+0591 efee f6 f0 f1                       LDAB    T_STOP      ; ( carry not affected by LDA )
+0592 eff1 f2 f0 de                       SBCB    d_TW        ; Subtract with Carry
+0593 eff4 26 04                          BNE     .fOut2
+0594 eff6 81 10                          CMPA    #16
+0595 eff8 25 02                          BCS     .fOut3
+0596 effa 86 0f              .fOut2      LDAA    #15
+0597 effc 8b 04              .fOut3      ADDA    #4
+0598 effe b7 f0 e1                       STAA    b_Count     ; FRAME COUNT THIS RECORD
+0599 f001 80 03                          SUBA    #3
+0600 f003 b7 f0 e2                       STAA    b_Temp      ; BYTE COUNT THIS RECORD
+0601 f006 bd ec 76                       JSR     STRING      ; Output this string...
+0602 f009 0d 0a                          FCB     $0D,$0A       ; c/r l/f
+0603 f00b 53 31                          FCB     'S,'1       ; S1
+0604 f00d ff                             FCB     $FF         ; End-Of-String
+0605 f00e 5f                             CLRB                ; Clear checksum
+0606                         
+0607                         ; Output frame count...
+0608 f00f ce f0 e1                       LDX     #b_Count    ; X = Address of Framecount
+0609 f012 8d 26                          BSR     .fOutHx2    ; O/P byte <-X and inc X
+0610                         
+0611                         ; Output address...
+0612 f014 ce f0 de                       LDX     #d_TW
+0613 f017 8d 21                          BSR     .fOutHx2    ; O/P byte <-X and inc X
+0614 f019 8d 1f                          BSR     .fOutHx2    ; O/P byte <-X and inc X
 0615                         
-0616                         ; Output frame count...
-0617 f010 ce f0 e1                       LDX     #b_Count    ; X = Address of Framecount
-0618 f013 8d 26                          BSR     .fOutHx2    ; O/P byte <-X and inc X
-0619                         
-0620                         ; Output address...
-0621 f015 ce f0 de                       LDX     #d_TW
-0622 f018 8d 21                          BSR     .fOutHx2    ; O/P byte <-X and inc X
-0623 f01a 8d 1f                          BSR     .fOutHx2    ; O/P byte <-X and inc X
-0624                         
-0625                         ; Output data...
-0626 f01c fe f0 de                       LDX     d_TW
-0627 f01f 8d 1a              .fOut4      BSR     .fOutHx2    ; O/P byte <-X and inc X
-0628 f021 7a f0 e2                       DEC     b_Temp      ; Decrement `bytes left` count
-0629 f024 26 f9                          BNE     .fOut4      ; Loop back if any left
-0630 f026 ff f0 de                       STX     d_TW
-0631 f029 53                             COMB
-0632 f02a 37                             PSHB
-0633 f02b 30                             TSX                 ; X = S + 1
-0634 f02c 8d 0d                          BSR     .fOutHx2    ; PUNCH CHECKSUM
-0635 f02e 33                             PULB
-0636 f02f fe f0 de                       LDX     d_TW
-0637 f032 09                             DEX
-0638 f033 bc f0 f1                       CPX     T_STOP
-0639 f036 26 b1                          BNE     .fOut1
-0640                         
-0641                         ;x          JSR     PR_STRING   ; Output `S9` record...
-0642                         ;x          FCB     C_CR,C_LF   ; c/r l/f
-0643                         ;x          FCB     'S,'9       ; S9 = <eof>
-0644                         ;x          FCB     C_EOS       ; End-Of-String
-0645                         
-0646 f038 bd ed 23                       JSR     STARTS      ;Go to START (via `S` code)
-0647                         
-0648                         ;- - - - - - - - - - - - - - - - - - - - - - - - -
-0649                         ; 1) Update checksum
-0650                         ; 2) Output byte pointed to by X as 2 x hex chars
-0651                         ; 3) Increment X
-0652                         ;
-0653 f03b eb 00              .fOutHx2    ADDB    0,X         ; Update checksum
-0654 f03d 36                             PSHA                ; Push A to STACK
-0655 f03e a6 00                          LDAA    0,X         ; Load byte to be o/p
-0656 f040 bd ec c9                       JSR     ZOUT        ; O/P byte <- X
-0657 f043 32                             PULA                ; Pull A off STACK
-0658 f044 08                             INX                 ; Increment X
-0659 f045 39                             RTS                 ; RETURN
+0616                         ; Output data...
+0617 f01b fe f0 de                       LDX     d_TW
+0618 f01e 8d 1a              .fOut4      BSR     .fOutHx2    ; O/P byte <-X and inc X
+0619 f020 7a f0 e2                       DEC     b_Temp      ; Decrement `bytes left` count
+0620 f023 26 f9                          BNE     .fOut4      ; Loop back if any left
+0621 f025 ff f0 de                       STX     d_TW
+0622 f028 53                             COMB
+0623 f029 37                             PSHB
+0624 f02a 30                             TSX                 ; X = S + 1
+0625 f02b 8d 0d                          BSR     .fOutHx2    ; PUNCH CHECKSUM
+0626 f02d 33                             PULB
+0627 f02e fe f0 de                       LDX     d_TW
+0628 f031 09                             DEX
+0629 f032 bc f0 f1                       CPX     T_STOP
+0630 f035 26 b1                          BNE     .fOut1
+0631                         
+0632                         ;x          JSR     PR_STRING   ; Output `S9` record...
+0633                         ;x          FCB     C_CR,C_LF   ; c/r l/f
+0634                         ;x          FCB     'S,'9       ; S9 = <eof>
+0635                         ;x          FCB     C_EOS       ; End-Of-String
+0636                         
+0637 f037 bd ed 23                       JSR     STARTS      ;Go to START (via `S` code)
+0638                         
+0639                         ;- - - - - - - - - - - - - - - - - - - - - - - - -
+0640                         ; 1) Update checksum
+0641                         ; 2) Output byte pointed to by X as 2 x hex chars
+0642                         ; 3) Increment X
+0643                         ;
+0644 f03a eb 00              .fOutHx2    ADDB    0,X         ; Update checksum
+0645 f03c 36                             PSHA                ; Push A to STACK
+0646 f03d a6 00                          LDAA    0,X         ; Load byte to be o/p
+0647 f03f bd ec c9                       JSR     ZOUT        ; O/P byte <- X
+0648 f042 32                             PULA                ; Pull A off STACK
+0649 f043 08                             INX                 ; Increment X
+0650 f044 39                             RTS                 ; RETURN
+0651                         
+0652                         
+0653                         
+0654                         
+0655                         
+0656                         
+0657                         
+0658                         ; -----------------------------------------------------
+0659 fff8                            ORG     $FFF8   ; 6800 interrupt vectors
 0660                         
-0661                         
-0662                         
-0663                         
-0664                         
-0665                         
-0666                         
-0667                         ; -----------------------------------------------------
-0668 fff8                            ORG     $FFF8   ; 6800 interrupt vectors
-0669                         
-0670 fff8 f0 e0                      FDB     JIRQ    ; IRQ
-0671 fffa ef 89                      FDB     SWI     ; SWI
-0672 fffc f0 dd                      FDB     JNMI    ; NMI
-0673 fffe ef 7e                      FDB     RESET   ; Reset
-0674                         ; -----------------------------------------------------
-0675                         ;       The End
-0676                         
-0677                         
+0661 fff8 f0 e0                      FDB     JIRQ    ; IRQ
+0662 fffa ef 89                      FDB     SWI     ; SWI
+0663 fffc f0 dd                      FDB     JNMI    ; NMI
+0664 fffe ef 7e                      FDB     RESET   ; Reset
+0665                         ; -----------------------------------------------------
+0666                         ;       The End
+0667                         
+0668                         

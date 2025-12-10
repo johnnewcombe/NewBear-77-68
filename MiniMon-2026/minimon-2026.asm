@@ -571,22 +571,13 @@ L10     CMPA    #'D     ; Is it `D` ?
         BNE     START   ; No: Give up - ignore comand
         JMP     DUMP    ;
 
-        ; [JN] The code above ends at address FFF6 and
-        ; there is no instruction at FFF7. Vectors
-        ; start at FFF8 (see ORG statement below)
-        ; Putting a NOP at FFF7 ensures there is no gap
-        ; and allows for an easy conversion from s19 to
-        ; binary.
-        NOP
 
 ; ============================================================================
 ; This is the new load and save routines to be integrated into this monitor
 ; this will need to relocated to fit in the original Load and Punch routines
 ;=============================================================================
-; Spare bytes: FD19=7, FDE2=81, EEEA=26
+; Spare bytes: FDE2=81, EEE8=23
 ; Total= 114
-
-
 
 ; -----------------------------------------------------
 ; S format data output : Modded version of Mikbug code
