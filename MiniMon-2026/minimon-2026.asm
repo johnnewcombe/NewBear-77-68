@@ -235,20 +235,29 @@ ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
 PUNCH       EQU *
             JMP CMD_P
 
+; second part of S19 version of ZIN
+
+ZIN2        JSR     BINARY      ; Convert A:B to binary to A
+            TAB                 ; B=A
+            ADDB    b_Csum      ; Add this value
+            STAB    b_Csum      ; to the Checksum (for S19)
+            RTS                 ; RETURN
+
 ; -----------------------------------------------------
 ; S19 format data load : Modded version of Mikbug code
+; NOTE THAT THIS IS IN THE WRONG PLACE AT PRESENT!!! It should be at FD07
 ;
 LOAD        EQU     *           ; L = Load = Input an S19 file
             JSR     STRING
             FCC     " + "
             FCB     $0D,$0A     ; c/r l/f
             FCB     $FF         ; End-Of-String
-.sRead      JSR     RD_CMD ; Read+Echo, test for '.'
+.sRead      JSR     RD_CMD      ; Read+Echo, test for '.'
             CMPA    #'S         ; Is it `S` ?
             BNE     .sRead      ; No: Keep waiting for `S`
             JSR     RD_CMD      ; Read+Echo, test for '.'
             CMPA    #'9         ; Is it `9` ?  ( `S9` record )
-            BEQ     .sDone      ; Yes: End-data, Back to START
+            BEQ     STARTS      ; Yes: End-data, Back to START
             CMPA    #'1         ; Is it `1` ?  ( `S1` record )
             BNE     .sRead      ; No: Wait for next `S`
             CLR     b_Csum      ; Clear checksum
@@ -264,23 +273,14 @@ LOAD        EQU     *           ; L = Load = Input an S19 file
             BRA     .sDoByt     ; Go get next byte
 .sChk       INC     b_Csum      ; Add 1 to checksum
             BEQ     .sRead      ; OK: Go read next record
-            JSR     PR_QM       ; Print "?"
-.sDone      EQU     *
+            BSR     PR_QM       ; Print "?"
 STARTS      JMP     START       ; Go to START
 
-PR_QM       LDAA #'?              ; Put '?' character in A
-PR_BYTE     JSR     PR_A    ; Print it
-            RTS             ; RETURN
+PR_QM       LDAA #'?            ; Put '?' character in A
+            JMP     PR_A        ; Print it and return via PR_As RTS
 
-            NOP          ; previously X and Z commands
 
-; second part of S19 version of ZIN
 
-ZIN2        JSR     BINARY      ; Convert A:B to binary to A
-            TAB                 ; B=A
-            ADDB    b_Csum      ; Add this value
-            STAB    b_Csum      ; to the Checksum (for S19)
-            RTS                 ; RETURN
 
 
 ; -----------------------------------------------------
@@ -442,7 +442,7 @@ NEWLINE STX     T_SAVE  ; Save X
         RTS             ; RETURN
 
 
-        RMB 26          ; previously the ALTER command
+        RMB 23          ; previously the ALTER command
 
 ;FEC2
 GO      JSR     RD_X    ; Get address to X (16.bit)
