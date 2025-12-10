@@ -230,11 +230,6 @@ ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
         JSR     PR_A    ; Print byte in A
         RTS             ; RETURN
 
-; -----------------------------------------------------
-;RD_HEX2 This is a new ZIN and is called RD_HEX2 on GruntMon
-;FCD8
-PUNCH       EQU *
-            JMP CMD_P
 
 ; second part of S19 version of ZIN
 
@@ -280,8 +275,7 @@ STARTS      JMP     START       ; Go to START
 PR_QM       LDAA #'?            ; Put '?' character in A
             JMP     PR_A        ; Print it and return via PR_As RTS
 
-
-
+            RMB 3
 
 
 ; -----------------------------------------------------
@@ -384,7 +378,7 @@ SUB     LDX     #T_X    ; Point X to start of T_X data
 ; S format data output : Modded version of Mikbug code
 ;
 
-CMD_P       EQU     *           ; P = Punch : Output an S19 file
+PUNCH       EQU     *           ; P = Punch : Output an S19 file
             JSR     GETADD      ; Prompt for "Start:","Stop:"
             LDX     T_STRT     ; Get start address
             STX     d_TW        ; save it to work area

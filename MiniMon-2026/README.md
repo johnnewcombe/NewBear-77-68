@@ -3,7 +3,7 @@
 09-12-2025 JN - THIS IS A WORK IN PROGRESS !!! DO NOT USE!!!
 
 This is an updated version of MINIMON with S19 LOAD and PUNCH routines. All entry points and Lables as published in
-the MINIMO documentation have been preserved with the exception of the LOAD command which is now at address FCE6.
+the MINIMO documentation have been preserved with the exception of the LOAD and PUNCH commands, see list below.
 
 In order to make space for the additional code required, the ALTER and OFFSET CALCULATION commands have been removed.
 The MODIFY command has very similar functionality to ALTER making ALTER unnecessary, and the OFFSET CALCULATION routines
@@ -26,8 +26,8 @@ GETADD  FC89 - Get Address, read 4 digit hex value.
 ASCII   FC9E - Convert value in A to 2 x ASCII hex digits in A and B.
 PRX     FCBB - Print value in X as 4 hex digits.
 ZOUT    FCC9 - Print value in A as 2 hex digits.
-PUNCH   FCD8 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
-LOAD    FCE6 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
+PUNCH   FDE2 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
+LOAD    FCE3 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
 BIN     FD01 - Inistialise ACIA(a) to 8N2 (MiniMon terminal originally used 7E1 for normal interaction).
 RD_A    FD2B - Read byte from ACIA.A to A.
 REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
