@@ -375,22 +375,60 @@ SUB     LDX     #T_X    ; Point X to start of T_X data
         SBCB    2,X     ; B = B - T_Y (high)
         RTS             ; RETURN
 
-        RMB 81          ; previously X and Z commands
-
 ; -----------------------------------------------------
-;FE33
-PRP     JSR     STRING  ; Print string...
-        FCC     " P "   ;
-        FCB     $FF     ; End-of-string
-        RTS             ; RETURN
+; S format data output : Modded version of Mikbug code
+;
 
-; -----------------------------------------------------
-PRD     JSR     STRING  ; Print string...
-        FCC     " D "   ;
-        FCB     $FF     ; End-of-string
-        RTS             ; RETURN
+CMD_P       EQU     *           ; P = Punch : Output an S19 file
+            JSR     GETADD      ; Prompt for "Start:","Stop:"
+            LDX     T_STRT     ; Get start address
+            STX     d_TW        ; save it to work area
+.fOut1      LDAA    T_STOP+1    ; get low order of end address
+            SUBA    d_TW+1      ; Subtract low order start
+            LDAB    T_STOP      ; ( carry not affected by LDA )
+            SBCB    d_TW        ; Subtract with Carry
+            BNE     .fOut2
+            CMPA    #16
+            BCS     .fOut3
+.fOut2      LDAA    #15
+.fOut3      ADDA    #4
+            STAA    b_Count     ; FRAME COUNT THIS RECORD
+            SUBA    #3
+            STAA    b_Temp      ; BYTE COUNT THIS RECORD
+            JSR     STRING      ; Output this string...
+            FCB     $0D,$0A       ; c/r l/f
+            FCB     'S,'1       ; S1
+            FCB     $FF         ; End-Of-String
+            CLRB                ; Clear checksum
 
-; -----------------------------------------------------
+; Output frame count...
+            LDX     #b_Count    ; X = Address of Framecount
+            JSR     .fOutHx2    ; O/P byte <-X and inc X
+
+; Output address...
+            LDX     #d_TW
+            JSR     .fOutHx2    ; O/P byte <-X and inc X
+            JSR     .fOutHx2    ; O/P byte <-X and inc X
+
+; Output data...
+            LDX     d_TW
+.fOut4      JSR     .fOutHx2    ; O/P byte <-X and inc X
+            DEC     b_Temp      ; Decrement `bytes left` count
+            BNE     .fOut4      ; Loop back if any left
+            STX     d_TW
+            COMB
+            PSHB
+            TSX                 ; X = S + 1
+            BSR     .fOutHx2    ; PUNCH CHECKSUM
+            PULB
+            LDX     d_TW
+            DEX
+            CPX     T_STOP
+            BNE     .fOut1
+            JSR     STARTS      ;Go to START (via `S` code)
+            BRA     .fOutHx2
+
+
 MODIFY  JSR     RD_X    ; Get address to X
 STRT    JSR     PRSP    ; Print a space
         CLR     T_R     ; T_R = 0
@@ -441,8 +479,15 @@ NEWLINE STX     T_SAVE  ; Save X
         JSR     PRX     ; Print X
         RTS             ; RETURN
 
+.fOutHx2    ADDB    0,X         ; Update checksum
+            PSHA                ; Push A to STACK
+            LDAA    0,X         ; Load byte to be o/p
+            JSR     ZOUT        ; O/P byte <- X
+            PULA                ; Pull A off STACK
+            INX                 ; Increment X
+            RTS                 ; RETURN
 
-        RMB 23          ; previously the ALTER command
+        RMB 12          ; previously the ALTER command
 
 ;FEC2
 GO      JSR     RD_X    ; Get address to X (16.bit)
@@ -576,78 +621,20 @@ L10     CMPA    #'D     ; Is it `D` ?
 ; This is the new load and save routines to be integrated into this monitor
 ; this will need to relocated to fit in the original Load and Punch routines
 ;=============================================================================
-; Spare bytes: FDE2=81, EEE8=23
+; Spare bytes: FDE2=96, EEE8=23
 ; Total= 114
 
-; -----------------------------------------------------
-; S format data output : Modded version of Mikbug code
-;
-CMD_P       EQU     *           ; P = Punch : Output an S19 file
-            JSR     GETADD      ; Prompt for "Start:","Stop:"
-            LDX     T_STRT     ; Get start address
-            STX     d_TW        ; save it to work area
-.fOut1      LDAA    T_STOP+1    ; get low order of end address
-            SUBA    d_TW+1      ; Subtract low order start
-            LDAB    T_STOP      ; ( carry not affected by LDA )
-            SBCB    d_TW        ; Subtract with Carry
-            BNE     .fOut2
-            CMPA    #16
-            BCS     .fOut3
-.fOut2      LDAA    #15
-.fOut3      ADDA    #4
-            STAA    b_Count     ; FRAME COUNT THIS RECORD
-            SUBA    #3
-            STAA    b_Temp      ; BYTE COUNT THIS RECORD
-            JSR     STRING      ; Output this string...
-            FCB     $0D,$0A       ; c/r l/f
-            FCB     'S,'1       ; S1
-            FCB     $FF         ; End-Of-String
-            CLRB                ; Clear checksum
 
-; Output frame count...
-            LDX     #b_Count    ; X = Address of Framecount
-            BSR     .fOutHx2    ; O/P byte <-X and inc X
 
-; Output address...
-            LDX     #d_TW
-            BSR     .fOutHx2    ; O/P byte <-X and inc X
-            BSR     .fOutHx2    ; O/P byte <-X and inc X
-
-; Output data...
-            LDX     d_TW
-.fOut4      BSR     .fOutHx2    ; O/P byte <-X and inc X
-            DEC     b_Temp      ; Decrement `bytes left` count
-            BNE     .fOut4      ; Loop back if any left
-            STX     d_TW
-            COMB
-            PSHB
-            TSX                 ; X = S + 1
-            BSR     .fOutHx2    ; PUNCH CHECKSUM
-            PULB
-            LDX     d_TW
-            DEX
-            CPX     T_STOP
-            BNE     .fOut1
-
-;x          JSR     PR_STRING   ; Output `S9` record...
-;x          FCB     C_CR,C_LF   ; c/r l/f
-;x          FCB     'S,'9       ; S9 = <eof>
-;x          FCB     C_EOS       ; End-Of-String
-
-            JSR     STARTS      ;Go to START (via `S` code)
 
 ;- - - - - - - - - - - - - - - - - - - - - - - - -
 ; 1) Update checksum
 ; 2) Output byte pointed to by X as 2 x hex chars
 ; 3) Increment X
 ;
-.fOutHx2    ADDB    0,X         ; Update checksum
-            PSHA                ; Push A to STACK
-            LDAA    0,X         ; Load byte to be o/p
-            JSR     ZOUT        ; O/P byte <- X
-            PULA                ; Pull A off STACK
-            INX                 ; Increment X
-            RTS                 ; RETURN
+;11 bytes
+
+
 
 
 
