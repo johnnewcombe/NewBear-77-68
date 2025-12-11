@@ -264,8 +264,7 @@ LOAD        EQU     *           ; L = Load = Input an S19 file
             JSR     RD_CMD      ; Read+Echo, test for '.'
             CMPA    #'9         ; Is it `9` ?  ( `S9` record )
             BNE     .sRead1
-            JMP     STERM       ; handle termination record
-            ;BEQ     STARTS      ; Yes: End-data, Back to START
+            JMP     STERMR      ; handle termination record
 .sRead1     CMPA    #'1         ; Is it `1` ?  ( `S1` record )
             BNE     .sRead      ; No: Wait for next `S`
             CLR     b_Csum      ; Clear checksum
@@ -434,12 +433,7 @@ PUNCH       EQU     *           ; P = Punch : Output an S19 file
             DEX
             CPX     T_STOP
             BNE     .fOut1
-
-; THIS MUST BE WRONG SURELY AS JSR STARTS followed by a BRA doesn't make sense
-            ; Note that the terminating record is not sent
-            ; Should just be 'S9030000FD',CR,LF
-            JMP     START       ;Go to START (via `S` code)
-
+            JMP     STERMS
             NOP
             NOP
 ;FE43
@@ -501,14 +495,17 @@ NEWLINE STX     T_SAVE  ; Save X
             INX                 ; Increment X
             RTS                 ; RETURN
 
-VERSION EQU " Ver 1.0"
+; Processes the termination record which, if we get here is an S9 record
+; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
+; next byte is the number of bytes to follow (should be 03h, i.e. 16bit address and a checksum)
+STERMR      LDAB    #8          ; get the number of bytes left in record
+STERM1      JSR     RD_A
+            DECB
+            BNE     STERM1
+STARTS      JMP     START
 
-; Prints Vesion to the console
-VER         JSR STRING
-            FCC    " 1.0.0"    ;
-            FCB     $FF     ; End-of-string
-            JMP     START
-
+            NOP
+            NOP
             NOP
             NOP
 
@@ -600,7 +597,8 @@ HEADER  JSR     STRING  ; print string...
         FCC     "   "   ;
         FCC     "SP"    ;
         FCB     $FF     ; End-of-string
-        JMP     START   ; Return to MINIMON
+        BRA     START   ; Return to MINIMON
+        NOP
 RESET   LDS     #STACK  ; Set up stack for MINIMON
         LDAA    #$03    ; Reset:
         STAA    CTRLA   ;   ACIA.A
@@ -627,11 +625,8 @@ L2      CMPA    #'R     ; Is it `R`
         BNE     L3      ; No: Skip
         JMP     REGPRT  ;
 L3      CMPA    #'B     ; Is it `B` ?
-        BNE     L4      ; No: Skip
-        JMP     BLKMOV  ;
-L4      CMPA    #'V     ; Is it `V` ?
         BNE     L6      ; No: Skip
-        JMP     VER     ;
+        JMP     BLKMOV  ;
 L6      CMPA    #'M     ; Is it `M` ?
         BNE     L8      ; No: Skip
         JMP     MODIFY  ;
@@ -645,19 +640,19 @@ L10     CMPA    #'D     ; Is it `D` ?
         BNE     START   ; No: Give up - ignore comand
         JMP     DUMP    ;
 
-; Processes the termination record which, if we get here is an S9 record
-; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
-; next byte is the number of bytes to follow (should be 03h, i.e. 16bit address and a checksum)
-STERM       LDAB    #7          ; get the number of bytes left in record
-STERM1      JSR     RD_A
-            DECB
-            BNE     STERM1
-STARTS      JMP     START
-            NOP
-            NOP
-            NOP
-            NOP
+; Transmit an S9 terminating record
+STERMS      JSR     STRING
+            FCB     $0D,$0A
+            FCC     "S9030000FC"
+            FCB $FF
+            BRA START
 
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
 
 ; -----------------------------------------------------
         ;ORG     $FFF8   ; 6800 interrupt vectors
