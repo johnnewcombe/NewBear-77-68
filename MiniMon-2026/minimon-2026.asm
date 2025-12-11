@@ -222,19 +222,10 @@ PRX     STX     T_TMPX  ; Save X
         RTS             ; RETURN
 
 ; -----------------------------------------------------
-; Print value in A as 2 hex digits
-;FCC9
-;ZOUT    BSR     ASCII   ; Convert A to ASCII in A & B
-;        STAB    T_M     ; Save B
-;        JSR     PR_A    ; Print byte in A
-;        LDAA    T_M     ; Get 2nd byte into A
-;        JMP     PR_A    ; Print byte in A
-
-
-; -----------------------------------------------------
 ; Print value in A as 2 hex digits, Preserve B
 ; X unchanged by called routines
-; This is 1 byte shorter that ZOUT
+; This is 1 byte shorter that original ZOUT
+;FCC9
 ZOUT        PSHB                ; Save B to STACK
             PSHA                ; Save A to STACK
             BSR     ASCII       ; Convert A to ASCII in A & B
@@ -272,8 +263,10 @@ LOAD        EQU     *           ; L = Load = Input an S19 file
             BNE     .sRead      ; No: Keep waiting for `S`
             JSR     RD_CMD      ; Read+Echo, test for '.'
             CMPA    #'9         ; Is it `9` ?  ( `S9` record )
-            BEQ     STARTS      ; Yes: End-data, Back to START
-            CMPA    #'1         ; Is it `1` ?  ( `S1` record )
+            BNE     .sRead1
+            JMP     STERM       ; handle termination record
+            ;BEQ     STARTS      ; Yes: End-data, Back to START
+.sRead1     CMPA    #'1         ; Is it `1` ?  ( `S1` record )
             BNE     .sRead      ; No: Wait for next `S`
             CLR     b_Csum      ; Clear checksum
             JSR     ZIN         ; Read 2xHex = data.byte count to A
@@ -289,15 +282,10 @@ LOAD        EQU     *           ; L = Load = Input an S19 file
 .sChk       INC     b_Csum      ; Add 1 to checksum
             BEQ     .sRead      ; OK: Go read next record
             BSR     PR_QM       ; Print "?"
-STARTS      JMP     START       ; Go to START
+            JMP     START       ; Go to START
 
 PR_QM       LDAA #'?            ; Put '?' character in A
             JMP     PR_A        ; Print it and return via PR_As RTS
-
-            NOP
-            NOP
-            NOP
-
 
 
 ; -----------------------------------------------------
@@ -447,10 +435,13 @@ PUNCH       EQU     *           ; P = Punch : Output an S19 file
             CPX     T_STOP
             BNE     .fOut1
 
+; THIS MUST BE WRONG SURELY AS JSR STARTS followed by a BRA doesn't make sense
             ; Note that the terminating record is not sent
-            JSR     STARTS      ;Go to START (via `S` code)
-            BRA     .fOutHx2
+            ; Should just be 'S9030000FD',CR,LF
+            JMP     START       ;Go to START (via `S` code)
 
+            NOP
+            NOP
 ;FE43
 MODIFY  JSR     RD_X    ; Get address to X
 STRT    JSR     PRSP    ; Print a space
@@ -654,21 +645,19 @@ L10     CMPA    #'D     ; Is it `D` ?
         BNE     START   ; No: Give up - ignore comand
         JMP     DUMP    ;
 
+; Processes the termination record which, if we get here is an S9 record
+; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
+; next byte is the number of bytes to follow (should be 03h, i.e. 16bit address and a checksum)
+STERM       LDAB    #7          ; get the number of bytes left in record
+STERM1      JSR     RD_A
+            DECB
+            BNE     STERM1
+STARTS      JMP     START
             NOP
             NOP
             NOP
             NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
+
 
 ; -----------------------------------------------------
         ;ORG     $FFF8   ; 6800 interrupt vectors
