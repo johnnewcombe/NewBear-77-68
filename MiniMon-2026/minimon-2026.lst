@@ -274,7 +274,7 @@ output:  minimon-2026.s19
 0273 fce8 0d 0a                          FCB     $0D,$0A     ; c/r l/f
 0274 fcea ff                             FCB     $FF         ; End-Of-String
 0275 fceb bd fc 00           .sRead      JSR     RD_CMD      ; Read+Echo, test for '.'
-0276 fcee 94 7f                          ANDA    $7F        ; Mask off parity bit if it exists
+0276 fcee 84 7f                          ANDA    #$7F        ; Mask off parity bit if it exists
 0277 fcf0 81 53                          CMPA    #'S         ; Is it `S` ?
 0278 fcf2 26 f7                          BNE     .sRead      ; No: Keep waiting for `S`
 0279 fcf4 bd fc 00                       JSR     RD_CMD      ; Read+Echo, test for '.'
@@ -297,7 +297,7 @@ output:  minimon-2026.s19
 0296 fd1d 7c f0 e0           .sChk       INC     b_Csum      ; Add 1 to checksum
 0297 fd20 27 c9                          BEQ     .sRead      ; OK: Go read next record
 0298 fd22 8d 02                          BSR     PR_QM       ; Print "?"
-0299 fd24 20 24                          BRA     STARTR      ; Go to START
+0299 fd24 20 24                          BRA     STARTR     ; Go to START
 0300                         
 0301 fd26 86 3f              PR_QM       LDAA #'?            ; Put '?' character in A
 0302 fd28 7e fc 0f                       JMP     PR_A        ; Print it and return via PR_As RTS
@@ -515,7 +515,7 @@ output:  minimon-2026.s19
 0514                         ; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
 0515                         ; which means there are left to absorb.
 0516 feb3 c6 08              STERMR      LDAB    #8          ; get the number of bytes left in record
-0517 feb5 bd fd 2b           STERM1      JSR     RD_A        ; red from ACIA and ignore
+0517 feb5 bd fc 00           STERM1      JSR     RD_CMD      ; read and echo from ACIA and ignore
 0518 feb8 5a                             DECB
 0519 feb9 26 fa                          BNE     STERM1      ; loop for remaining bytes
 0520 febb 7e ff 8f           STARTS      JMP     START

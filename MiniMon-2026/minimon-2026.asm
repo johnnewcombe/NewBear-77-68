@@ -273,7 +273,7 @@ LOAD        EQU     *           ; L = Load = Input an S19 file
             FCB     $0D,$0A     ; c/r l/f
             FCB     $FF         ; End-Of-String
 .sRead      JSR     RD_CMD      ; Read+Echo, test for '.'
-            ANDA    $7F        ; Mask off parity bit if it exists
+            ANDA    #$7F        ; Mask off parity bit if it exists
             CMPA    #'S         ; Is it `S` ?
             BNE     .sRead      ; No: Keep waiting for `S`
             JSR     RD_CMD      ; Read+Echo, test for '.'
@@ -296,7 +296,7 @@ LOAD        EQU     *           ; L = Load = Input an S19 file
 .sChk       INC     b_Csum      ; Add 1 to checksum
             BEQ     .sRead      ; OK: Go read next record
             BSR     PR_QM       ; Print "?"
-            BRA     STARTR      ; Go to START
+            BRA     STARTR     ; Go to START
 
 PR_QM       LDAA #'?            ; Put '?' character in A
             JMP     PR_A        ; Print it and return via PR_As RTS
@@ -514,7 +514,7 @@ NEWLINE STX     T_SAVE  ; Save X
 ; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
 ; which means there are left to absorb.
 STERMR      LDAB    #8          ; get the number of bytes left in record
-STERM1      JSR     RD_A        ; red from ACIA and ignore
+STERM1      JSR     RD_CMD      ; read and echo from ACIA and ignore
             DECB
             BNE     STERM1      ; loop for remaining bytes
 STARTS      JMP     START
