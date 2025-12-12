@@ -58,15 +58,10 @@ JIRQ    EQU     $F0E0   ; Space for jump to IRQ sub.
 ;       as some were sharing names with labels or registers
 ;
 ; New additions to support S19 additions
-;d_RdFstX    RMB     2       ;  "  RD_ByteFast X
-;d_Hx4X      RMB     2       ;  "  RDX4 PRX4
 d_TW        RMB     2       ;  "  S19
-;d_STOP      RMB     2       ;  "  ASK_Addrs `Stop:`
 b_Csum      RMB     1       ;  "  S19
 b_Count     RMB     1       ;  "  S19
 b_Temp      RMB     1       ;  "  S19
-;d_START     RMB     2       ;  "  ASK_Start `Start:`
-;b_Q         RMB     1       ;  "  ZIN,DUMP
 
 T_SAVE  RMB     2       ; Temp storage for NEWLINE
 T_P     RMB     1       ;   "     "     "  Z,X
@@ -96,10 +91,9 @@ RD_CMD  JSR     RD_A    ; Input one character
         BEQ     RD_CMD  ; Ignore paper tape follower
         BSR     PR_A    ; Echo character
         CMPA    #'.     ; Was it a fullstop ?
-        BNE     END_RD  ;
+        BNE     PRA_END ;
         JMP     START   ; Yes: Go to start of MINIMON
-END_RD  RTS             ;  No: RETURN
-
+        NOP
 ; -----------------------------------------------------
 ; Print character in A
 ;FC0F
@@ -108,7 +102,7 @@ PR_A    LDAB    CTRLA   ; Get ACIA(a) status byte
         BEQ     PR_A    ; Yes: Try again
         STAA    DATAA   ;  No: Send data
         INC     T_R     ; Characters printed + One
-        RTS             ; RETURN
+PRA_END RTS             ; RETURN
 
 ; -----------------------------------------------------
 ; Check A contains a HEX character,  Set C.bit on fail
@@ -232,9 +226,9 @@ ADD     ADDB    #$37    ; Make it an ASII letter
 PRX     STX     T_TMPX  ; Save X
         LDAA    T_TMPX  ; Get high order byte to A
         BSR     ZOUT    ; Print A as 2 hex digits
-        LDAA    T_TMPX+1 ; Get low order byte to A
-        BSR     ZOUT    ; Print A as 2 hex digits
-        RTS             ; RETURN
+        LDAA    T_TMPX+1; Get low order byte to A
+        BRA     ZOUT    ; Print A as 2 hex digits
+        NOP
 
 ; -----------------------------------------------------
 ; Print value in A as 2 hex digits, Preserve B
@@ -252,8 +246,6 @@ ZOUT        PSHB                ; Save B to STACK
             PULB                ; Recover B from STACK
             RTS                 ; RETURN
 
-            NOP
-            NOP
 
 ; second part of S19 version of ZIN
 
@@ -268,7 +260,7 @@ ZIN2        JSR     BINARY      ; Convert A:B to binary to A
 ; NOTE THAT THIS IS IN THE WRONG PLACE AT PRESENT!!! It should be at FD07
 ;
 LOAD        EQU     *           ; L = Load = Input an S19 file
-            JSR     STRING
+            BSR     STRING
 ;           FCC     " + "      ; not needed
             FCB     $0D,$0A     ; c/r l/f
             FCB     $FF         ; End-Of-String
@@ -301,6 +293,9 @@ LOAD        EQU     *           ; L = Load = Input an S19 file
 PR_QM       LDAA #'?            ; Put '?' character in A
             JMP     PR_A        ; Print it and return via PR_As RTS
 
+            NOP
+            NOP
+            NOP
 
 ; -----------------------------------------------------
 ; Read byte from ACIA.A to A
@@ -322,7 +317,9 @@ REGPRT  BSR     PRSP    ; Print a space
         BSR     PR4     ; Print PC
         LDX     #PSTACK ; Point X at stack pointer
         BSR     PR4X    ; Print stack pointer
-STARTR  JMP     START   ; (RETURN) to MINIMON
+STARTR  BRA     STARTB   ; (RETURN) to MINIMON
+
+        NOP
 
 ; -----------------------------------------------------
 ;FD4D
@@ -358,7 +355,7 @@ BLKMOV  JSR     GETADD  ; Prompt for boundary addresses
 DO_UP   LDX     T_STRT  ; Get START address
         CPX     T_STOP  ; Compare it with STOP
         BNE     CONT_A  ; Finished ?
-STARTB  JMP     START   ; Yes: back to MINIMON
+STARTB  BRA     STARTR  ; Yes: back to MINIMON
 CONT_A  LDAA    0,X     ; No: Get data
         INX             ; Point X to next `old` address
         STX     T_STRT  ; and store it
@@ -388,7 +385,7 @@ DO_DOWN LDX     T_STOP  ; Get STOP address
         DEX             ; Point X to next `new` address
         STX     T_NEW   ; Store it
         BRA     DO_DOWN ; Loop back for next byte
-
+        NOP
 ; -----------------------------------------------------
 ;FDD6
 SUB     LDX     #T_X    ; Point X to start of T_X data
@@ -402,8 +399,7 @@ SUB     LDX     #T_X    ; Point X to start of T_X data
 ; S format data output : Modded version of Mikbug code
 ;
 
-PUNCH       EQU     *           ; P = Punch : Output an S19 file
-            JSR     GETADD      ; Prompt for "Start:","Stop:"
+PUNCH       JSR     GETADD      ; Prompt for "Start:","Stop:"
             LDX     T_STRT     ; Get start address
             STX     d_TW        ; save it to work area
 .fOut1      LDAA    T_STOP+1    ; get low order of end address
@@ -449,6 +445,7 @@ PUNCH       EQU     *           ; P = Punch : Output an S19 file
             CPX     T_STOP
             BNE     .fOut1
             JMP     STERMS
+
             NOP
             NOP
 ;FE43
@@ -613,11 +610,17 @@ HEADER  JSR     STRING  ; print string...
         FCB     $FF     ; End-of-string
         BRA     START   ; Return to MINIMON
         NOP
+
+;FF81
 RESET   LDS     #STACK  ; Set up stack for MINIMON
         LDAA    #$03    ; Reset:
         STAA    CTRLA   ;   ACIA.A
         STAA    CTRLB   ;   ACIA.B
+
+;FF8C
 SWI     STS     PSTACK  ; Save callers stack pointer
+
+;FF8F
 START   LDS     #STACK  ; Set up stack for MINMON
         LDAA    #$11    ; Set up: 8N2
         STAA    CTRLA   ;   ACIA.A
@@ -625,34 +628,84 @@ START   LDS     #STACK  ; Set up stack for MINMON
         FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
         FCB     $FF     ; End-of-string
         JSR     RD_CMD  ; Read a byte (test for `.`)
-        CMPA    #'S     ; Is it `S` ?
-        BEQ     BRPTSET ; Yes: Set breakpoint cmd
-        CMPA    #'H     ; Is it `H` ?
-        BEQ     HEADER  ;
-        CMPA    #'P     ; Is it `P` ?
-        BNE     L1      ; No: Skip
-        JMP     PUNCH   ;
-L1      CMPA    #'L     ; Is it `L` ?
-        BNE     L2      ; No: Skip
-        JMP     LOAD    ;
-L2      CMPA    #'R     ; Is it `R`
-        BNE     L3      ; No: Skip
-        JMP     REGPRT  ;
-L3      CMPA    #'B     ; Is it `B` ?
-        BNE     L6      ; No: Skip
-        JMP     BLKMOV  ;
-L6      CMPA    #'M     ; Is it `M` ?
-        BNE     L8      ; No: Skip
-        JMP     MODIFY  ;
-L8      CMPA    #'G     ; Is it `G` ?
-        BNE     L9      ; No: Skip
-        JMP     GO      ;
-L9      CMPA    #'C     ; Is it `C` ?
-        BNE     L10     ; No: Skip
-        JMP     CONTNU  ;
-L10     CMPA    #'D     ; Is it `D` ?
-        BNE     START   ; No: Give up - ignore comand
-        JMP     DUMP    ;
+
+
+        ; A already has the command character from RD_CMD
+        LDX     #CMDTAB     ; point to command table
+.CMDLP  LDAB    0,X        ; B = key byte (0 ends table)
+        BEQ     .DEFAULT    ; end of table → default to START
+        CBA                 ; compare A vs B
+        BEQ     .FOUND      ; match → dispatch
+        INX                 ; skip key
+        INX                 ; skip FDB high
+        INX                 ; skip FDB low
+        BRA     .CMDLP      ; try next entry
+
+.FOUND  LDAB    1,X        ; B = target high byte (FDB stores high,low)
+        LDAA    2,X        ; A = target low byte
+        PSHA                ; push high first
+        PSHB                ; push low — now low is on top of stack
+;        WAI
+        RTS                 ; jump to target
+
+.DEFAULT JMP     START      ; unknown command → ignore
+
+; Command table: key, then FDB routine
+CMDTAB  FCB     'S
+        FDB     BRPTSET
+        FCB     'H
+        FDB     HEADER
+        FCB     'P
+        FDB     PUNCH
+        FCB     'L
+        FDB     LOAD
+        FCB     'R
+        FDB     REGPRT
+        FCB     'B
+        FDB     BLKMOV
+        FCB     'M
+        FDB     MODIFY
+        FCB     'G
+        FDB     GO
+        FCB     'C
+        FDB     CONTNU
+        FCB     'D
+        FDB     DUMP
+        FCB     0          ; terminator
+        FDB     START      ; not used (any value ok after 0)
+
+
+
+
+;        CMPA    #'H     ; Is it `H` ?
+;        BEQ     HEADER  ;
+;        CMPA    #'P     ; Is it `P` ?
+;        BNE     L1      ; No: Skip
+;        JMP     PUNCH   ;
+;L1      CMPA    #'L     ; Is it `L` ?
+;        BNE     L2      ; No: Skip
+;        JMP     LOAD    ;
+;L2      CMPA    #'R     ; Is it `R`
+;        BNE     L3      ; No: Skip
+;        JMP     REGPRT  ;
+;L3      CMPA    #'B     ; Is it `B` ?
+;        BNE     L6      ; No: Skip
+;        JMP     BLKMOV  ;
+;L6      CMPA    #'M     ; Is it `M` ?
+;        BNE     L8      ; No: Skip
+;        JMP     MODIFY  ;
+;L8      CMPA    #'G     ; Is it `G` ?
+;        BNE     L9      ; No: Skip
+;        JMP     GO      ;
+;L9      CMPA    #'C     ; Is it `C` ?
+;        BNE     L10     ; No: Skip
+;        JMP     CONTNU  ;
+;L10     CMPA    #'D     ; Is it `D` ?
+;        BNE     START   ; No: Give up - ignore comand
+;        JMP     DUMP    ;
+
+
+
 
 ; Transmit an address '0000' S9 terminating record
 STERMS      JSR     STRING
@@ -665,6 +718,13 @@ STERMS      JSR     STRING
             NOP
             NOP
             NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+            NOP
+
 
 ; -----------------------------------------------------
         ;ORG     $FFF8   ; 6800 interrupt vectors
