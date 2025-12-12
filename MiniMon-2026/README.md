@@ -27,7 +27,7 @@ ASCII   FC9E - Convert value in A to 2 x ASCII hex digits in A and B.
 PRX     FCBB - Print value in X as 4 hex digits.
 ZOUT    FCC9 - Print value in A as 2 hex digits.
 PUNCH   FDE2 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
-LOAD    FCE6 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
+LOAD    FCE5 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
 BIN     FD01 - Inistialise ACIA(a) to 8N2 (MiniMon terminal originally used 7E1 for normal interaction).
 RD_A    FD2B - Read byte from ACIA.A to A.
 REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.

@@ -1,17 +1,32 @@
-; ------------------------------------------------------
-; Minimon
-; ------------------------------------------------------
-;  Original author ACH, Dec.1978;
-; ------------------------------------------------------
-; 13 NOV 2025 : [JN] added NOP at FFF7 to remove gap to
-;             : allow easier conversion to bin from s19
-; 05 DEC 2025 : [JN] Changed ACIA(a) to be 8N2 to match
-;             : PROM. So that MiniMon can be loaded and
-;             : run from the same terminal config.
-; ------------------------------------------------------
-; 2 x ACIAs :-
+; ----------------------------------------------------------------------------
+; Minimon (Dec. 2025)
+; ----------------------------------------------------------------------------
+; Original author ACH, Dec. 1978;
+; ----------------------------------------------------------------------------
+; This is an updated version of MINIMON with the LOAD and PUNCH commands
+; replaced for versions that support the Motorola S Record Format (.s19)
+; files.
 ;
+; All entry points and source code labels as published in the MINIMON
+; documentation have been preserved with the exception of the LOAD and PUNCH
+; commands.
+;
+; In order to make space for the additional code required, the ALTER and
+; OFFSET CALCULATION commands have been removed. This has been justified as
+; the MODIFY command has very similar functionality to ALTER making ALTER
+; unnecessary, and the OFFSET CALCULATION routines (commands X and Y) are
+; rarely used as all cross-assemblers perform these calculations
+; automatically.
 
+; One other minor change is that the terminal along with any devices sending
+; S19 format files should be configured for 8 Data Bits, No Parity, 2 Stop
+; Bits.
+
+; v0.0.0
+; ----------------------------------------------------------------------------
+; Updated by GlassTTY, Dec. 2025, using code from Motorola's Mikbug.
+; Thanks to Chris Carter for inspiration and help.
+; ----------------------------------------------------------------------------
 
 CTRLA   EQU     $F401   ; ACIA.A Ctrl/Status
 CTRLB   EQU     $F403   ; ACIA.B Ctrl/Status
@@ -239,7 +254,6 @@ ZOUT        PSHB                ; Save B to STACK
 
             NOP
             NOP
-            NOP
 
 ; second part of S19 version of ZIN
 
@@ -259,6 +273,7 @@ LOAD        EQU     *           ; L = Load = Input an S19 file
             FCB     $0D,$0A     ; c/r l/f
             FCB     $FF         ; End-Of-String
 .sRead      JSR     RD_CMD      ; Read+Echo, test for '.'
+            ANDA    $7F        ; Mask off parity bit if it exists
             CMPA    #'S         ; Is it `S` ?
             BNE     .sRead      ; No: Keep waiting for `S`
             JSR     RD_CMD      ; Read+Echo, test for '.'
@@ -281,7 +296,7 @@ LOAD        EQU     *           ; L = Load = Input an S19 file
 .sChk       INC     b_Csum      ; Add 1 to checksum
             BEQ     .sRead      ; OK: Go read next record
             BSR     PR_QM       ; Print "?"
-            JMP     START       ; Go to START
+            BRA     STARTR      ; Go to START
 
 PR_QM       LDAA #'?            ; Put '?' character in A
             JMP     PR_A        ; Print it and return via PR_As RTS
@@ -307,7 +322,7 @@ REGPRT  BSR     PRSP    ; Print a space
         BSR     PR4     ; Print PC
         LDX     #PSTACK ; Point X at stack pointer
         BSR     PR4X    ; Print stack pointer
-        JMP     START   ; (RETURN) to MINIMON
+STARTR  JMP     START   ; (RETURN) to MINIMON
 
 ; -----------------------------------------------------
 ;FD4D
@@ -497,11 +512,11 @@ NEWLINE STX     T_SAVE  ; Save X
 
 ; Processes the termination record which, if we get here is an S9 record
 ; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
-; next byte is the number of bytes to follow (should be 03h, i.e. 16bit address and a checksum)
+; which means there are left to absorb.
 STERMR      LDAB    #8          ; get the number of bytes left in record
-STERM1      JSR     RD_A
+STERM1      JSR     RD_A        ; red from ACIA and ignore
             DECB
-            BNE     STERM1
+            BNE     STERM1      ; loop for remaining bytes
 STARTS      JMP     START
 
             NOP
@@ -640,15 +655,13 @@ L10     CMPA    #'D     ; Is it `D` ?
         BNE     START   ; No: Give up - ignore comand
         JMP     DUMP    ;
 
-; Transmit an S9 terminating record
+; Transmit an address '0000' S9 terminating record
 STERMS      JSR     STRING
             FCB     $0D,$0A
             FCC     "S9030000FC"
             FCB $FF
             BRA START
 
-            NOP
-            NOP
             NOP
             NOP
             NOP
