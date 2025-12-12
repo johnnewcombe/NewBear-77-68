@@ -513,13 +513,12 @@ NEWLINE STX     T_SAVE  ; Save X
 ; Processes the termination record which, if we get here is an S9 record
 ; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
 ; which means there are left to absorb.
-STERMR      LDAB    #8          ; get the number of bytes left in record
+STERMR      LDX     #8          ; get the number of bytes left in record
 STERM1      JSR     RD_CMD      ; read and echo from ACIA and ignore
-            DECB
+            DEX
             BNE     STERM1      ; loop for remaining bytes
 STARTS      JMP     START
 
-            NOP
             NOP
             NOP
             NOP
