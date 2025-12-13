@@ -1,7 +1,7 @@
 # MiniMon-2026
 
 
-This is an updated version of MINIMON with *S Record Format* LOAD and PUNCH routines. All entry points and Lables as published in
+This is an updated version of MINIMON with *S Record Format* LOAD and PUNCH routines. All entry points and labels as published in
 the MINIMON documentation have been preserved with the exception of the LOAD and PUNCH commands, see list below.
 
 In order to make space for the additional code required, the ALTER and OFFSET CALCULATION commands have been removed.
@@ -52,7 +52,7 @@ START   FF8F - Restarts MniMon.
 
 ```text
 Record structure
-S  Type  Byte  Count  Address  Data  Checksum
+S  Type  Byte Count  Address  Data  Checksum
 ```
 
 An SREC format file consists of a series of ASCII text records. The records have the following structure from left to right:
