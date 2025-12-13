@@ -1,4 +1,4 @@
-# MiniMon (Jan 2026)
+# MiniMon
 
 The following is a list of routines within MINIMON.
 
