@@ -1,4 +1,5 @@
-# MiniMon-2026 (Jan 2026)
+# MiniMon-2026
+
 
 This is an updated version of MINIMON with *S Record Format* LOAD and PUNCH routines. All entry points and Lables as published in
 the MINIMON documentation have been preserved with the exception of the LOAD and PUNCH commands, see list below.
