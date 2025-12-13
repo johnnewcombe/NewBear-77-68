@@ -628,12 +628,9 @@ START   LDS     #STACK  ; Set up stack for MINMON
         FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
         FCB     $FF     ; End-of-string
         JSR     RD_CMD  ; Read a byte (test for `.`)
-
-
-        ; A already has the command character from RD_CMD
         LDX     #CMDTAB     ; point to command table
-.CMDLP  LDAB    0,X        ; B = key byte (0 ends table)
-        BEQ     .DEFAULT    ; end of table → default to START
+.CMDLP  LDAB    0,X         ; B = key byte (0 ends table)
+        BEQ     START       ; end of table → default to START
         CBA                 ; compare A vs B
         BEQ     .FOUND      ; match → dispatch
         INX                 ; skip key
@@ -648,7 +645,8 @@ START   LDS     #STACK  ; Set up stack for MINMON
 ;        WAI
         RTS                 ; jump to target
 
-.DEFAULT JMP     START      ; unknown command → ignore
+; This can probably be removed...
+;.DEFAULT JMP     START      ; unknown command → ignore
 
 ; Command table: key, then FDB routine
 CMDTAB  FCB     'S
@@ -671,41 +669,8 @@ CMDTAB  FCB     'S
         FDB     CONTNU
         FCB     'D
         FDB     DUMP
-        FCB     0          ; terminator
-        FDB     START      ; not used (any value ok after 0)
-
-
-
-
-;        CMPA    #'H     ; Is it `H` ?
-;        BEQ     HEADER  ;
-;        CMPA    #'P     ; Is it `P` ?
-;        BNE     L1      ; No: Skip
-;        JMP     PUNCH   ;
-;L1      CMPA    #'L     ; Is it `L` ?
-;        BNE     L2      ; No: Skip
-;        JMP     LOAD    ;
-;L2      CMPA    #'R     ; Is it `R`
-;        BNE     L3      ; No: Skip
-;        JMP     REGPRT  ;
-;L3      CMPA    #'B     ; Is it `B` ?
-;        BNE     L6      ; No: Skip
-;        JMP     BLKMOV  ;
-;L6      CMPA    #'M     ; Is it `M` ?
-;        BNE     L8      ; No: Skip
-;        JMP     MODIFY  ;
-;L8      CMPA    #'G     ; Is it `G` ?
-;        BNE     L9      ; No: Skip
-;        JMP     GO      ;
-;L9      CMPA    #'C     ; Is it `C` ?
-;        BNE     L10     ; No: Skip
-;        JMP     CONTNU  ;
-;L10     CMPA    #'D     ; Is it `D` ?
-;        BNE     START   ; No: Give up - ignore comand
-;        JMP     DUMP    ;
-
-
-
+        FCB     0           ; terminator
+        FDB     START       ; not used (any value ok after 0)
 
 ; Transmit an address '0000' S9 terminating record
 STERMS      JSR     STRING
@@ -724,7 +689,9 @@ STERMS      JSR     STRING
             NOP
             NOP
             NOP
-
+            NOP
+            NOP
+            NOP
 
 ; -----------------------------------------------------
         ;ORG     $FFF8   ; 6800 interrupt vectors

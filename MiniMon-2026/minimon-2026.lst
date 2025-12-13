@@ -445,7 +445,7 @@ output:  minimon-2026.s19
 0444 fe38 09                             DEX
 0445 fe39 bc f0 f1                       CPX     T_STOP
 0446 fe3c 26 ad                          BNE     .fOut1
-0447 fe3e 7e ff dc                       JMP     STERMS
+0447 fe3e 7e ff d9                       JMP     STERMS
 0448                         
 0449 fe41 01                             NOP
 0450 fe42 01                             NOP
@@ -629,113 +629,80 @@ output:  minimon-2026.s19
 0628 ff9a 0d 0a 00 2a                FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
 0629 ff9e ff                         FCB     $FF     ; End-of-string
 0630 ff9f bd fc 00                   JSR     RD_CMD  ; Read a byte (test for `.`)
-0631                         
-0632                         
-0633                                 ; A already has the command character from RD_CMD
-0634 ffa2 ce ff bb                   LDX     #CMDTAB     ; point to command table
-0635 ffa5 e6 00              .CMDLP  LDAB    0,X        ; B = key byte (0 ends table)
-0636 ffa7 27 0f                      BEQ     .DEFAULT    ; end of table → default to START
-0637 ffa9 11                         CBA                 ; compare A vs B
-0638 ffaa 27 05                      BEQ     .FOUND      ; match → dispatch
-0639 ffac 08                         INX                 ; skip key
-0640 ffad 08                         INX                 ; skip FDB high
-0641 ffae 08                         INX                 ; skip FDB low
-0642 ffaf 20 f4                      BRA     .CMDLP      ; try next entry
-0643                         
-0644 ffb1 e6 01              .FOUND  LDAB    1,X        ; B = target high byte (FDB stores high,low)
-0645 ffb3 a6 02                      LDAA    2,X        ; A = target low byte
-0646 ffb5 36                         PSHA                ; push high first
-0647 ffb6 37                         PSHB                ; push low — now low is on top of stack
-0648                         ;        WAI
-0649 ffb7 39                         RTS                 ; jump to target
+0631 ffa2 ce ff b8                   LDX     #CMDTAB     ; point to command table
+0632 ffa5 e6 00              .CMDLP  LDAB    0,X         ; B = key byte (0 ends table)
+0633 ffa7 27 e6                      BEQ     START       ; end of table → default to START
+0634 ffa9 11                         CBA                 ; compare A vs B
+0635 ffaa 27 05                      BEQ     .FOUND      ; match → dispatch
+0636 ffac 08                         INX                 ; skip key
+0637 ffad 08                         INX                 ; skip FDB high
+0638 ffae 08                         INX                 ; skip FDB low
+0639 ffaf 20 f4                      BRA     .CMDLP      ; try next entry
+0640                         
+0641 ffb1 e6 01              .FOUND  LDAB    1,X        ; B = target high byte (FDB stores high,low)
+0642 ffb3 a6 02                      LDAA    2,X        ; A = target low byte
+0643 ffb5 36                         PSHA                ; push high first
+0644 ffb6 37                         PSHB                ; push low — now low is on top of stack
+0645                         ;        WAI
+0646 ffb7 39                         RTS                 ; jump to target
+0647                         
+0648                         ; This can probably be removed...
+0649                         ;.DEFAULT JMP     START      ; unknown command → ignore
 0650                         
-0651 ffb8 7e ff 8f           .DEFAULT JMP     START      ; unknown command → ignore
-0652                         
-0653                         ; Command table: key, then FDB routine
-0654 ffbb 53                 CMDTAB  FCB     'S
-0655 ffbc ff 39                      FDB     BRPTSET
-0656 ffbe 48                         FCB     'H
-0657 ffbf ff 63                      FDB     HEADER
-0658 ffc1 50                         FCB     'P
-0659 ffc2 fd e2                      FDB     PUNCH
-0660 ffc4 4c                         FCB     'L
-0661 ffc5 fc e3                      FDB     LOAD
-0662 ffc7 52                         FCB     'R
-0663 ffc8 fd 36                      FDB     REGPRT
-0664 ffca 42                         FCB     'B
-0665 ffcb fd 62                      FDB     BLKMOV
-0666 ffcd 4d                         FCB     'M
-0667 ffce fe 43                      FDB     MODIFY
-0668 ffd0 47                         FCB     'G
-0669 ffd1 fe c2                      FDB     GO
-0670 ffd3 43                         FCB     'C
-0671 ffd4 fe d9                      FDB     CONTNU
-0672 ffd6 44                         FCB     'D
-0673 ffd7 ff 07                      FDB     DUMP
-0674 ffd9 00                         FCB     0          ; terminator
-0675 ffda ff 8f                      FDB     START      ; not used (any value ok after 0)
-0676                         
-0677                         
-0678                         
-0679                         
-0680                         ;        CMPA    #'H     ; Is it `H` ?
-0681                         ;        BEQ     HEADER  ;
-0682                         ;        CMPA    #'P     ; Is it `P` ?
-0683                         ;        BNE     L1      ; No: Skip
-0684                         ;        JMP     PUNCH   ;
-0685                         ;L1      CMPA    #'L     ; Is it `L` ?
-0686                         ;        BNE     L2      ; No: Skip
-0687                         ;        JMP     LOAD    ;
-0688                         ;L2      CMPA    #'R     ; Is it `R`
-0689                         ;        BNE     L3      ; No: Skip
-0690                         ;        JMP     REGPRT  ;
-0691                         ;L3      CMPA    #'B     ; Is it `B` ?
-0692                         ;        BNE     L6      ; No: Skip
-0693                         ;        JMP     BLKMOV  ;
-0694                         ;L6      CMPA    #'M     ; Is it `M` ?
-0695                         ;        BNE     L8      ; No: Skip
-0696                         ;        JMP     MODIFY  ;
-0697                         ;L8      CMPA    #'G     ; Is it `G` ?
-0698                         ;        BNE     L9      ; No: Skip
-0699                         ;        JMP     GO      ;
-0700                         ;L9      CMPA    #'C     ; Is it `C` ?
-0701                         ;        BNE     L10     ; No: Skip
-0702                         ;        JMP     CONTNU  ;
-0703                         ;L10     CMPA    #'D     ; Is it `D` ?
-0704                         ;        BNE     START   ; No: Give up - ignore comand
-0705                         ;        JMP     DUMP    ;
-0706                         
-0707                         
-0708                         
-0709                         
-0710                         ; Transmit an address '0000' S9 terminating record
-0711 ffdc bd fc 76           STERMS      JSR     STRING
-0712 ffdf 0d 0a                          FCB     $0D,$0A
-0713 ffe1 53 39 30 33 30 30              FCC     "S9030000FC"
+0651                         ; Command table: key, then FDB routine
+0652 ffb8 53                 CMDTAB  FCB     'S
+0653 ffb9 ff 39                      FDB     BRPTSET
+0654 ffbb 48                         FCB     'H
+0655 ffbc ff 63                      FDB     HEADER
+0656 ffbe 50                         FCB     'P
+0657 ffbf fd e2                      FDB     PUNCH
+0658 ffc1 4c                         FCB     'L
+0659 ffc2 fc e3                      FDB     LOAD
+0660 ffc4 52                         FCB     'R
+0661 ffc5 fd 36                      FDB     REGPRT
+0662 ffc7 42                         FCB     'B
+0663 ffc8 fd 62                      FDB     BLKMOV
+0664 ffca 4d                         FCB     'M
+0665 ffcb fe 43                      FDB     MODIFY
+0666 ffcd 47                         FCB     'G
+0667 ffce fe c2                      FDB     GO
+0668 ffd0 43                         FCB     'C
+0669 ffd1 fe d9                      FDB     CONTNU
+0670 ffd3 44                         FCB     'D
+0671 ffd4 ff 07                      FDB     DUMP
+0672 ffd6 00                         FCB     0           ; terminator
+0673 ffd7 ff 8f                      FDB     START       ; not used (any value ok after 0)
+0674                         
+0675                         ; Transmit an address '0000' S9 terminating record
+0676 ffd9 bd fc 76           STERMS      JSR     STRING
+0677 ffdc 0d 0a                          FCB     $0D,$0A
+0678 ffde 53 39 30 33 30 30              FCC     "S9030000FC"
      30 30 46 43
-0714 ffeb ff                             FCB $FF
-0715 ffec 20 a1                          BRA START
-0716                         
-0717 ffee 01                             NOP
-0718 ffef 01                             NOP
-0719 fff0 01                             NOP
-0720 fff1 01                             NOP
-0721 fff2 01                             NOP
-0722 fff3 01                             NOP
-0723 fff4 01                             NOP
-0724 fff5 01                             NOP
-0725 fff6 01                             NOP
-0726 fff7 01                             NOP
-0727                         
-0728                         
-0729                         ; -----------------------------------------------------
-0730                                 ;ORG     $FFF8   ; 6800 interrupt vectors
-0731                         
-0732 fff8 f0 e0                      FDB     JIRQ    ; IRQ
-0733 fffa ff 8c                      FDB     SWI     ; SWI
-0734 fffc f0 dd                      FDB     JNMI    ; NMI
-0735 fffe ff 81                      FDB     RESET   ; Reset
-0736                         ; -----------------------------------------------------
-0737                         ;       The End
-0738                         
-0739                         
+0679 ffe8 ff                             FCB $FF
+0680 ffe9 20 a4                          BRA START
+0681                         
+0682 ffeb 01                             NOP
+0683 ffec 01                             NOP
+0684 ffed 01                             NOP
+0685 ffee 01                             NOP
+0686 ffef 01                             NOP
+0687 fff0 01                             NOP
+0688 fff1 01                             NOP
+0689 fff2 01                             NOP
+0690 fff3 01                             NOP
+0691 fff4 01                             NOP
+0692 fff5 01                             NOP
+0693 fff6 01                             NOP
+0694 fff7 01                             NOP
+0695                         
+0696                         ; -----------------------------------------------------
+0697                                 ;ORG     $FFF8   ; 6800 interrupt vectors
+0698                         
+0699 fff8 f0 e0                      FDB     JIRQ    ; IRQ
+0700 fffa ff 8c                      FDB     SWI     ; SWI
+0701 fffc f0 dd                      FDB     JNMI    ; NMI
+0702 fffe ff 81                      FDB     RESET   ; Reset
+0703                         ; -----------------------------------------------------
+0704                         ;       The End
+0705                         
+0706                         
