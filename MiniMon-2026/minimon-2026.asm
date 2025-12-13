@@ -1,5 +1,5 @@
 ; ----------------------------------------------------------------------------
-; Minimon (Dec. 2025)
+; Minimon (Jan. 2026)
 ; ----------------------------------------------------------------------------
 ; Original author ACH, Dec. 1978;
 ; ----------------------------------------------------------------------------
@@ -17,14 +17,13 @@
 ; unnecessary, and the OFFSET CALCULATION routines (commands X and Y) are
 ; rarely used as all cross-assemblers perform these calculations
 ; automatically.
-
+;
 ; One other minor change is that the terminal along with any devices sending
 ; S19 format files should be configured for 8 Data Bits, No Parity, 2 Stop
 ; Bits.
-
-; v0.0.0
+;
 ; ----------------------------------------------------------------------------
-; Updated by GlassTTY, Dec. 2025, using code from Motorola's Mikbug.
+; Updated by GlassTTY, Jan. 2026, using code from Motorola's Mikbug.
 ; Thanks to Chris Carter for inspiration and help.
 ; ----------------------------------------------------------------------------
 
@@ -79,8 +78,6 @@ T_ABYT  RMB     2       ;   "     "     "  SET BR.PT.
         RMB     2       ;   "     "     "  SET BR.PT.
 T_BYTE  RMB     2       ;   "     "     "  SET BR.PT.
 PSTACK  RMB     2       ;   "     "     "     SWI etc
-
-
 
 ;
 ; -----------------------------------------------------
@@ -702,5 +699,4 @@ STERMS      JSR     STRING
         FDB     RESET   ; Reset
 ; -----------------------------------------------------
 ;       The End
-
 
