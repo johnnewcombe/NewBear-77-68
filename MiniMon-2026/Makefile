@@ -5,6 +5,7 @@ CCS19 = ../Tools/ccs19
 
 build:
 	$(ASSEMBLER) $(NAME).asm # Motorola Hex
+	$(ASSEMBLER) $(NAME).asm -s > $(NAME).sym # Symbol Table
 	$(ASSEMBLER) $(NAME).asm -h # Intel Hex
 	$(ASSEMBLER) $(NAME).asm -b # 64k binary
 	$(ASSEMBLER) $(NAME).asm -l > $(NAME).lst # list
