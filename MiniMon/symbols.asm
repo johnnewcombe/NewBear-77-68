@@ -36,7 +36,7 @@ START   EQU $FF8F ; Restarts MniMon.
 
 T_STRT  EQU $F0EF ; Temp storage for GETADDRESS
 T_STOP  EQU $F0F1 ; Temp storage for GETADDRESS
-T_Q     EQU $F0F6 ; Temp storage for ZIN,DUMP,MEMTEST
+T_Q     EQU $F0F6 ; Temp storage for ZIN,DUMP
 
 ; I/O Addresses
 
