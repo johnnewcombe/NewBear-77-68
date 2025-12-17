@@ -57,12 +57,17 @@ DATAB   EQU $F402 ; ACIA.B Data register
 
 	    ORG $F000
 
-MEMTEST
-        JSR     PRCR
+MEMTEST JSR     STRING
+        FCC     "MEMTEST"
+        FCB     $0D, $0A,$FF
         JSR     GETADD      ; get the start and finish addresses
+        JSR     STRING
+        FCC     " TESTING..."
+        FCB     $0D,$0A,$FF
         CLRB                ; set up accumulators
 .TST    PSHB
-        JSR     PRCR
+        JSR     STRING
+        FCB     $0D,$FF
         PULB
         TBA
         JSR     ZOUT
@@ -93,7 +98,4 @@ MEMTEST
         FCC     " FLT"
         FCB     $FF
         JMP     START
-PRCR    JSR     STRING      ; CR
-        FCB     $0D,$0A
-        FCB     $FF
-        RTS
+PRCR

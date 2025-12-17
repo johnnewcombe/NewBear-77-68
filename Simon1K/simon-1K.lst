@@ -1,0 +1,1055 @@
+output:  simon-1K.s19
+0001                         ; ---------------------------------------------------------------
+0002                         ; DEMON v6 CDC : JAN 2025 
+0003                         ; was SIMON v1 CDC : DEC 2023 
+0004                         ; which was trimmed DEMON v5 to get 
+0005                         ; SWI handling, Load and Modify into 1K
+0006                         ; with all other commands in 2nd 1K called EXTRAS
+0007                         ; hence new name: Software Interrupt MONitor
+0008                         ;
+0009                         ; Set version number...
+0010 0006                    C_VERSION   EQU     6
+0011 0001                    C_SUBVER    EQU     1
+0012                         ;
+0013                         ; History...
+0014                         ;
+0015                         ; Jan-2025 : Minor mods
+0016                         ;
+0017                         ; Sep-2024 : ? shows name as DEMON as this command is only in 2kb version
+0018                         ;
+0019                         ; Jun-2024 : Bug fix in Block Move
+0020                         ;
+0021                         ; Feb-2023...
+0022                         ;   Change Pdelay (Punch delay) from 5 to 8
+0023                         ;
+0024                         ; Jan-2023...
+0025                         ;   Change `S`=Switches to Leds cmd to `R` ( coz we want the S )...
+0026                         ;
+0027                         ;   If `S` met as command, jump into LOAD at point after `S` 
+0028                         ;   received so just starting to send an S19 file will 
+0029                         ;   automagically invoke the LOAD process
+0030                         ;
+0031                         ; Dec-2023...  ver 1.1
+0032                         ;   Code base taken from Demon v5
+0033                         ;   Trimmed to just SWI handling, Load and Modify cmds
+0034                         ;   Prompt suffix changed to >> from ->
+0035                         ;   Some (more) JSR calls in CMD_M changed to SWI
+0036                         ;   to save one byte each.
+0037                         ;
+0038                         ; ---------------------------------------------------------------
+0039                         ; CD & DJ Carter  :  www.cmas-net.co.uk/vintage
+0040                         ; ---------------------------------------------------------------
+0041                         ; RESET address is same as ROM base address
+0042                         ;
+0043                         ; SIMON (Top 1KB) Commands:-                   Based on code from
+0044                         ;   M = Modify                                          Minimon
+0045                         ;   L = S19 format file load                            Mikbug
+0046                         ;   G = Go <addr>
+0047                         ; DEMON Extra (optional 2nd KB) Commands:-
+0048                         ;   B = Block Move                                      Minimon
+0049                         ;   P = File : `punch` S19 format                       Mikbug
+0050                         ;   D = Dump                                            Minimon
+0051                         ;   ? = Show version /  Help
+0052                         ;   I = On/Off toggle for LED count during input wait
+0053                         ;   Z = Set memory to <switches>        /__  For debugging
+0054                         ;   Y = Check memory for <switches>     \    corrupted memory
+0055                         ;   X = Find byte on <switches>
+0056                         ;   S = <switches> to LEDs
+0057                         ;   * = Bounce LEDs
+0058                         ;   T = Test memory (R/W 0 to 255)  (error bit detect based on
+0059                         ;       code by Ben Zotto ... https://sphere.computer)
+0060                         ;
+0061                         ; ---------------------------------------------------------------
+0062                         ; Set up system-specific addresses
+0063                         
+0064 fff8                    H_VECT      EQU     $FFF8       ; Interrup Vector List Address
+0065                         
+0066 ffe0                    O_JMPS      EQU     H_VECT-24   ; Calc start of JMP list...
+0067                                                         ; For 8 JMPs, 3 bytes per JMP
+0068                                                         ; This is for entry points for
+0069                                                         ; INEEE, OUTEEE equivalents etc
+0070                                                         ; So these are at fixed positions
+0071                                                         ; just before normal interrupt vectors
+0072                         
+0073 f800                    O_EXTRA     EQU     $F800       ; Start of DEMON, optional part.2 of SIMON
+0074 fc00                    O_ROM       EQU     $FC00       ; Start of ROM ( 1K monitor )
+0075                         
+0076 0012                    D_MARK_1    EQU     $12         ; Marker byte for O_2NDKB, if used
+0077 0021                    D_MARK_2    EQU     $21         ; Marker byte for O_2NDKB+1, if used
+0078                         
+0079 f0ff                    H_PANEL     EQU     $F0FF       ; Switches / Lights
+0080                         
+0081 f000                    O_RAM       EQU     $F000       ; Start of our RAM usage (F000->F00FE)
+0082                         
+0083 f0fd                    O_RAM_TOP   EQU     $F0FD       ; RAM TOP for variable and stack
+0084                                                         ; Note: This leaves F0FE `unused`
+0085                                                         ; in case any apps use S or X reg
+0086                                                         ; to write to F0FE/F0FF to set
+0087                                                         ; lights ( eg: Newbear tune program )
+0088                         
+0089                         ; ---------------------------------------------------------------
+0090                         ; 2 x ACIAs :-  Hardware addresses
+0091                         ;
+0092 f400                    H_AciaA     EQU     $F400       ; Address of 1st ACIA (I/O port)
+0093 f402                    H_AciaB     EQU     H_AciaA+2   ; Address of 2nd ACIA (I/O port)
+0094                         ;
+0095 f400                    H_DataA     EQU     H_AciaA     ; ACIA.A Data register
+0096 f401                    H_CtrlA     EQU     H_AciaA+1   ; ACIA.A Ctrl/Status
+0097 f402                    H_DataB     EQU     H_AciaB     ; ACIA.B Data register
+0098 f403                    H_CtrlB     EQU     H_AciaB+1   ; ACIA.B Ctrl/Status
+0099                         
+0100                         ;--------------------------------------------------------
+0101                         ;- ACIA setting values
+0102                         ;--------------------------------------------------------
+0103                         
+0104 0003                    A_Reset   EQU  $03       ; Value: ACIA Reset
+0105                         
+0106                         ; Bits...
+0107                         
+0108 0001                    A_Got     EQU  $01       ; Value: ACIA `Has Data` bit
+0109 0002                    A_Busy    EQU  $02       ; Value: ACIA `Busy` bit
+0110                         
+0111                         ; MODE definitions:-
+0112                         
+0113 0001                    A_M7_D_16 EQU  $01       ; Value: ACIA Mode: 7 data, 2 stop,
+0114                                                  ;             Odd Parity, Clk/16
+0115                         
+0116 0011                    A_M8_D_16 EQU  $11       ; Value: ACIA Mode: 8.data, 2.stop,
+0117                                                  ;             No Parity,  Clk/16
+0118                         
+0119 0010                    A_M8_D_1  EQU  $10       ; Value: ACIA Mode: 8.data, 2.stop,
+0120                                                  ;             No Parity,  Clk/1
+0121                         ; DEFAULT MODE...
+0122                         ;
+0123 0011                    A_AciaMode EQU A_M8_D_16 ; Default for both ACIAs
+0124                         
+0125                         ; -----------------------------------------------------
+0126                         ; General constants
+0127                         ;
+0128                         ; Our lowest ASCII char allowed within a string is $07=BELL
+0129                         ; anything *below* this can act as a string terminator
+0130 0007                    C_ASC_low  EQU   $07    ; BELL
+0131                         ; Using Zero as our teminator here (as in `c`)...
+0132 0000                    C_EOS      EQU   $00    ; End-Of-String, for PR_STR_JSR
+0133                         
+0134 000d                    C_CR       EQU   $0D    ; C/R ( carriage-return )
+0135 000a                    C_LF       EQU   $0A    ; L/F ( line-feed )
+0136                         
+0137                         ; -----------------------------------------------------
+0138                         ; SIMON/DEMON SWI $nn call function codes for 
+0139                         ; 1st data bye after SWI instruction...
+0140 0000                    D_RESET       EQU     $00 ; Reset Monitor SOFT (& Stack)
+0141 0001                    D_RD_BYTE     EQU     $01 ; Get char into A from ACIA
+0142 0002                    D_RD_CMD      EQU     $02 ; Get char, test for . + LEDs
+0143 0003                    D_RD_PR_BYT   EQU     $03 ; Get char into A from ACIA and output it
+0144 0004                    D_PR_BYTE     EQU     $04 ; Output char in A
+0145 0005                    D_PR_FROM_X   EQU     $05 ; Print string pointed to by X
+0146 0006                    D_PR_STR      EQU     $06 ; Print string following SWI $06
+0147 0007                    D_RD_HEX2     EQU     $07 ; Read 2hex char value into A
+0148 0008                    D_RD_HEX4     EQU     $08 ; Read 4hex char value into X
+0149 0009                    D_PR_HEX2     EQU     $09 ; O/P 2hex char value from A
+0150 000a                    D_PR_HEX4     EQU     $0A ; O/P 4hex char value from X
+0151 000b                    D_PR_STK      EQU     $0B ; Print data put on stack by SWI
+0152 000c                    D_PR_REPEAT   EQU     $0C ; Print char in A no. of times in B
+0153 000d                    D_PR_SPACE    EQU     $0D ; Print char in A no. of times in B
+0154 000e                    D_PR_AND_SP   EQU     $0E ; Print char in A then a space
+0155 000f                    D_PR_CRLF     EQU     $0F ; Print c/r and l/f
+0156 0010                    D_RESET_HRD   EQU     $10 ; Reset monitor HARD - Inc.ACIAs
+0157 0011                    D_RD_IFRDY    EQU     $11 ; Read Kbd char if one is ready,else A=0
+0158 0012                    D_GET_RANDOM  EQU     $12 ; Put pseudo random number into X
+0159 0013                    D_GET_VERSION EQU     $13 ; Return version Ver.Sub in A and B
+0160 0014                    D_ASK_START   EQU     $14 ; Prompt for "Start:", value in X
+0161 0015                    D_ASK_STOP    EQU     $15 ; Prompt for "Stop:", value in X
+0162                         
+0163                         ; -----------------------------------------------------
+0164                         ; Flag bits ( in b_Flag byte ) etc...
+0165 0001                    Flag_I      EQU     $01         ; `Idle` flag
+0166 007f                    FlgAll      EQU     $7F         ; All possible flag bits ON
+0167                         
+0168                         ; -----------------------------------------------------
+0169                         ; Delay after `P` issued, before o/p starts (0 to 255)...
+0170 0008                    Pdelay      EQU     $08         ; = times delay loop is run
+0171                         
+0172                         ; -----------------------------------------------------
+0173 0010                    DumpBPL     EQU     16          ; Dump Bytes Per Line default
+0174                         
+0175                         ; -----------------------------------------------------
+0176                         ; -----------------------------------------------------
+0177                         ; - RAM -
+0178                         ; -------
+0179 f000                                ORG     O_RAM
+0180                         
+0181                         ; - - - - - - - - - - - - - - - - - - - - - - - - - - -
+0182                         ; Variables: b_ = BYTE,  d_ = Double Byte
+0183                         ;
+0184 f000                    d_AciaGO    RMB     2       ; ACIA addr for UI ( Console )
+0185 f002                    b_AciaID    RMB     1       ; '1'=ACIA.A, '2'=ACIA.B
+0186                         
+0187 f003                    b_Wait      RMB     1       ; Delay for `Wait` after `P` (0 to 255) 
+0188 f004                    b_Flag      RMB     1       ; Flag bits
+0189                         
+0190 f005                    b_dbpl      RMB     1       ; For Dump Bytes Per Line - User can change via 'M' cmd
+0191 f006                    b_Q         RMB     1       ; For ZIN, DUMP, MODIFY
+0192                         
+0193 f007                    d_START     RMB     2       ; For ASK_Start `Start:`
+0194 f009                    d_STOP      RMB     2       ;  "  ASK_Addrs `Stop:`
+0195 f00b                    d_NEW       RMB     2       ;  "  Block move `To:`
+0196                         
+0197 f00d                    q_XY        EQU     *       ; For addressing X & Y as quad byte
+0198 f00d                    d_X         RMB     2       ;  "  Block move (SUB) \_These 2 must
+0199 f00f                    d_Y         RMB     2       ;  "  Block move (SUB) /  be together
+0200                         
+0201 f011                    d_BolX      RMB     2       ;  "  Modify, Dump (Begining Of Line)
+0202 f013                    d_Hx4X      RMB     2       ;  "  RDX4 PRX4
+0203 f015                    d_RdPrX     RMB     2       ;  "  RD_BYTE, PR_BYTE X, RD_IFRDY
+0204 f017                    d_RdFstX    RMB     2       ;  "  RD_ByteFast X
+0205                         ;
+0206 f019                    d_PrStrR    EQU     *       ;  "  PR_STR_... : Return addr: WORD
+0207 f019                    b_PrStrRhi  RMB     1       ;  "  PR_STR_... : Return addr: High byte
+0208 f01a                    b_PrStrRlo  RMB     1       ;  "  PR_STR_... : Return addr: Low byte
+0209                         ;
+0210 f01b                    d_PrStrX    RMB     2       ;  "  PR_STR_... : X  and DumpAsc
+0211 f01d                    d_PrStkX    RMB     2       ;  "  PR_STK_... : X
+0212 f01f                    d_PrStrRAD  RMB     2       ;  "  PR_STR_... : Addr of Return Addr
+0213 f021                    d_TW        RMB     2       ;  "  S19
+0214 f023                    b_Csum      RMB     1       ;  "  S19
+0215 f024                    b_Count     RMB     1       ;  "  S19
+0216 f025                    b_Temp      RMB     1       ;  "  S19 and T(test)
+0217 f026                    b_PrStrA    RMB     1       ;  "  PR_STR_... : A
+0218 f027                    b_PrStkA    RMB     1       ;  "  PR_STK_... : A
+0219 f028                    b_LEDa      RMB     1       ;  "  LED display work and CMD_T
+0220 f029                    b_LEDs      RMB     1       ;  "  LED display work and CMD_T
+0221 f02a                    d_Random    EQU     *       ; For grabbing next 2 bytes in GET_RANDOM
+0222 f02a                    b_PrCnt     RMB     1       ;  "  PR and GET_RANDOM
+0223 f02b                    b_RndCnt    RMB     1       ;  "  Incremented lots, mainly in ACIA waits
+0224                         
+0225                         ; SWI RAM variables
+0226 f02c                    b_SwiTmp    RMB     1       ; Save B reg and to set CCs before RTI
+0227 f02d                    b_SwiFunc   RMB     1       ; Our SWI Function code
+0228                         ;
+0229                         ; JMP <addr> ...
+0230                         ; JMP ...
+0231 f02e                    b_SwiJMP    RMB     1       ; JMP Instruction for SWI
+0232                         ; <addr> ...
+0233 f02f                    d_SwiAddr   EQU     *       ; JMP address - 16.bit value via X
+0234 f02f                    b_SwiAdHi   RMB     1       ; JMP address - High byte
+0235 f030                    b_SwiAdLo   RMB     1       ; JMP address - Low byte
+0236                         ;
+0237 f031                    d_SwiStk    RMB     2       ; Save SP
+0238                         ;
+0239 f033                    d_SwiX      EQU     *       ; Save X - 16.bit value for STX,LDX
+0240 f033                    b_SwiXhi    RMB     1       ; Save X - High byte
+0241 f034                    b_SwiXlo    RMB     1       ; Save X - low byte
+0242                         ;
+0243 f035                    d_SwiRet    EQU     *       ; Return PC - 16.bit value for STX
+0244 f035                    b_SwiRetHi  RMB     1       ; Return PC - High byte
+0245 f036                    b_SwiRetLo  RMB     1       ; Return PC - low byte
+0246                         
+0247 f036                    VAR_LAST    EQU     *-1
+0248 0036                    VARS_USE    EQU     VAR_LAST-O_RAM  ; for lisitng
+0249                         
+0250                         ; - - - - - - - - - - - - - - - - - - - - - - - - - - -
+0251                         ; STACK: The rest of our 256 byte RAM area is stack
+0252                         
+0253 f037                    S_BASE      EQU     *                 ; Bottom of stack
+0254 f0fd                    S_TOP       EQU     O_RAM_TOP         ; Top of our stack
+0255 00c7                    S_SIZE      EQU     S_TOP-VAR_LAST    ; for listing
+0256                         
+0257                         ; ------------------------------------------------------------------
+0258                         ; FOR SIMON 1KB monitor ONLY :
+0259                         ; ------------------------------------------------------------------
+0260                         ; SIMON START 
+0261                         ; -----------------------------------------------------
+0262                         ; - ROM -
+0263                         ; -------
+0264 fc00                                ORG     O_ROM       ; Start of ROM based code
+0265                         
+0266 fc00                    Do_RESET    EQU     *           ; Main RESET point
+0267 fc00 0e                             CLI                 ; Clear interrupt bit - for SWI func.0
+0268 fc01 8e f0 fd                       LDS     #S_TOP      ; Set up stack for SIMON
+0269                         
+0270 fc04 86 10                          LDAA    #DumpBPL    ; Dump Bytes Per Line    ...
+0271 fc06 b7 f0 05                       STAA    b_dbpl      ;  User can change via 'M' cmd
+0272                         
+0273 fc09 86 55                          LDAA    #$55        ; Put 01010101 on the LEDs
+0274 fc0b b7 f0 ff                       STAA    H_PANEL     ; Put on LEDs
+0275                         
+0276 fc0e 86 7f                          LDAA    #FlgAll     ; A = All flag bits set ON
+0277 fc10 b7 f0 04                       STAA    b_Flag      ; Set into flag byte
+0278                         
+0279 fc13 86 08                          LDAA    #Pdelay     ; Default delay
+0280 fc15 b7 f0 03                       STAA    b_Wait      ; Set into RAM byte, where user can modify it
+0281                         
+0282                                                         ; Initialise ACIA modes in RAM...
+0283                         
+0284 fc18 86 03                          LDAA    #A_Reset    ; RESET ACIAs...
+0285 fc1a b7 f4 01                       STAA    H_CtrlA     ;   ACIA.A
+0286 fc1d b7 f4 03                       STAA    H_CtrlB     ;   ACIA.B
+0287                         
+0288 fc20 86 11                          LDAA    #A_AciaMode ; Get default mode for ACIAs
+0289 fc22 b7 f4 01                       STAA    H_CtrlA     ;   ACIA.A
+0290 fc25 b7 f4 03                       STAA    H_CtrlB     ;   ACIA.B
+0291                         
+0292 fc28 ce f4 00                       LDX     #H_AciaA    ; Get addr of ACIA.A for UI
+0293 fc2b ff f0 00                       STX     d_AciaGO    ; Set A as our CURRENT device
+0294 fc2e 86 31                          LDAA    #'1         ; Set ACIA ID char
+0295 fc30 b7 f0 02                       STAA    b_AciaID    ;     for prompt
+0296                         
+0297 fc33                    WaitChr     EQU     *
+0298                         ;            v
+0299 fc33 ce f4 00                       LDX     #H_AciaA    ; X = addr of ACIA.A
+0300 fc36 a6 01                          LDAA    1,X         ; Get ACIA status byte
+0301 fc38 47                             ASRA                ; Shift low order bit to C
+0302 fc39 25 10                          BCS     .ReadChr    ; Got char on A, already set, so GO
+0303                         ;            v
+0304 fc3b ce f4 02           .NoChrA     LDX     #H_AciaB    ; X = addr of ACIA.B
+0305 fc3e a6 01                          LDAA    1,X         ; Get ACIA status byte
+0306 fc40 47                             ASRA                ; Shift low order bit to C
+0307 fc41 24 f0                          BCC     WaitChr     ; C not set, no char waiting
+0308                         ;            v                  ; Set B as i/o tty device
+0309 fc43 ff f0 00                       STX     d_AciaGO    ; Set B as our CURRENT device
+0310 fc46 86 32                          LDAA    #'2         ; Set ACIA ID char
+0311 fc48 b7 f0 02                       STAA    b_AciaID    ;     for prompt
+0312 fc4b 8d 58              .ReadChr    BSR     RD_BYTE     ; Get rid of keystroke
+0313                         ;            v
+0314                         ; - - - - - - - - - - - - - - - - - - - - - - - - - - -
+0315                         ;            v
+0316 fc4d                    ReSTART     EQU     *           ; SOFT RESET point
+0317 fc4d 8e f0 fd                       LDS     #S_TOP      ; Set up stack for SIMON
+0318                         
+0319 fc50 bd fe bd                       JSR     PR_CRLF     ; c/r l/f
+0320 fc53 b6 f0 02                       LDAA    b_AciaID    ; Get ACIA.ID char (A or B)
+0321 fc56 bd fc e3                       JSR     PR_BYTE     ; Output it
+0322 fc59 bd fe 6c                       JSR     PR_STR_JSR  ; Print string...
+0323 fc5c 3e 3e 20                       FCC     ">> "       ; PROMPT
+0324 fc5f 00                             FCB     C_EOS       ;
+0325                         
+0326 fc60 8d 2b              RsGetCmd    BSR     RD_CMD      ; Read a byte (test for `.`)
+0327 fc62 8d 36                          BSR     UPPER       ; Change Cmd byte to uppercase
+0328 fc64 ce ff 84                       LDX     #C_STRT     ; Point to start of CMD table
+0329 fc67                    .rsChkCmd   EQU     *
+0330 fc67 a1 00                          CMPA    0,X         ; Is this the command ?
+0331 fc69 26 07                          BNE     .rsIncIdx   ; No: skip past it
+0332 fc6b bd fd b9                       JSR     PR_SPACE    ; Yes: Output a space
+0333 fc6e ee 01                          LDX     1,X         ; Load address associated with
+0334 fc70 6e 00                          JMP     0,X         ;  this CMD to X and JUMP to it
+0335 fc72 08                 .rsIncIdx   INX                 ; Increment X
+0336 fc73 08                             INX                 ;  to get to
+0337 fc74 08                             INX                 ;   next command byte
+0338 fc75 8c ff 90                       CPX     #C_END      ; Are we at end of list ?
+0339 fc78 26 ed                          BNE     .rsChkCmd   ; No: Go check this one
+0340 fc7a f6 f8 00                       LDAB    O_EXTRA     ; Look at 1st byte of SIMON extras
+0341 fc7d c1 12                          CMPB    #D_MARK_1   ; Does it match 1st marker byte ?            
+0342 fc7f 26 0a                          BNE     .rsChkEnd   ; No: quit
+0343 fc81 f6 f8 01                       LDAB    O_EXTRA+1   ; Look at 2nd byte of SIMON extras
+0344 fc84 c1 21                          CMPB    #D_MARK_2   ; Does it match 2nd marker byte ?
+0345 fc86 26 03                          BNE     .rsChkEnd   ; No: quit
+0346 fc88 bd f8 02                       JSR     O_EXTRA+2   ; Got extras... JSR to them           
+0347 fc8b 20 c0              .rsChkEnd   BRA     ReSTART     ; Go back to start point
+0348                         
+0349                         ; -----------------------------------------------------
+0350                         ; READ COMMAND BYTE ...
+0351                         ;  Read a character into A
+0352                         ;  : if `.` then soft START
+0353                         ;  : Ignore NULLS ( =0 )
+0354                         
+0355 fc8d                    RD_CMD      EQU     *           ; Read ONE Character
+0356 fc8d 8d 16                          BSR     RD_BYTE     ; Input one character
+0357 fc8f 84 7f                          ANDA    #$7F        ; Strip off `parity` bit, if present
+0358 fc91 8d 50                          BSR     PR_BYTE     ; Echo character
+0359 fc93 81 2e                          CMPA    #'.         ; Was it '.' ?
+0360 fc95 26 02                          BNE     .cDone      ;  If not, go to return
+0361 fc97 20 b4              .cReStart   BRA     ReSTART     ; Yes: Go to START
+0362 fc99 39                 .cDone      RTS                 ; RETURN
+0363                         
+0364                         ; -----------------------------------------------------
+0365                         ; Convert Reg.A to UPPERCASE
+0366                         
+0367 fc9a 81 61              UPPER       CMPA    #'a         ; Is it below lowercase a-z ?
+0368 fc9c 2d 06                          BLT     .CaseOK    
+0369 fc9e 81 7a                          CMPA    #'z         ; Is it above lowercase a-z ?
+0370 fca0 2e 02                          BGT     .CaseOK    
+0371 fca2 80 20                          SUBA    #$20        ; Convert lowercase alpha to upper
+0372 fca4 39                 .CaseOK     RTS
+0373                         
+0374                         ; -----------------------------------------------------
+0375                         ; Read byte from ACIA(current) to A.  B and X preserved
+0376                         
+0377 fca5                    RD_BYTE     EQU     *           ; Read from ACIA to A
+0378 fca5 7f f0 29                       CLR     b_LEDs
+0379 fca8 37                             PSHB                ; Save B on STACK
+0380 fca9 ff f0 15                       STX     d_RdPrX     ; Save X
+0381 fcac fe f0 00                       LDX     d_AciaGO    ; X = addr of current ACIA
+0382 fcaf 7c f0 2b           .rdChk      INC     b_RndCnt    ; Bump random number
+0383 fcb2 5c                             INCB                ; Add one to B
+0384 fcb3 27 0d                          BEQ     .rdLED
+0385 fcb5 a6 01              .rdGet      LDAA    1,X         ; Get ACIA status byte
+0386 fcb7 47                             ASRA                ; Shift low order bit to C
+0387 fcb8 24 f5                          BCC     .rdChk      ; Loop until C set
+0388 fcba a6 00                          LDAA    0,X         ; Get the data byte to A
+0389 fcbc fe f0 15                       LDX     d_RdPrX     ; Restore X
+0390 fcbf 33                             PULB                ; Restore B from STACK
+0391 fcc0 4d                             TSTA                ; Set status bits for A
+0392 fcc1 39                             RTS                 ; RETURN
+0393 fcc2 f6 f0 04           .rdLED      LDAB    b_Flag      ; Load flag bits
+0394 fcc5 c4 01                          ANDB    #Flag_I     ; Is the Flag_I bit set ?
+0395 fcc7 27 ec                          BEQ     .rdGet      ; No: Skip LED display
+0396 fcc9 7c f0 28                       INC     b_LEDa      ; Delay: Count through
+0397 fccc f6 f0 28                       LDAB    b_LEDa      ; another byte
+0398 fccf 26 e4                          BNE     .rdGet      ; If not zero, go back
+0399 fcd1 7c f0 29                       INC     b_LEDs      ; Now increment LEDs value
+0400 fcd4 f6 f0 29                       LDAB    b_LEDs      ; and load to B
+0401                                                         ; Speaker attached to low bit...
+0402 fcd7 58                             ASLB                ; Shift B left to zero low bit
+0403                                                         ; This stops blips on speaker
+0404 fcd8 f7 f0 ff                       STAB    H_PANEL     ; Show B on LEDs
+0405 fcdb 20 d8                          BRA     .rdGet      ; go back to work
+0406                         
+0407                         
+0408                         ; -----------------------------------------------------
+0409                         ; Read a byte and echo it to ACIA...
+0410                         
+0411 fcdd 8d c6              RD_PR_BYTE  BSR     RD_BYTE     ; Read a byte from ACIA
+0412 fcdf 20 02                          BRA     PR_BYTE     ; Output it and return via its BSR
+0413                         ;..dummy..  RTS                 ; BRA used instead of BSR (above)
+0414                         
+0415                         ; -----------------------------------------------------
+0416 fce1 86 3f              PR_QM       LDAA    #'?         ;  Question mark
+0417                         ;             v
+0418                         ; - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+0419                         ; Print byte in A, Preserve B and X
+0420                         
+0421 fce3                    PR_BYTE     EQU     *           ; From A to ACIA(current)
+0422 fce3 7c f0 2a                       INC     b_PrCnt     ; Characters printed + One
+0423 fce6 37                             PSHB                ; Preserve B on STACK
+0424 fce7 ff f0 15                       STX     d_RdPrX     ; Save X
+0425 fcea fe f0 00                       LDX     d_AciaGO    ; X = addr of current ACIA
+0426 fced 7c f0 2b           .prChk      INC     b_RndCnt    ; Bump random number
+0427 fcf0 e6 01                          LDAB    1,X         ; B = ACIA.status byte
+0428 fcf2 c5 02                          BITB    #A_Busy     ; Is it busy ?
+0429 fcf4 27 f7                          BEQ     .prChk      ; Yes: Try again
+0430 fcf6 a7 00                          STAA    0,X         ; ACIA.data = A
+0431 fcf8 fe f0 15                       LDX     d_RdPrX     ; Restore X
+0432 fcfb 33                             PULB                ; Restore B from STACK
+0433 fcfc 39                             RTS                 ; RETURN
+0434                         
+0435                         ; -----------------------------------------------------
+0436 fcfd                    RD_ByteFast EQU     *           ; Read ONE Character (fast)
+0437 fcfd ff f0 17                       STX     d_RdFstX    ; Save X
+0438 fd00 fe f0 00                       LDX     d_AciaGO    ; X = addr of current ACIA
+0439 fd03 a6 01              .rdChkF     LDAA    1,X         ; Get ACIA status byte
+0440 fd05 47                             ASRA                ; Shift low order bit to C
+0441 fd06 24 fb                          BCC     .rdChkF     ; Loop until C set
+0442 fd08 a6 00                          LDAA    0,X         ; Get the data byte to A
+0443 fd0a 8d d7                          BSR     PR_BYTE     ; Echo character ...echo...
+0444                         ;xxx CUT    ANDA    #$7F        ; Strip off `parity` bit, if present
+0445                         ;xxx CUT    BEQ     .rdChkF     ; Ignore paper tape follower
+0446 fd0c 81 2e                          CMPA    #'.         ; Was it
+0447 fd0e 26 03                          BNE     .rfDone      ;  a fullstop ?
+0448 fd10 7e fc 4d                       JMP     ReSTART     ; Yes: Go to START
+0449 fd13 fe f0 17           .rfDone     LDX     d_RdFstX    ; Restore X
+0450 fd16 39                             RTS                 ; RETURN
+0451                         
+0452                         ; -----------------------------------------------------
+0453                         ; -----------------------------------------------------
+0454                         ; S format data load : Modded version of Mikbug code
+0455                         ;                      S1<addr><len><data><crc>
+0456                         ;                      S9<...> = end
+0457                         ;
+0458 fd17                    CMD_L       EQU     *           ; L = Load = Input an S19 file
+0459 fd17                    .sRead      EQU     *
+0460 fd17 8d e4                          BSR     RD_ByteFast ; Read+Echo, test for '.'
+0461 fd19 81 53                          CMPA    #'S         ; Is it `S` ?
+0462 fd1b 26 fa                          BNE     .sRead      ; No: Keep waiting for `S`
+0463 fd1d 8d de              CMD_S       BSR     RD_ByteFast ; Read+Echo, test for '.'
+0464 fd1f 81 39                          CMPA    #'9         ; Is it `9` ?  ( `S9` record )
+0465 fd21 27 27                          BEQ     .sDone      ; Yes: End-data, Back to START
+0466 fd23 81 31                          CMPA    #'1         ; Is it `1` ?  ( `S1` record )
+0467 fd25 26 f0                          BNE     .sRead      ; No: Wait for next `S`
+0468 fd27 7f f0 23                       CLR     b_Csum      ; Clear checksum
+0469 fd2a 8d 56                          BSR     RD_HEX2     ; Read 2xHex = data.byte count to A
+0470 fd2c 80 02                          SUBA    #2          ; Subtract 2 (to get bytes left in line)
+0471 fd2e b7 f0 24                       STAA    b_Count     ; Store byte count
+0472 fd31 8d 75                          BSR     RD_HEX4     ; Read 4xHex digit address to X
+0473 fd33 8d 4d              .sDoByt     BSR     RD_HEX2     ; Read 2xHex digits, value to A
+0474 fd35 7a f0 24                       DEC     b_Count     ; Decrement our byte count
+0475 fd38 27 05                          BEQ     .sChk       ; If end-of-line, go look at checksum
+0476 fd3a a7 00                          STAA    0,X         ; Save byte where X points
+0477 fd3c 08                             INX                 ; Point X at next byte
+0478 fd3d 20 f4                          BRA     .sDoByt     ; Go get next byte
+0479 fd3f 86 0d              .sChk       LDAA    #C_CR       ; Print a
+0480 fd41 8d a0                          BSR     PR_BYTE     ;  carriage-return
+0481 fd43 7c f0 23                       INC     b_Csum      ; Add 1 to checksum
+0482 fd46 27 cf                          BEQ     .sRead      ; OK: Go read next record
+0483 fd48 8d 97                          BSR     PR_QM       ; Print "?"
+0484 fd4a                    .sDone      EQU     *
+0485 fd4a 7e fc 4d                       JMP     ReSTART     ; Go to START
+0486                         
+0487                         ; -----------------------------------------------------
+0488                         ; Check A contains a HEX character,  Set C.bit on fail
+0489                         ; If it fails, try converting to uppercase and retry
+0490                         ; Trying to keep hex data reads fast.
+0491                         
+0492 fd4d                    VFY_HEX     EQU     *
+0493 fd4d 8d 07                          BSR     .vTry       ; 1st try
+0494 fd4f 24 0d                          BCC     .vIsHex     ; OK
+0495 fd51 bd fc 9a                       JSR     UPPER       ; Convert to uppercase
+0496 fd54 20 00                          BRA     .vTry       ; 2nd try
+0497                         ;..dummy..  RTS                 ; BRA used instead of BSR (above)
+0498                         ;           ---
+0499 fd56 81 2f              .vTry       CMPA    #$2F        ; A < 30 ?
+0500 fd58 2f 0e                          BLE     .vNoHex     ;  not hex
+0501 fd5a 81 39                          CMPA    #$39        ; A > 39 ?
+0502 fd5c 22 02                          BHI     .vNoNum     ;  Not a Numeral
+0503 fd5e 0c                 .vIsHex     CLC                 ; It's OK (clear C bit)
+0504 fd5f 39                             RTS                 ; RETURN
+0505                         ;           ---
+0506 fd60 81 40              .vNoNum     CMPA    #$40        ; A < 41 ?
+0507 fd62 2f 04                          BLE     .vNoHex     ;  not hex
+0508 fd64 81 46                          CMPA    #$46        ; A <= 46
+0509 fd66 2f f6                          BLE     .vIsHex     ;  then it is hex
+0510 fd68 0d                 .vNoHex     SEC                 ; Set C bit
+0511 fd69 39                             RTS                 ; RETURN
+0512                         
+0513                         ; -----------------------------------------------------
+0514                         ; A and B have 2 x hex digits, convert to binary and return in A
+0515                         
+0516 fd6a 85 30              HEX2BIN     BITA    #$30        ; Is A a letter ?
+0517 fd6c 27 0c                          BEQ     .hNumA      ; Yes: Go to handle it
+0518 fd6e 48                 .hShftA     ASLA                ;  No: It is a number, so
+0519 fd6f 48                             ASLA                ;      shift
+0520 fd70 48                             ASLA                ;       left
+0521 fd71 48                             ASLA                ;        4 bits
+0522 fd72 c5 30                          BITB    #$30        ; Is B a letter ?
+0523 fd74 27 08                          BEQ     .hNumB      ; Yes: Go handle it
+0524 fd76 c4 0f              .hMaskB     ANDB    #$0F        ; Clear 4 high bits in B
+0525 fd78 1b                             ABA                 ; Form binary character (A=A+B)
+0526 fd79 39                             RTS                 ; RETURN
+0527 fd7a 8b 09              .hNumA      ADDA    #$09        ; Make A a binary
+0528 fd7c 20 f0                          BRA     .hShftA     ;  as before
+0529 fd7e cb 09              .hNumB      ADDB    #$09        ; Make B a binary
+0530 fd80 20 f4                          BRA     .hMaskB     ;  as before
+0531                         
+0532                         ; -----------------------------------------------------
+0533                         ; Read a 2 digit HEX value, put result into X
+0534                         
+0535 fd82                    RD_HEX2     EQU     *
+0536 fd82 bd fc fd                       JSR     RD_ByteFast ; Read a character
+0537 fd85 8d c6                          BSR     VFY_HEX     ; Is it a hex character ?
+0538 fd87 25 18                          BCS     .rxPrQM     ; No: go to print `?`
+0539 fd89 b7 f0 06                       STAA    b_Q         ; Save it
+0540 fd8c bd fc fd                       JSR     RD_ByteFast ; Read 2nd character
+0541 fd8f 8d bc                          BSR     VFY_HEX     ; Is it a hex character ?
+0542 fd91 25 0e                          BCS     .rxPrQM     ; No: go to print `?`
+0543 fd93 16                             TAB                 ; Yes: Put it into B
+0544 fd94 b6 f0 06                       LDAA    b_Q         ; Retrieve 1st hex char to A
+0545 fd97 8d d1                          BSR     HEX2BIN     ; Convert A:B to binary to A
+0546 fd99 16                             TAB                 ; B=A
+0547 fd9a fb f0 23                       ADDB    b_Csum      ; Add this value
+0548 fd9d f7 f0 23                       STAB    b_Csum      ; to the Checksum (for S19)
+0549 fda0 39                             RTS                 ; RETURN
+0550 fda1 bd fc e1           .rxPrQM     JSR     PR_QM       ; Print "?"
+0551 fda4 20 dc                          BRA     RD_HEX2     ; Go back to start of hex input
+0552                         
+0553                         ; -----------------------------------------------------
+0554                         ; Read 4 hex digits and put value into X
+0555                         ;
+0556                         ; RD_HEX4   = Read 4.hex digit address value into X
+0557                         ; RD_HEX4_S = As above, but print a SPACE first
+0558                         
+0559 fda6 8d 11              RD_HEX4_S   BSR     PR_SPACE    ; Print a space
+0560 fda8 8d d8              RD_HEX4     BSR     RD_HEX2     ; Read 2 digit hex val into A
+0561 fdaa b7 f0 13                       STAA    d_Hx4X      ; Save high.byte
+0562 fdad 8d d3                          BSR     RD_HEX2     ; Read 2 digit hex val into A
+0563 fdaf b7 f0 14                       STAA    d_Hx4X+1    ; Save low.byte
+0564 fdb2 fe f0 13                       LDX     d_Hx4X      ; Load 4 digit hex val into X
+0565 fdb5 39                             RTS                 ; RETURN
+0566                         
+0567                         ; -----------------------------------------------------
+0568 fdb6 bd fc e3           PR_AND_SP   JSR     PR_BYTE     ; Print from A
+0569 fdb9 bd fe 6c           PR_SPACE    JSR     PR_STR_JSR  ; Print string...
+0570 fdbc 20                             FCC     " "         ; space
+0571 fdbd 00                             FCB     C_EOS       ;
+0572 fdbe 39                             RTS                 ; RETURN
+0573                         
+0574                         ; -----------------------------------------------------
+0575                         ; Prompt for Start and Stop addresses
+0576                         ; Put results in d_STARTand d_STOP
+0577                         ; A and B preserved by called routines
+0578                         ; X = STOP address
+0579                         
+0580 fdbf 8d 10              ASK_Addrs   BSR     ASK_Start
+0581 fdc1 bd fe 6c           ASK_Stop    JSR     PR_STR_JSR  ; Print string...
+0582 fdc4 20 53 74 6f 70 3a              FCC     " Stop:"
+0583 fdca 00                             FCB     C_EOS       ;
+0584 fdcb 8d d9                          BSR     RD_HEX4_S   ; Read 4 digit HEX addr value
+0585 fdcd ff f0 09                       STX     d_STOP      ; Save it
+0586 fdd0 39                             RTS                 ; RETURN
+0587                         
+0588 fdd1 bd fe 6c           ASK_Start   JSR     PR_STR_JSR  ; Print string...
+0589 fdd4 20 53 74 61 72 74              FCC     " Start:"
+     3a
+0590 fddb 00                             FCB     C_EOS       ;
+0591 fddc 8d c8                          BSR     RD_HEX4_S   ; Read 4 digit HEX addr value
+0592 fdde ff f0 07                       STX     d_START     ; Save it
+0593 fde1 39                             RTS
+0594                         
+0595                         ; -----------------------------------------------------
+0596                         ; Print value in X as 4 hex digits
+0597                         
+0598 fde2 36                 PR_HEX4     PSHA
+0599 fde3 ff f0 13                       STX     d_Hx4X      ; Save X
+0600 fde6 b6 f0 13                       LDAA    d_Hx4X      ; Get high order byte to A
+0601 fde9 8d 07                          BSR     PR_HEX2     ; Print A as 2 hex digits
+0602 fdeb b6 f0 14                       LDAA    d_Hx4X+1    ; Get low order byte to A
+0603 fdee 8d 02                          BSR     PR_HEX2     ; Print A as 2 hex digits
+0604 fdf0 32                             PULA
+0605 fdf1 39                             RTS                 ; RETURN
+0606                         
+0607                         ; -----------------------------------------------------
+0608                         ; Print value in A as 2 hex digits, Preserve B
+0609                         ; X unchanged by called routines
+0610                         
+0611 fdf2 37                 PR_HEX2     PSHB                ; Save B to STACK
+0612 fdf3 36                             PSHA                ; Save A to STACK
+0613 fdf4 8d 5e                          BSR     BIN2HEX     ; Convert A to ASCII in A & B
+0614 fdf6 37                             PSHB                ; Save B (2nd byte) to STACK
+0615 fdf7 bd fc e3                       JSR     PR_BYTE     ; Print byte in A
+0616 fdfa 32                             PULA                ; Get 2nd byte into A from STACK
+0617 fdfb bd fc e3                       JSR     PR_BYTE     ; Print byte in A
+0618 fdfe 32                             PULA                ; Recover A from STACK
+0619 fdff 33                             PULB                ; Recover B from STACK
+0620 fe00 39                             RTS                 ; RETURN
+0621                         
+0622                         ;------------------------------------------------------
+0623                         ; Output data on stack after SWI...
+0624                         ; IE: Dump registers at point of SWI call
+0625                         ;
+0626 fe01                    PR_STK_SWI  EQU     *
+0627 fe01 ff f0 1d                       STX     d_PrStkX    ; Save X
+0628 fe04 b7 f0 27                       STAA    b_PrStkA    ; Save A
+0629                         
+0630 fe07 8d 63                          BSR     PR_STR_JSR  ; Output <newline>`SP=`
+0631 fe09 0d 0a                          FCB     C_CR,C_LF   ; <newline>
+0632 fe0b 53 50 3d                       FCC     "SP="
+0633 fe0e 00                             FCB     C_EOS
+0634 fe0f 30                             TSX                 ; get stack ptr + 1
+0635                         
+0636                                                         ; Note *a*:-
+0637 fe10 08                             INX                 ; Move past PC put on stack
+0638 fe11 08                             INX                 ; by call to get here from
+0639                                                         ; SWI handling
+0640 fe12 8d ce                          BSR     PR_HEX4
+0641                         
+0642 fe14 8d 56                          BSR     PR_STR_JSR  ; Output ` CC=`
+0643 fe16 20 43 43 3d                    FCC     " CC="
+0644 fe1a 00                             FCB     C_EOS
+0645 fe1b 30                             TSX                 ; get stack ptr + 1
+0646 fe1c a6 02                          LDAA    2,X         ; +2 as per *a*
+0647 fe1e 8d d2                          BSR     PR_HEX2
+0648                         
+0649 fe20 8d 4a                          BSR     PR_STR_JSR  ; Output ` B=`
+0650 fe22 20 42 3d                       FCC     " B="
+0651 fe25 00                             FCB     C_EOS
+0652 fe26 30                             TSX                 ; get stack ptr + 1
+0653 fe27 a6 03                          LDAA    3,X         ; +2 as per *a*
+0654 fe29 8d c7                          BSR     PR_HEX2
+0655                         
+0656 fe2b 8d 3f                          BSR     PR_STR_JSR  ; Output ` A=`
+0657 fe2d 20 41 3d                       FCC     " A="
+0658 fe30 00                             FCB     C_EOS
+0659 fe31 30                             TSX                 ; get stack ptr + 1
+0660 fe32 a6 04                          LDAA    4,X         ; +2 as per *a*
+0661 fe34 8d bc                          BSR     PR_HEX2
+0662                         
+0663 fe36 8d 34                          BSR     PR_STR_JSR  ; Output ` X=`
+0664 fe38 20 58 3d                       FCC     " X="
+0665 fe3b 00                             FCB     C_EOS
+0666 fe3c 30                             TSX                 ; get stack ptr + 1
+0667 fe3d ee 05                          LDX     5,X         ; +2 as per *a*
+0668 fe3f 8d a1                          BSR     PR_HEX4
+0669                         
+0670 fe41 8d 29                          BSR     PR_STR_JSR  ; Output ` PC=`
+0671 fe43 20 50 43 3d                    FCC     " PC="
+0672 fe47 00                             FCB     C_EOS
+0673 fe48 30                             TSX
+0674 fe49 ee 07                          LDX     7,X         ; +2 as per *a*
+0675 fe4b 8d 95                          BSR     PR_HEX4
+0676                         
+0677 fe4d b6 f0 27                       LDAA    b_PrStkA
+0678 fe50 fe f0 1d                       LDX     d_PrStkX
+0679 fe53 39                             RTS
+0680                         
+0681                         ;-
+0682 0053                    SZ_PSTK     EQU     *-PR_STK_SWI     ; Show size of PR_STK_SWI code
+0683                         
+0684                         ; -----------------------------------------------------
+0685                         ; Convert value in A to 2 x ASCII hex digits in A and B
+0686                         ; X unchanged
+0687                         
+0688 fe54 16                 BIN2HEX     TAB                 ; Copy A to B
+0689 fe55 8d 09                          BSR     .bxNibble   ; Convert B.nibble to hex in A
+0690 fe57 36                             PSHA                ; Push A as B result to STACK
+0691 fe58 17                             TBA                 ; Get original back to A from B
+0692 fe59 33                             PULB                ; Pop B result from Stack
+0693 fe5a 44                             LSRA                ; Shift A
+0694 fe5b 44                             LSRA                ;  Right
+0695 fe5c 44                             LSRA                ;   4
+0696 fe5d 44                             LSRA                ;    bits
+0697 fe5e 20 00                          BRA     .bxNibble   ; Convert A.nibble to hex in A
+0698                         ;..dummy..  RTS                 ; BRA used instead of BSR (above)
+0699                         
+0700                         ; - - - - - - - - - - - - - - - - - - - - - - - - -
+0701                         ; Convert value in low 4.bits of A to Hex char in A
+0702                         
+0703 fe60 84 0f              .bxNibble   ANDA    #$0F        ; Clear high order bits
+0704 fe62 81 09                          CMPA    #$09        ; Letter or number ?
+0705 fe64 22 03                          BHI     .bxAscHi    ;
+0706 fe66 8b 30                          ADDA    #$30        ; Make it an ASCII number
+0707 fe68 39                             RTS                 ; RETURN
+0708 fe69 8b 37              .bxAscHi    ADDA    #$37        ; Make it an ASCI letter
+0709 fe6b 39                             RTS                 ; RETURN
+0710                         
+0711                         
+0712                         ; -----------------------------------------------------
+0713                         ; Print string FOLLOWING JSR/BSR ( terminated by a C_EOS )
+0714                         ;  IE: It starts at the `return addr` put onto the stack by JSR
+0715                         ;  So actual return address needed is past the string
+0716                         ;  It is popped off the stack, and the new one pushed on
+0717                         ;  before RTS
+0718                         ;  A,B and X are PRESERVED
+0719                         ;
+0720 fe6c ff f0 1b           PR_STR_JSR  STX     d_PrStrX    ; Save X
+0721 fe6f b7 f0 26                       STAA    b_PrStrA    ; Save A
+0722 fe72 30                             TSX                 ; Get addr of return to X (X=S+1)
+0723 fe73 20 0e                          BRA     PR_STR_cmn  ; Go to common print string code
+0724                         
+0725                         ;- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+0726                         ; As PR_STR_JSR, but using stack as set when called via SWI
+0727                         ; Note: We have to take account of, and ignore, the last 2 bytes
+0728                         ;       on the stack from the JSR which got us here
+0729                         ;
+0730 fe75 ff f0 1b           PR_STR_SWI  STX     d_PrStrX    ; Save X
+0731 fe78 b7 f0 26                       STAA    b_PrStrA    ; Save A
+0732 fe7b 30                             TSX                 ; Get addr of return to X (X=S+1)
+0733 fe7c 08                             INX                 ; 1: Move pointer
+0734 fe7d 08                             INX                 ; 2:  7 bytes
+0735 fe7e 08                             INX                 ; 3:   up
+0736 fe7f 08                             INX                 ; 4:    the
+0737 fe80 08                             INX                 ; 5:     `stack`
+0738 fe81 08                             INX                 ; 6:      to get to
+0739 fe82 08                             INX                 ; 7:       SWI return address
+0740                         
+0741 fe83 ff f0 1f           PR_STR_cmn  STX     d_PrStrRAD  ; Save Retrun Address pointer
+0742 fe86 ee 00                          LDX     0,X         ; Get return addr to X
+0743 fe88 8d 18                          BSR     PR_FROM_X   ; Print string, addr in X
+0744                         
+0745 fe8a 08                             INX                 ; X = return address
+0746 fe8b ff f0 19                       STX     d_PrStrR    ; Put it back on stack, so RTI returns to right place...
+0747                         
+0748 fe8e fe f0 1f                       LDX     d_PrStrRAD  ; Get address of return address
+0749 fe91 b6 f0 19                       LDAA    b_PrStrRhi  ; Get high byte of return address
+0750 fe94 a7 00                          STAA    0,X         ; Put back Pc High byte into stack
+0751 fe96 b6 f0 1a                       LDAA    b_PrStrRlo  ; Get low byte of return address
+0752 fe99 a7 01                          STAA    1,X         ; Put back Pc Low byte into stack
+0753                         
+0754 fe9b b6 f0 26                       LDAA    b_PrStrA    ; Retrieve original A at entry
+0755 fe9e fe f0 1b                       LDX     d_PrStrX    ; Retrieve original X at entry
+0756 fea1 39                             RTS                 ; RETURN to addr on stack
+0757                         
+0758                         ; - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+0759                         ; Print string pointed to by X
+0760                         ; At end, X points to the string terminator byte
+0761 fea2                    PR_FROM_X   EQU     *
+0762 fea2 36                             PSHA                ; Preserve A on STACK
+0763 fea3 a6 00              .prNext     LDAA    0,X         ; Get byte to be printed
+0764 fea5 81 07                          CMPA    #C_ASC_low  ; less than lowest val allowed
+0765 fea7 2d 06                          BLT     .prx_rts    ; Yes: Go to finish up
+0766 fea9 bd fc e3                       JSR     PR_BYTE     ; Print the byte
+0767 feac 08                             INX                 ; Point to next byte
+0768 fead 20 f4                          BRA     .prNext     ; Go back for next byte
+0769 feaf 32                 .prx_rts    PULA                ; Restore A from STACK
+0770 feb0 39                             RTS                 ; RETURN to addr on stack
+0771                         
+0772                         ; -----------------------------------------------------
+0773                         ; Print char from A the number of times held in B
+0774 feb1 37                 PR_REPEAT   PSHB                ; Push B to stack
+0775 feb2 5c                             INCB                ; Add one to count
+0776 feb3 5a                 .prr_loop   DECB                ; subtract one fom count
+0777 feb4 2f 05                          BLE     .prr_end    ; If <=0 then finished
+0778 feb6 bd fc e3                       JSR     PR_BYTE     ; Print from A
+0779 feb9 20 f8                          BRA     .prr_loop   ; back for next one
+0780 febb 33                 .prr_end    PULB                ; Restore B
+0781 febc 39                             RTS                 ; RETURN
+0782                         
+0783                         ; -----------------------------------------------------
+0784 febd bd fe 6c           PR_CRLF     JSR     PR_STR_JSR  ; Print string...
+0785 fec0 0d 0a                          FCB     C_CR,C_LF   ; c/r l/f
+0786 fec2 00                             FCB     C_EOS
+0787 fec3 39                             RTS
+0788                         
+0789                         ; -----------------------------------------------------
+0790                         ; SWI handler
+0791                         ; - - - - - - - - - - - - - - - - - - - - - - - - - - -
+0792                         ; Pushed on stack by SWI call:-
+0793                         ;
+0794                         ;  0: <-- data relative to stack pointer at SWI
+0795                         ;  1: CC       <-- 0,X : After TSX, X points here
+0796                         ;  2: B          = 1,X
+0797                         ;  3: A          = 2,X
+0798                         ;  4: X-high     = 3,X
+0799                         ;  5: X-low      = 4,X
+0800                         ;  6: PC-high    = 5,X
+0801                         ;  7: PC-low     = 6,X
+0802                         ; - - - - - - - - - - - - - - - - - - - - - - - - - - -
+0803                         
+0804 fec4                    Do_SWI  EQU     *           ; SWI Handling -- NOTE: uses CALLERS STACK, not SIMONs
+0805                         ;...                        ; A value at call not saved as it is not changed
+0806                         ;...                        ; before the call to the SIMON routine
+0807                         ;...                        ; And A, B and X are all set to their values after
+0808                         ;...                        ; that call before return to caller...
+0809 fec4 7c f0 2b                   INC     b_RndCnt    ; Bump random number
+0810 fec7 f7 f0 2c                   STAB    b_SwiTmp    ; Save B value at SWI call
+0811 feca ff f0 33                   STX     d_SwiX      ; Save X value at SWI call
+0812 fecd bf f0 31                   STS     d_SwiStk    ; Save the callers stack pointer
+0813                         
+0814                                                     ; Now get our function code from the byte after the
+0815                                                     ; SWI instruction that got us here.  We use the PC
+0816                                                     ; left on the stack for this, then incement it so
+0817                                                     ; our eventual RTI will go back to the byte after
+0818                                                     ; the function code...
+0819 fed0 30                         TSX                 ; Copy stack pointer+1 to index register
+0820                         
+0821 fed1 ee 05                      LDX     5,X         ; Put content of address pointed to by X+5 (PC) to X
+0822 fed3 e6 00                      LDAB    0,X         ; X now points to function code following SWI, load it into B
+0823 fed5 f7 f0 2d                   STAB    b_SwiFunc   ; Store it
+0824                         
+0825 fed8 08                         INX                 ; Add one to callers PC to get past function code
+0826 fed9 ff f0 35                   STX     d_SwiRet    ; Put it back on stack, so RTI returns to right place...
+0827 fedc 30                         TSX                 ; Copy stack pointer+1 to index register
+0828 fedd f6 f0 35                   LDAB    b_SwiRetHi  ;
+0829 fee0 e7 05                      STAB    5,X         ; Put back Pc High byte into stack
+0830 fee2 f6 f0 36                   LDAB    b_SwiRetLo  ;
+0831 fee5 e7 06                      STAB    6,X         ; Put back Pc Low byte into stack
+0832                         
+0833 fee7 f6 f0 2d                   LDAB    b_SwiFunc   ; Get function code into B
+0834 feea f1 ff 66                   CMPB    D_CNTV      ; Compare function code with call vector count
+0835 feed 2c 2b                      BGE     .SwiEnd     ; Error, if too big (call IDs start at 0, hence BGE, not BGT)
+0836                         
+0837 feef 58                         ASLB                ; Shift B left, to multiply func code by 2
+0838 fef0 ce ff 3a                   LDX     #D_LIST     ; Load X with start address of routine list
+0839 fef3 ff f0 2f                   STX     d_SwiAddr   ; Store  it in RAM (modifiable JMP instruction)
+0840 fef6 fb f0 30                   ADDB    b_SwiAdLo   ; Add low byte of address to value in B
+0841 fef9 f7 f0 30                   STAB    b_SwiAdLo   ; Save it back to low byte of jump address
+0842 fefc 24 03                      BCC     .Swi3       ; If CARRY BIT is set...
+0843 fefe 7c f0 2f                   INC     b_SwiAdHi   ; add one to the high byte of the jump address
+0844 ff01 c6 7e              .Swi3   LDAB    #$7E        ; Put JMP opcode into B
+0845 ff03 f7 f0 2e                   STAB    b_SwiJMP    ; and write it to RAM
+0846                         
+0847 ff06 fe f0 2f                   LDX     d_SwiAddr   ; Get vector address for call
+0848 ff09 ee 00                      LDX     0,X         ; Get actual routine address
+0849 ff0b ff f0 2f                   STX     d_SwiAddr   ; Put it back, ready for JSR
+0850                         
+0851 ff0e f6 f0 2c           .SwiCmd LDAB    b_SwiTmp    ; Restore B to value at SWI call
+0852 ff11 7f f0 2c                   CLR     b_SwiTmp    ; Clear ready to hold `C` bit on RTI
+0853 ff14 fe f0 33                   LDX     d_SwiX      ; Restore X to value at SWI call
+0854 ff17 bd f0 2e                   JSR     b_SwiJMP    ; JSR to required function, via JMP in RAM
+0855                         ;       ...
+0856                         ;       ...                 ; Return from SIMON function to `user` program
+0857                         ;       ...
+0858 ff1a                    .SwiEnd EQU     *           ; Tidy up and return to caller
+0859 ff1a 24 03                      BCC     .SwiCC      ; Is C bit clear
+0860 ff1c 7c f0 2c                   INC     b_SwiTmp    ; Set C bit in CCs
+0861 ff1f ff f0 33           .SwiCC  STX     d_SwiX      ; Save X value set by our routine
+0862 ff22 be f0 31                   LDS     d_SwiStk    ; Recover Stack pointer to state before function call
+0863                                                     ; Replace A,B,X on stack with values from SIMON call
+0864 ff25 30                         TSX                 ; Get Stack Ptr+1 to X
+0865 ff26 e7 01                      STAB    1,X         ; Put B back on stack to go back to caller
+0866 ff28 a7 02                      STAA    2,X         ;  and A
+0867 ff2a b6 f0 2c                   LDAA    b_SwiTmp    ; Get our CCs containing C bit into A
+0868 ff2d a7 00                      STAA    0,X         ;  and put back on stack
+0869 ff2f b6 f0 33                   LDAA    b_SwiXhi    ; Get high byte of X returned by our routine
+0870 ff32 a7 03                      STAA    3,X         ;   and put in into stack
+0871 ff34 b6 f0 34                   LDAA    b_SwiXlo    ; Get low byte of X returned by our routine
+0872 ff37 a7 04                      STAA    4,X         ;   and put in into stack
+0873 ff39 3b                 Do_RTI  RTI                 ; RETURN FROM INTERRUPT
+0874                         
+0875                         ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+0876                                 ; SWI function call vectors
+0877 ff3a                    D_LIST  EQU     *
+0878 ff3a fc 4d                      FDB     ReSTART     ; $00 - Reset Monitor (& Stack)
+0879 ff3c fc a5                      FDB     RD_BYTE     ; $01 - Get char into A from ACIA
+0880 ff3e fc 8d                      FDB     RD_CMD      ; $02 - Get char, test for `.` + cycle LEDs
+0881 ff40 fc dd                      FDB     RD_PR_BYTE  ; $03 - Get char into A from ACIA and output it
+0882 ff42 fc e3                      FDB     PR_BYTE     ; $04 - Output char in A
+0883 ff44 fe a2                      FDB     PR_FROM_X   ; $05 - Print string pointed to by X to (End=ANY <= $06)
+0884 ff46 fe 75                      FDB     PR_STR_SWI  ; $06 - Print string following SWI $06
+0885 ff48 fd 82                      FDB     RD_HEX2     ; $07 - Read 2hex char value into A
+0886 ff4a fd a8                      FDB     RD_HEX4     ; $08 - Read 4hex char value into X
+0887 ff4c fd f2                      FDB     PR_HEX2     ; $09 - O/P 2hex char value from A
+0888 ff4e fd e2                      FDB     PR_HEX4     ; $0A - O/P 4hex char value from X
+0889 ff50 fe 01                      FDB     PR_STK_SWI  ; $0B - Print data put on stack by SWI
+0890 ff52 fe b1                      FDB     PR_REPEAT   ; $0C - Print char in A no. of times in B
+0891 ff54 fd b9                      FDB     PR_SPACE    ; $0D - Print a space
+0892 ff56 fd b6                      FDB     PR_AND_SP   ; $0E - Print char in A then a space
+0893 ff58 fe bd                      FDB     PR_CRLF     ; $0F - Print c/r and l/f
+0894 ff5a fc 00                      FDB     Do_RESET    ; $10 - Reset monitor HARD : Reset ACIAs
+0895 ff5c ff 70                      FDB     RD_IFRDY    ; $11 - Read Kbd char if one is ready,else A=0
+0896 ff5e ff 6c                      FDB     GET_RANDOM  ; $12 - Put pseudo random number into X
+0897 ff60 ff 67                      FDB     GET_VERSION ; $13 - Return s/w version number in A & B
+0898 ff62 fd d1                      FDB     ASK_Start   ; $14 - Prompt for Start:, value into X
+0899 ff64 fd c1                      FDB     ASK_Stop    ; $15 - Prompt for Stop:, value into X
+0900 ff66 16                 D_CNTV  FCB     *-D_LIST/2  ; Count of call vectors in 1 byte
+0901                         
+0902                         ;-
+0903 00a3                    SZ_SWI  EQU     *-Do_SWI    ; Show size of SWI code
+0904                         
+0905                         ; ------------------------------------------------------------------
+0906 ff67                    GET_VERSION EQU     *
+0907 ff67 86 06                          LDAA    #C_VERSION
+0908 ff69 c6 01                          LDAB    #C_SUBVER
+0909 ff6b 39                             RTS
+0910                         
+0911                         ; ------------------------------------------------------------------
+0912                         ; Fetch a pseudo random number into X
+0913 ff6c                    GET_RANDOM  EQU     *
+0914 ff6c fe f0 2a                       LDX     d_Random
+0915 ff6f 39                             RTS
+0916                         
+0917                         ; ------------------------------------------------------------------
+0918                         ; Test for a char waiting in ACIA...
+0919                         ; If present return A=1, else A=0
+0920 ff70                    RD_IFRDY    EQU     *
+0921 ff70 ff f0 15                       STX     d_RdPrX     ; Save X
+0922                         ;           ....                ; Check for keystroke...
+0923 ff73 fe f0 00                       LDX     d_AciaGO    ; X = addr of current ACIA 
+0924 ff76 a6 01                          LDAA    1,X         ; Get ACIA status byte
+0925 ff78 47                             ASRA                ; Shift low order bit to C
+0926 ff79 24 04                          BCC     .NoChr      ; C not set, no char waiting
+0927 ff7b 86 01                          LDAA    #$01        ; A=1
+0928 ff7d 20 01                          BRA     .GotChr     ; Done
+0929 ff7f 4f                 .NoChr      CLRA                ; No char, so set A=0
+0930 ff80 fe f0 15           .GotChr     LDX     d_RdPrX     ; Recover X
+0931 ff83 39                             RTS                 ; RETURN
+0932                         
+0933                         
+0934                         ; ------------------------------------------------------------------
+0935                         ; COMMAND TABLE
+0936                         ; ------------------------------------------------------------------
+0937 ff84                    C_STRT      EQU     *
+0938 ff84 47                             FCB     'G      ; G = Go = Jump to address
+0939 ff85 ff 90                          FDB     CMD_G
+0940 ff87 4c                             FCB     'L      ; L = Load S format
+0941 ff88 fd 17                          FDB     CMD_L
+0942 ff8a 4d                             FCB     'M      ; M = Modify
+0943 ff8b ff 94                          FDB     CMD_M
+0944 ff8d 53                             FCB     'S      ; S = Trap S19 loading (jump to Load routine)
+0945 ff8e fd 1d                          FDB     CMD_S
+0946 ff90                    C_END       EQU     *
+0947                         
+0948                         ; ------------------------------------------------------------------
+0949                         ; G = Go to <addr>...
+0950                         ; ------------------------------------------------------------------
+0951 ff90                    CMD_G       EQU     *           ; G = GO : Jump to address
+0952 ff90 3f                             SWI                 ; Call via SWI...
+0953 ff91 14                             FCB     D_ASK_START ; Prompt for "Start:" (to X)
+0954 ff92 6e 00                          JMP     0,X         ; Jump to it
+0955                         
+0956                         ; ------------------------------------------------------------------
+0957                         ; Built-in `M` (Modify) command ...
+0958                         ; ------------------------------------------------------------------
+0959 ff94                    CMD_M       EQU     *           ; M = MODIFY
+0960 ff94 3f                             SWI                 ; Call via SWI...
+0961 ff95 14                             FCB     D_ASK_START ; Prompt for "Start:" (to X)
+0962 ff96 3f                 .mStrt      SWI                 ; Call via SWI...
+0963 ff97 0d                             FCB     D_PR_SPACE  ; to print a space
+0964 ff98 7f f0 2a                       CLR     b_PrCnt     ; d_R = 0
+0965 ff9b a6 00              .mNewC      LDAA    0,X         ; Get byte pointed to by X to A
+0966 ff9d 3f                             SWI                 ; Call via SWI...
+0967 ff9e 09                             FCB     D_PR_HEX2   ;  to print it as 2.hex digits
+0968 ff9f 3f                 .mRead      SWI                 ; Call via SWI...
+0969 ffa0 02                             FCB     D_RD_CMD    ;  to read byt, test for `.` etc
+0970 ffa1 81 20              .mIsSP      CMPA    #$20        ; Is it a space ?
+0971 ffa3 26 0c                          BNE     .mIsSL      ; No: go test for slash
+0972 ffa5 08                 .mNext      INX                 ; Increment X
+0973 ffa6 b6 f0 2a                       LDAA    b_PrCnt     ; A = b_PrCnt
+0974 ffa9 81 16                          CMPA    #$16        ; At end of line ?
+0975 ffab 2f ee                          BLE     .mNewC      ; No: Loop back to continue
+0976 ffad 8d 31              .mNewL      BSR     M_BOL       ; Print c/r l/f XXXX
+0977 ffaf 20 e5                          BRA     .mStrt      ; Loop back
+0978                         
+0979 ffb1 81 2f              .mIsSL      CMPA    #'/         ; Is it a slash ?
+0980 ffb3 26 03                          BNE     .mIsCR      ; No: go test for c/r
+0981 ffb5 09                             DEX                 ; X = X - 1
+0982 ffb6 20 f5                          BRA     .mNewL      ; Loop back (print newline)
+0983                         
+0984 ffb8 81 0d              .mIsCR      CMPA    #C_CR       ; Is it a c/r ?
+0985 ffba 26 03                          BNE     .mIsHx      ; No: go test for valid Hex
+0986 ffbc 08                             INX                 ; X = X + 1
+0987 ffbd 20 ee                          BRA     .mNewL      ; Loop back (print newline)
+0988                         
+0989 ffbf bd fd 4d           .mIsHx      JSR     VFY_HEX     ; Is it a valid hex character ?
+0990 ffc2 25 17                          BCS     .mPrQM      ; No: print `?` and ignore
+0991 ffc4 b7 f0 06                       STAA    b_Q         ; b_Q = A : Save it
+0992 ffc7 3f                             SWI                 ; Call via SWI...
+0993 ffc8 02                             FCB     D_RD_CMD    ; Get 2nd character
+0994 ffc9 bd fd 4d                       JSR     VFY_HEX     ; Is it a valid hex character ?
+0995 ffcc 25 d3                          BCS     .mIsSP      ; No: then see what it is
+0996 ffce 16                             TAB                 ; B = A
+0997 ffcf b6 f0 06                       LDAA    b_Q         ; A = b_Q
+0998 ffd2 bd fd 6a                       JSR     HEX2BIN     ; Convert to binary value
+0999 ffd5 a7 00                          STAA    0,X         ; Store it
+1000 ffd7 3f                             SWI                 ; Call via SWI...
+1001 ffd8 0d                             FCB     D_PR_SPACE  ; to print a space
+1002 ffd9 20 ca                          BRA     .mNext      ; Loop back
+1003                         
+1004 ffdb bd fc e1           .mPrQM      JSR     PR_QM       ; Print "?"
+1005 ffde 20 bf                          BRA     .mRead      ; Loop back
+1006                         
+1007                         ; - - - - - - - - - - - - - - - - - - - - - - - - -
+1008                         ; Beginning Of Line
+1009 ffe0                    M_BOL       EQU     *           ; print l/f c/r and X in hex
+1010 ffe0 ff f0 11                       STX     d_BolX      ; Save X
+1011 ffe3 3f                             SWI                 ; Call via SWI...
+1012 ffe4 0f                             FCB     D_PR_CRLF   ; Print c/r  l/f
+1013 ffe5 fe f0 11                       LDX     d_BolX      ; Restore X
+1014 ffe8 7e fd e2                       JMP     PR_HEX4     ; Print X .. JMP instead of JSR
+1015                         ;..dummy..  RTS                 ; RETURN  .. to save this RTS
+1016                         
+1017                         ; -----------------------------------------------------
+1018                         ; NEED TO PAD TO FFF8 for 1KB SIMON BINARY suitable for 
+1019                         ; 32yte rom loader on MON1...
+1020                         ; .lst file shows the above JMP xxxx at FFE8/9/A, so...
+1021 ffeb 01                  NOP ; Pad FFEB
+1022 ffec 01                  NOP ; Pad FFEC
+1023 ffed 01                  NOP ; Pad FFED
+1024 ffee 01                  NOP ; Pad FFEE
+1025 ffef 01                  NOP ; Pad FFEF
+1026 fff0 01                  NOP ; Pad FFF0
+1027 fff1 01                  NOP ; Pad FFF1
+1028 fff2 01                  NOP ; Pad FFF2
+1029 fff3 01                  NOP ; Pad FFF3
+1030 fff4 01                  NOP ; Pad FFF4
+1031 fff5 01                  NOP ; Pad FFF5
+1032 fff6 01                  NOP ; Pad FFF6
+1033 fff7 01                  NOP ; Pad FFF7
+1034                         
+1035                         ;x LAST_BYTE   EQU     *-1       ; Show last SIMON code address on listing
+1036                         ;x SZ_FREE     EQU     H_VECT-*  ; Show free space left on listing
+1037                         
+1038                         ; NOW CHECK (visually on lisitng) VECTOR LIST IS FROM FFF8 to FFFF...
+1039                         ; ------------------------------------------------------------------
+1040                         ; ------------------------------------------------------------------
+1041                         ;x            ORG     H_VECT   ; 6800 interrupt vectors
+1042                         ;                            ;-----------------------------
+1043 fff8 ff 39                          FDB     Do_RTI   ; IRQ not used
+1044 fffa fe c4                          FDB     Do_SWI   ; SWI handling
+1045 fffc ff 39                          FDB     Do_RTI   ; NMI not used
+1046 fffe fc 00                          FDB     Do_RESET ; Hardware Restart
+1047                         ; ------------------------------------------------------------------
+1048                         ;       End of 1K SIMON   ( eg: FC00 to FFFF )
+1049                         ; ------------------------------------------------------------------
+1050                         ; ------------------------------------------------------------------
+1051                         ;
+1052                         
+1053                         ; The End
