@@ -32,35 +32,28 @@ CTRLB   EQU     $F403   ; ACIA.B Ctrl/Status
 DATAA   EQU     $F400   ; ACIA.A Data register
 DATAB   EQU     $F402   ; ACIA.B Data register
 
-; Note:The original 256 bytes of RAM on the CPU board 
+; -----------------------------------------------------
+; Note:The original 256 bytes of RAM on the CPU board
 ;  appears at $F000 to $F0FE, with Switches/LEDs at $F0FF
 ;  when a MON1 board is installed
-
-; Stack goes down from $F0D0
-STACK   EQU     $F0D0   ; Top of MINIMON's stack
-
-
-
-; RAM at $F0D1 to $F0DC appears to be unused
-
-; 3 bytes reserved for each if NMI and IRQ handling
-; so an application can write JMP <addr> into those
-; places if those interrupts are wanted...
-
-JNMI    EQU     $F0DD   ; Space for jump to NMI sub.
-JIRQ    EQU     $F0E0   ; Space for jump to IRQ sub.
+; -----------------------------------------------------
+JNMI    EQU     $F0DD   ; 3 bytes for jump to NMI sub.
+JIRQ    EQU     $F0E0   ; 3 bytes for jump to IRQ sub.
+STACK   EQU     $F0D0   ; tack goes down from $F0D0
 
 ; -----------------------------------------------------
-        ORG     $F0DE   ; Start of RAM variables
+        ORG     $F0D1
 ; -----------------------------------------------------
-; Note: Temp storage variables renamed to get T_ prefix
-;       as some were sharing names with labels or registers
-;
-; New additions to support S19 additions
-d_TW    RMB     2       ;
-b_Csum  RMB     1       ;
-b_Count RMB     1       ;
-b_Temp  RMB     1       ;
+
+; $F0D1 to $F0DC is unused RAM in original  MINIMON
+d_TW    RMB     2       ; New additions to support SRec
+b_Csum  RMB     1       ;            "
+b_Count RMB     1       ;            "
+b_Temp  RMB     1       ;            "
+
+; -----------------------------------------------------
+        ORG     $F0E3   ; Start of RAM variables
+; -----------------------------------------------------
 
 T_SAVE  RMB     2       ; Temp storage for NEWLINE
 T_P     RMB     1       ;   "     "     "  Z,X
@@ -79,9 +72,10 @@ T_ABYT  RMB     2       ;   "     "     "  SET BR.PT.
 T_BYTE  RMB     2       ;   "     "     "  SET BR.PT.
 PSTACK  RMB     2       ;   "     "     "     SWI etc
 
-;
 ; -----------------------------------------------------
         ORG     $FC00   ; Start of ROM based code
+; -----------------------------------------------------
+
 ; -----------------------------------------------------
 ; Read Character from ACIA
 ; FC00

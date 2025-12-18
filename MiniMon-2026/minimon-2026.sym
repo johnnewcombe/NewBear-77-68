@@ -110,7 +110,7 @@ ZIN        fc49
 ZIN2       fcd8
 ZOUT       fcc9
 Z_PRQM     fc5f
-b_Count    f0e1
-b_Csum     f0e0
-b_Temp     f0e2
-d_TW       f0de
+b_Count    f0d4
+b_Csum     f0d3
+b_Temp     f0d5
+d_TW       f0d1
