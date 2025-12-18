@@ -5,7 +5,7 @@ output:  minimon-2026.s19
 .fOut2     fdfd
 .fOut3     fdff
 .fOut4     fe24
-.fOutHx2   fea8
+.fOutH2    fea8
 .sChk      fd1a
 .sDoByt    fd0d
 .sRead     fce8
