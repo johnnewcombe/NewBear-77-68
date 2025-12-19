@@ -78,14 +78,14 @@ RESET      ff81
 RIDA       fc35
 RIDB       fc3d
 SAME       ff4b
-SETACIA    ffe8
+SETACIA    ffeb
 STACK      f0d0
 START      ff8f
 STARTR     fd4a
 STARTS     febc
 STERM1     feb6
 STERMR     feb3
-STERMS     ffd6
+STERMS     ffd9
 STRING     fc76
 STRT       fe46
 SUB        fdd6
@@ -109,6 +109,7 @@ T_TW       f0d1
 T_X        f0e6
 T_Y        f0e8
 T_Z        f0f3
+VERSION    fdc3
 VHEX       fc1d
 WATSIT     fe51
 WHAT       fe54

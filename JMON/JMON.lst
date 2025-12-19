@@ -391,357 +391,349 @@ output:  JMON.s19
 0389 fdbf ff                         FCB     $FF
 0390 fdc0 7e ff 8f                   JMP START
 0391                         
-0392 fdc3 01                         NOP
-0393 fdc4 01                         NOP
-0394 fdc5 01                         NOP
-0395 fdc6 01                         NOP
-0396 fdc7 01                         NOP
-0397 fdc8 01                         NOP
-0398 fdc9 01                         NOP
-0399 fdca 01                         NOP
-0400 fdcb 01                         NOP
-0401 fdcc 01                         NOP
-0402 fdcd 01                         NOP
-0403 fdce 01                         NOP
-0404 fdcf 01                         NOP
-0405 fdd0 01                         NOP
-0406 fdd1 01                         NOP
-0407 fdd2 01                         NOP
-0408 fdd3 01                         NOP
-0409 fdd4 01                         NOP
-0410 fdd5 01                         NOP
-0411                         
-0412                         ; -----------------------------------------------------
-0413                         ; FDD6
-0414                         ; -----------------------------------------------------
-0415 fdd6 ce f0 e6           SUB     LDX     #T_X    ; Point X to start of T_X data
-0416 fdd9 a6 01                      LDAA    1,X     ; A = T_X (low)
-0417 fddb e6 00                      LDAB    0,X     ; B = T_X (high)
-0418 fddd a0 03                      SUBA    3,X     ; A = A - T_Y (low)
-0419 fddf e2 02                      SBCB    2,X     ; B = B - T_Y (high)
-0420 fde1 39                         RTS             ; RETURN
-0421                         
-0422                         ; -----------------------------------------------------
-0423                         ; S format data output : Modded version of Mikbug code
-0424                         ; -----------------------------------------------------
-0425 fde2 bd fc 89           PUNCH   JSR     GETADD      ; Prompt for "Start:","Stop:"
-0426 fde5 fe f0 ef                   LDX     T_STRT      ; Get start address
-0427 fde8 ff f0 d1                   STX     T_TW        ; save it to work area
-0428 fdeb b6 f0 f2           POUT1   LDAA    T_STOP+1    ; get low order of end address
-0429 fdee b0 f0 d2                   SUBA    T_TW+1      ; Subtract low order start
-0430 fdf1 f6 f0 f1                   LDAB    T_STOP      ; ( carry not affected by LDA )
-0431 fdf4 f2 f0 d1                   SBCB    T_TW        ; Subtract with Carry
-0432 fdf7 26 04                      BNE     POUT2
-0433 fdf9 81 10                      CMPA    #16
-0434 fdfb 25 02                      BCS     POUT3
-0435 fdfd 86 0f              POUT2   LDAA    #15
-0436 fdff 8b 04              POUT3   ADDA    #4
-0437 fe01 b7 f0 d4                   STAA    T_COUNT     ; FRAME COUNT THIS RECORD
-0438 fe04 80 03                      SUBA    #3
-0439 fe06 b7 f0 d5                   STAA    T_TEMP      ; BYTE COUNT THIS RECORD
-0440 fe09 bd fc 76                   JSR     STRING      ; Output this string...
-0441 fe0c 0d 0a                      FCB     $0D,$0A     ; c/r l/f
-0442 fe0e 53 31                      FCB     'S,'1       ; S1
-0443 fe10 ff                         FCB     $FF         ; End-Of-String
-0444 fe11 5f                         CLRB                ; Clear checksum
-0445                         
-0446                         ; Output frame count...
-0447 fe12 ce f0 d4                   LDX     #T_COUNT    ; X = Address of Framecount
-0448 fe15 bd fe a8                   JSR     POUTH2      ; O/P byte <-X and inc X
-0449                         
-0450                         ; Output address...
-0451 fe18 ce f0 d1                   LDX     #T_TW
-0452 fe1b bd fe a8                   JSR     POUTH2      ; O/P byte <-X and inc X
-0453 fe1e bd fe a8                   JSR     POUTH2      ; O/P byte <-X and inc X
-0454                         
-0455                         ; Output data...
-0456 fe21 fe f0 d1                   LDX     T_TW
-0457 fe24 bd fe a8           POUT4   JSR     POUTH2      ; O/P byte <-X and inc X
-0458 fe27 7a f0 d5                   DEC     T_TEMP      ; Decrement `bytes left` count
-0459 fe2a 26 f8                      BNE     POUT4       ; Loop back if any left
-0460 fe2c ff f0 d1                   STX     T_TW
-0461 fe2f 53                         COMB
-0462 fe30 37                         PSHB
-0463 fe31 30                         TSX                ; X = S + 1
-0464 fe32 8d 74                      BSR     POUTH2     ; PUNCH CHECKSUM
-0465 fe34 33                         PULB
-0466 fe35 fe f0 d1                   LDX     T_TW
-0467 fe38 09                         DEX
-0468 fe39 bc f0 f1                   CPX     T_STOP
-0469 fe3c 26 ad                      BNE     POUT1
-0470 fe3e 7e ff d6                   JMP     STERMS
-0471                         
-0472 fe41 01                         NOP
-0473 fe42 01                         NOP
-0474                         
-0475                         ; -----------------------------------------------------
-0476                         ; FE43
-0477                         ; -----------------------------------------------------
-0478 fe43 bd fc 65           MODIFY  JSR     RD_X    ; Get address to X
-0479 fe46 bd fd 4d           STRT    JSR     PRSP    ; Print a space
-0480 fe49 7f f0 f5                   CLR     T_R     ; T_R = 0
-0481 fe4c a6 00              PRz     LDAA    0,X     ; Get byte pointed to by X to A
-0482 fe4e bd fc c9                   JSR     ZOUT    ; Print it as 2.hex digits
-0483 fe51 bd fc 00           WATSIT  JSR     RD_CMD  ; Get command character
-0484 fe54 81 20              WHAT    CMPA    #$20    ; Is it a space ?
-0485 fe56 26 0c                      BNE     ISSLSH  ; No: go test for slash
-0486 fe58 08                 CARYON  INX             ; Increment X
-0487 fe59 b6 f0 f5                   LDAA    T_R     ; A = T_R
-0488 fe5c 81 16                      CMPA    #$16    ; At end of line ?
-0489 fe5e 2f ec                      BLE     PRz     ; No: Loop back to continue
-0490 fe60 8d 35              NEW_1   BSR     NEWLINE ; Print c/r l/f nul
-0491 fe62 20 e2                      BRA     STRT    ; Loop back (Note: Hex was wrong in doc, E2 instead of E5)
-0492                         
-0493 fe64 81 2f              ISSLSH  CMPA    #'/     ; Is it a slash ?
-0494 fe66 26 03                      BNE     ISCRET  ; No: go test for c/r
-0495 fe68 09                         DEX             ; X = X - 1
-0496 fe69 20 f5                      BRA     NEW_1   ; Loop back (print newline)
-0497                         
-0498 fe6b 81 0d              ISCRET  CMPA    #$0D    ; Is it a c/r ?
-0499 fe6d 26 03                      BNE     ISHEX   ; No: go test for valid Hex
-0500 fe6f 08                         INX             ; X = X + 1
-0501 fe70 20 ee                      BRA     NEW_1   ; Loop back (print newline)
-0502                         
-0503 fe72 bd fc 1d           ISHEX   JSR     VHEX    ; Is it a valid hex character ?
-0504 fe75 25 19                      BCS     PRQM    ; No: print `?` and ignore
-0505 fe77 b7 f0 f6                   STAA    T_Q     ; T_Q = A : Save it
-0506 fe7a bd fc 00                   JSR     RD_CMD  ; Get 2nd character
-0507 fe7d bd fc 1d                   JSR     VHEX    ; Is it a valid hex character ?
-0508 fe80 25 d2                      BCS     WHAT    ; No: then see what it is
-0509 fe82 16                         TAB             ; B = A
-0510 fe83 b6 f0 f6                   LDAA    T_Q     ; A = T_Q
-0511 fe86 bd fc 31                   JSR     BINARY  ; Convert to binary value
-0512 fe89 a7 00                      STAA    0,X     ; Store it
-0513 fe8b bd fd 4d                   JSR     PRSP    ; Print a space
-0514 fe8e 20 c8                      BRA     CARYON  ; Loop back
-0515                         
-0516 fe90 86 3f              PRQM    LDAA    #'?     ; Put `?` into A
-0517 fe92 bd fc 0f                   JSR     PR_A    ; Print it
-0518 fe95 20 ba                      BRA     WATSIT  ; Loop back
-0519                         
-0520 fe97 ff f0 e3           NEWLINE STX     T_SAVE  ; Save X
-0521 fe9a bd fc 76                   JSR     STRING  ; Print string...
-0522 fe9d 0d 0a 00                   FCB     $0D,$0A,$00
-0523 fea0 ff                         FCB     $FF     ; End-of-string
-0524 fea1 fe f0 e3                   LDX     T_SAVE  ; Restore X
-0525 fea4 bd fc bb                   JSR     PRX     ; Print X
-0526 fea7 39                         RTS             ; RETURN
-0527                         
-0528 fea8 eb 00              POUTH2 ADDB    0,X      ; Update checksum
-0529 feaa 36                         PSHA            ; Push A to STACK
-0530 feab a6 00                      LDAA    0,X     ; Load byte to be o/p
-0531 fead bd fc c9                   JSR     ZOUT    ; O/P byte <- X
-0532 feb0 32                         PULA            ; Pull A off STACK
-0533 feb1 08                         INX             ; Increment X
-0534 feb2 39                         RTS             ; RETURN
-0535                         
-0536                         ; Processes the termination record which, if we get here is an S9 record
-0537                         ; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
-0538                         ; which means there are left to absorb.
-0539 feb3 ce 00 08           STERMR  LDX     #8      ; get the number of bytes left in record
-0540 feb6 bd fc 00           STERM1  JSR     RD_CMD  ; read and echo from ACIA and ignore
-0541 feb9 09                         DEX
-0542 feba 26 fa                      BNE     STERM1   ; loop for remaining bytes
-0543 febc 7e ff 8f           STARTS  JMP     START
-0544                         
-0545 febf 01                         NOP
-0546 fec0 01                         NOP
-0547 fec1 01                         NOP
-0548                         
-0549                         ; -----------------------------------------------------
-0550                         ; FEC2
-0551                         ; -----------------------------------------------------
-0552 fec2 bd fc 65           GO      JSR     RD_X    ; Get address to X (16.bit)
-0553 fec5 bd fc 00                   JSR     RD_CMD  ; Right address ?
-0554 fec8 b6 f0 f4                   LDAA    T_Z+1   ; T_Z.low to A
-0555 fecb f6 f0 f3                   LDAB    T_Z     ; T_Z.high to B
-0556 fece fe f0 fd           GOTO    LDX     PSTACK  ; Callers stack address to X
-0557 fed1 a7 07                      STAA    7,X     ; Put new return
-0558 fed3 e7 06                      STAB    6,X     ; address on stack
-0559 fed5 be f0 fd                   LDS     PSTACK  ; Set up calling programs stack
-0560 fed8 3b                         RTI             ; RETURN-FROM-INTERRUPT (SWI)
-0561                         
-0562                         ; -----------------------------------------------------
-0563                         ; FED9
-0564                         ; -----------------------------------------------------
-0565 fed9 bd fc 00           CONTNU  JSR     RD_CMD  ; Read a byte (test for `.`)
-0566 fedc 81 31                      CMPA    #'1     ; Is it `1` ?
-0567 fede 26 10                      BNE     IsIt2  ; No: go test for `2`
-0568 fee0 fe f0 f7                   LDX     T_ABYT  ; Get address of break.point
-0569 fee3 b6 f0 fb                   LDAA    T_BYTE  ; Get saved opcode
-0570 fee6 a7 00                      STAA    0,X     ; Put it back in the program
-0571 fee8 b6 f0 f8                   LDAA    T_ABYT+1 ; Get address at which
-0572 feeb f6 f0 f7                   LDAB    T_ABYT  ;   to re-enter program
-0573 feee 20 de                      BRA     GOTO    ; Go to calling program
-0574                         
-0575 fef0 81 32              IsIt2   CMPA    #'2     ; Is it `2`
-0576 fef2 27 03                      BEQ     G_Is2   ; Yes: go process it
-0577 fef4 7e ff 8f                   JMP     START   ; No: Return to MINIMON
-0578 fef7 fe f0 f9           G_Is2   LDX     T_ABYT+2 ; Get addr. of break.point 2
-0579 fefa b6 f0 fc                   LDAA    T_BYTE+1 ; Get old opcode
-0580 fefd a7 00                      STAA    0,X      ; Put it back
-0581 feff b6 f0 fa                   LDAA    T_ABYT+3 ; Load address to start
-0582 ff02 f6 f0 f9                   LDAB    T_ABYT+2 ;  running program at
-0583 ff05 20 c7                      BRA     GOTO    ; Run user program
-0584                         
-0585                         ; -----------------------------------------------------
-0586                         ; FF07
-0587                         ; -----------------------------------------------------
-0588 ff07 bd fc 89           DUMP    JSR     GETADD  ; Prompt for boundary addresses
-0589 ff0a fe f0 ef                   LDX     T_STRT  ;
-0590 ff0d bd fe 97           D_NEW   JSR     NEWLINE ; Print c/r l/f nul
-0591 ff10 86 08                      LDAA    #$08    ;
-0592 ff12 b7 f0 f6                   STAA    T_Q     ; T_Q = 8
-0593 ff15 09                         DEX             ; X = X - 1
-0594 ff16 08                 D_NXT   INX             ; X = X + 1
-0595 ff17 bd fd 4d                   JSR     PRSP    ; Print a space
-0596 ff1a a6 00                      LDAA    0,X     ; Get a byte
-0597 ff1c bd fc c9                   JSR     ZOUT    ; Print it as 2.hex digits
-0598 ff1f bc f0 f1                   CPX     T_STOP  ; Finished ?
-0599 ff22 26 06                      BNE     D_CNT   ; No: Carry on
-0600 ff24 b6 f4 00           D_END   LDAA    DATAA   ; Get a byte from ACIA (clear)
-0601 ff27 7e ff 8f                   JMP     START   ; Return to MINIMON
-0602 ff2a b6 f4 01           D_CNT   LDAA    CTRLA   ; Read ACIA status
-0603 ff2d 85 01                      BITA    #$01    ; Stop dump ?
-0604 ff2f 26 f3                      BNE     D_END   ; Yes; go clear ACIA etc
-0605 ff31 7a f0 f6                   DEC     T_Q     ; New line needed ?
-0606 ff34 26 e0                      BNE     D_NXT   ; No: Loop back
-0607 ff36 08                         INX             ; Print next byte
-0608 ff37 20 d4                      BRA     D_NEW   ;  on a new line
-0609                         
-0610                         ; -----------------------------------------------------
-0611                         ; FF39
-0612                         ; -----------------------------------------------------
-0613 ff39 bd fc 00           BRPTSET JSR     RD_CMD  ; Read a byte (test for `.`)
-0614 ff3c 81 31                      CMPA    #'1     ; Is it `1` ?
-0615 ff3e 26 12                      BNE     Is2b    ; No: go test for `2`
-0616 ff40 bd fc 65                   JSR     RD_X    ; Read addr value into X
-0617 ff43 a6 00                      LDAA    0,X     ; Get the opcode
-0618 ff45 b7 f0 fb                   STAA    T_BYTE  ; Save it
-0619 ff48 ff f0 f7                   STX     T_ABYT  ; and the address
-0620 ff4b 86 3f              SAME    LDAA    #$3F    ; `SWI` opcode :
-0621 ff4d a7 00                      STAA    0,X     ;   set the breakpoint
-0622 ff4f 7e ff 8f           ENDB    JMP     START   ; Return to MINIMON
-0623 ff52 81 32              Is2b    CMPA    #'2     ; Is it `2` ?
-0624 ff54 26 f9                      BNE     ENDB   ; No: Return to MINIMON
-0625 ff56 bd fc 65                   JSR     RD_X    ; Read address into X
-0626 ff59 a6 00                      LDAA    0,X     ; Get opcode
-0627 ff5b b7 f0 fc                   STAA    T_BYTE+1 ; Save it
-0628 ff5e ff f0 f9                   STX     T_ABYT+2 ; Save address
-0629 ff61 20 e8                      BRA     SAME    ; Set the breakpoint
-0630                         
-0631                         ; -----------------------------------------------------
-0632                         ; FF63
-0633                         ; -----------------------------------------------------
-0634 ff63 bd fc 76           HEADER  JSR     STRING  ; print string...
-0635 ff66 20 43 43                   FCC     " CC"   ;
-0636 ff69 20 42 20                   FCC     " B "   ;
-0637 ff6c 20 41 20                   FCC     " A "   ;
-0638 ff6f 20 20 58                   FCC     "  X"   ;
-0639 ff72 20 20 20                   FCC     "   "   ;
-0640 ff75 20 50 43                   FCC     " PC"   ;
-0641 ff78 20 20 20                   FCC     "   "   ;
-0642 ff7b 53 50                      FCC     "SP"    ;
-0643 ff7d ff                         FCB     $FF     ; End-of-string
-0644 ff7e 20 0f                      BRA     START   ; Return to MINIMON
-0645                         
-0646 ff80 01                         NOP
-0647                         
-0648                         ; -----------------------------------------------------
-0649                         ; FF81
-0650                         ; -----------------------------------------------------
-0651 ff81 8e f0 d0           RESET   LDS     #STACK  ; Set up stack for MINIMON
-0652 ff84 86 03                      LDAA    #$03    ; Reset:
-0653 ff86 b7 f4 01                   STAA    CTRLA   ;   ACIA.A
-0654 ff89 b7 f4 03                   STAA    CTRLB   ;   ACIA.B
-0655                         
+0392                         ; -----------------------------------------------------
+0393                         ; FDC3
+0394                         ; -----------------------------------------------------
+0395 fdc3 bd fc 76           VERSION JSR     STRING
+0396 fdc6 20 56 45 52 20 31          FCC     " VER 1.0"
+     2e 30
+0397 fdce ff                         FCB     $FF
+0398 fdcf 7e ff 8f                   JMP     START
+0399                         
+0400 fdd2 01                         NOP
+0401 fdd3 01                         NOP
+0402 fdd4 01                         NOP
+0403 fdd5 01                         NOP
+0404                         
+0405                         ; -----------------------------------------------------
+0406                         ; FDD6
+0407                         ; -----------------------------------------------------
+0408 fdd6 ce f0 e6           SUB     LDX     #T_X    ; Point X to start of T_X data
+0409 fdd9 a6 01                      LDAA    1,X     ; A = T_X (low)
+0410 fddb e6 00                      LDAB    0,X     ; B = T_X (high)
+0411 fddd a0 03                      SUBA    3,X     ; A = A - T_Y (low)
+0412 fddf e2 02                      SBCB    2,X     ; B = B - T_Y (high)
+0413 fde1 39                         RTS             ; RETURN
+0414                         
+0415                         ; -----------------------------------------------------
+0416                         ; S format data output : Modded version of Mikbug code
+0417                         ; -----------------------------------------------------
+0418 fde2 bd fc 89           PUNCH   JSR     GETADD      ; Prompt for "Start:","Stop:"
+0419 fde5 fe f0 ef                   LDX     T_STRT      ; Get start address
+0420 fde8 ff f0 d1                   STX     T_TW        ; save it to work area
+0421 fdeb b6 f0 f2           POUT1   LDAA    T_STOP+1    ; get low order of end address
+0422 fdee b0 f0 d2                   SUBA    T_TW+1      ; Subtract low order start
+0423 fdf1 f6 f0 f1                   LDAB    T_STOP      ; ( carry not affected by LDA )
+0424 fdf4 f2 f0 d1                   SBCB    T_TW        ; Subtract with Carry
+0425 fdf7 26 04                      BNE     POUT2
+0426 fdf9 81 10                      CMPA    #16
+0427 fdfb 25 02                      BCS     POUT3
+0428 fdfd 86 0f              POUT2   LDAA    #15
+0429 fdff 8b 04              POUT3   ADDA    #4
+0430 fe01 b7 f0 d4                   STAA    T_COUNT     ; FRAME COUNT THIS RECORD
+0431 fe04 80 03                      SUBA    #3
+0432 fe06 b7 f0 d5                   STAA    T_TEMP      ; BYTE COUNT THIS RECORD
+0433 fe09 bd fc 76                   JSR     STRING      ; Output this string...
+0434 fe0c 0d 0a                      FCB     $0D,$0A     ; c/r l/f
+0435 fe0e 53 31                      FCB     'S,'1       ; S1
+0436 fe10 ff                         FCB     $FF         ; End-Of-String
+0437 fe11 5f                         CLRB                ; Clear checksum
+0438                         
+0439                         ; Output frame count...
+0440 fe12 ce f0 d4                   LDX     #T_COUNT    ; X = Address of Framecount
+0441 fe15 bd fe a8                   JSR     POUTH2      ; O/P byte <-X and inc X
+0442                         
+0443                         ; Output address...
+0444 fe18 ce f0 d1                   LDX     #T_TW
+0445 fe1b bd fe a8                   JSR     POUTH2      ; O/P byte <-X and inc X
+0446 fe1e bd fe a8                   JSR     POUTH2      ; O/P byte <-X and inc X
+0447                         
+0448                         ; Output data...
+0449 fe21 fe f0 d1                   LDX     T_TW
+0450 fe24 bd fe a8           POUT4   JSR     POUTH2      ; O/P byte <-X and inc X
+0451 fe27 7a f0 d5                   DEC     T_TEMP      ; Decrement `bytes left` count
+0452 fe2a 26 f8                      BNE     POUT4       ; Loop back if any left
+0453 fe2c ff f0 d1                   STX     T_TW
+0454 fe2f 53                         COMB
+0455 fe30 37                         PSHB
+0456 fe31 30                         TSX                ; X = S + 1
+0457 fe32 8d 74                      BSR     POUTH2     ; PUNCH CHECKSUM
+0458 fe34 33                         PULB
+0459 fe35 fe f0 d1                   LDX     T_TW
+0460 fe38 09                         DEX
+0461 fe39 bc f0 f1                   CPX     T_STOP
+0462 fe3c 26 ad                      BNE     POUT1
+0463 fe3e 7e ff d9                   JMP     STERMS
+0464                         
+0465 fe41 01                         NOP
+0466 fe42 01                         NOP
+0467                         
+0468                         ; -----------------------------------------------------
+0469                         ; FE43
+0470                         ; -----------------------------------------------------
+0471 fe43 bd fc 65           MODIFY  JSR     RD_X    ; Get address to X
+0472 fe46 bd fd 4d           STRT    JSR     PRSP    ; Print a space
+0473 fe49 7f f0 f5                   CLR     T_R     ; T_R = 0
+0474 fe4c a6 00              PRz     LDAA    0,X     ; Get byte pointed to by X to A
+0475 fe4e bd fc c9                   JSR     ZOUT    ; Print it as 2.hex digits
+0476 fe51 bd fc 00           WATSIT  JSR     RD_CMD  ; Get command character
+0477 fe54 81 20              WHAT    CMPA    #$20    ; Is it a space ?
+0478 fe56 26 0c                      BNE     ISSLSH  ; No: go test for slash
+0479 fe58 08                 CARYON  INX             ; Increment X
+0480 fe59 b6 f0 f5                   LDAA    T_R     ; A = T_R
+0481 fe5c 81 16                      CMPA    #$16    ; At end of line ?
+0482 fe5e 2f ec                      BLE     PRz     ; No: Loop back to continue
+0483 fe60 8d 35              NEW_1   BSR     NEWLINE ; Print c/r l/f nul
+0484 fe62 20 e2                      BRA     STRT    ; Loop back (Note: Hex was wrong in doc, E2 instead of E5)
+0485                         
+0486 fe64 81 2f              ISSLSH  CMPA    #'/     ; Is it a slash ?
+0487 fe66 26 03                      BNE     ISCRET  ; No: go test for c/r
+0488 fe68 09                         DEX             ; X = X - 1
+0489 fe69 20 f5                      BRA     NEW_1   ; Loop back (print newline)
+0490                         
+0491 fe6b 81 0d              ISCRET  CMPA    #$0D    ; Is it a c/r ?
+0492 fe6d 26 03                      BNE     ISHEX   ; No: go test for valid Hex
+0493 fe6f 08                         INX             ; X = X + 1
+0494 fe70 20 ee                      BRA     NEW_1   ; Loop back (print newline)
+0495                         
+0496 fe72 bd fc 1d           ISHEX   JSR     VHEX    ; Is it a valid hex character ?
+0497 fe75 25 19                      BCS     PRQM    ; No: print `?` and ignore
+0498 fe77 b7 f0 f6                   STAA    T_Q     ; T_Q = A : Save it
+0499 fe7a bd fc 00                   JSR     RD_CMD  ; Get 2nd character
+0500 fe7d bd fc 1d                   JSR     VHEX    ; Is it a valid hex character ?
+0501 fe80 25 d2                      BCS     WHAT    ; No: then see what it is
+0502 fe82 16                         TAB             ; B = A
+0503 fe83 b6 f0 f6                   LDAA    T_Q     ; A = T_Q
+0504 fe86 bd fc 31                   JSR     BINARY  ; Convert to binary value
+0505 fe89 a7 00                      STAA    0,X     ; Store it
+0506 fe8b bd fd 4d                   JSR     PRSP    ; Print a space
+0507 fe8e 20 c8                      BRA     CARYON  ; Loop back
+0508                         
+0509 fe90 86 3f              PRQM    LDAA    #'?     ; Put `?` into A
+0510 fe92 bd fc 0f                   JSR     PR_A    ; Print it
+0511 fe95 20 ba                      BRA     WATSIT  ; Loop back
+0512                         
+0513 fe97 ff f0 e3           NEWLINE STX     T_SAVE  ; Save X
+0514 fe9a bd fc 76                   JSR     STRING  ; Print string...
+0515 fe9d 0d 0a 00                   FCB     $0D,$0A,$00
+0516 fea0 ff                         FCB     $FF     ; End-of-string
+0517 fea1 fe f0 e3                   LDX     T_SAVE  ; Restore X
+0518 fea4 bd fc bb                   JSR     PRX     ; Print X
+0519 fea7 39                         RTS             ; RETURN
+0520                         
+0521 fea8 eb 00              POUTH2 ADDB    0,X      ; Update checksum
+0522 feaa 36                         PSHA            ; Push A to STACK
+0523 feab a6 00                      LDAA    0,X     ; Load byte to be o/p
+0524 fead bd fc c9                   JSR     ZOUT    ; O/P byte <- X
+0525 feb0 32                         PULA            ; Pull A off STACK
+0526 feb1 08                         INX             ; Increment X
+0527 feb2 39                         RTS             ; RETURN
+0528                         
+0529                         ; Processes the termination record which, if we get here is an S9 record
+0530                         ; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
+0531                         ; which means there are left to absorb.
+0532 feb3 ce 00 08           STERMR  LDX     #8      ; get the number of bytes left in record
+0533 feb6 bd fc 00           STERM1  JSR     RD_CMD  ; read and echo from ACIA and ignore
+0534 feb9 09                         DEX
+0535 feba 26 fa                      BNE     STERM1   ; loop for remaining bytes
+0536 febc 7e ff 8f           STARTS  JMP     START
+0537                         
+0538 febf 01                         NOP
+0539 fec0 01                         NOP
+0540 fec1 01                         NOP
+0541                         
+0542                         ; -----------------------------------------------------
+0543                         ; FEC2
+0544                         ; -----------------------------------------------------
+0545 fec2 bd fc 65           GO      JSR     RD_X    ; Get address to X (16.bit)
+0546 fec5 bd fc 00                   JSR     RD_CMD  ; Right address ?
+0547 fec8 b6 f0 f4                   LDAA    T_Z+1   ; T_Z.low to A
+0548 fecb f6 f0 f3                   LDAB    T_Z     ; T_Z.high to B
+0549 fece fe f0 fd           GOTO    LDX     PSTACK  ; Callers stack address to X
+0550 fed1 a7 07                      STAA    7,X     ; Put new return
+0551 fed3 e7 06                      STAB    6,X     ; address on stack
+0552 fed5 be f0 fd                   LDS     PSTACK  ; Set up calling programs stack
+0553 fed8 3b                         RTI             ; RETURN-FROM-INTERRUPT (SWI)
+0554                         
+0555                         ; -----------------------------------------------------
+0556                         ; FED9
+0557                         ; -----------------------------------------------------
+0558 fed9 bd fc 00           CONTNU  JSR     RD_CMD  ; Read a byte (test for `.`)
+0559 fedc 81 31                      CMPA    #'1     ; Is it `1` ?
+0560 fede 26 10                      BNE     IsIt2  ; No: go test for `2`
+0561 fee0 fe f0 f7                   LDX     T_ABYT  ; Get address of break.point
+0562 fee3 b6 f0 fb                   LDAA    T_BYTE  ; Get saved opcode
+0563 fee6 a7 00                      STAA    0,X     ; Put it back in the program
+0564 fee8 b6 f0 f8                   LDAA    T_ABYT+1 ; Get address at which
+0565 feeb f6 f0 f7                   LDAB    T_ABYT  ;   to re-enter program
+0566 feee 20 de                      BRA     GOTO    ; Go to calling program
+0567                         
+0568 fef0 81 32              IsIt2   CMPA    #'2     ; Is it `2`
+0569 fef2 27 03                      BEQ     G_Is2   ; Yes: go process it
+0570 fef4 7e ff 8f                   JMP     START   ; No: Return to MINIMON
+0571 fef7 fe f0 f9           G_Is2   LDX     T_ABYT+2 ; Get addr. of break.point 2
+0572 fefa b6 f0 fc                   LDAA    T_BYTE+1 ; Get old opcode
+0573 fefd a7 00                      STAA    0,X      ; Put it back
+0574 feff b6 f0 fa                   LDAA    T_ABYT+3 ; Load address to start
+0575 ff02 f6 f0 f9                   LDAB    T_ABYT+2 ;  running program at
+0576 ff05 20 c7                      BRA     GOTO    ; Run user program
+0577                         
+0578                         ; -----------------------------------------------------
+0579                         ; FF07
+0580                         ; -----------------------------------------------------
+0581 ff07 bd fc 89           DUMP    JSR     GETADD  ; Prompt for boundary addresses
+0582 ff0a fe f0 ef                   LDX     T_STRT  ;
+0583 ff0d bd fe 97           D_NEW   JSR     NEWLINE ; Print c/r l/f nul
+0584 ff10 86 08                      LDAA    #$08    ;
+0585 ff12 b7 f0 f6                   STAA    T_Q     ; T_Q = 8
+0586 ff15 09                         DEX             ; X = X - 1
+0587 ff16 08                 D_NXT   INX             ; X = X + 1
+0588 ff17 bd fd 4d                   JSR     PRSP    ; Print a space
+0589 ff1a a6 00                      LDAA    0,X     ; Get a byte
+0590 ff1c bd fc c9                   JSR     ZOUT    ; Print it as 2.hex digits
+0591 ff1f bc f0 f1                   CPX     T_STOP  ; Finished ?
+0592 ff22 26 06                      BNE     D_CNT   ; No: Carry on
+0593 ff24 b6 f4 00           D_END   LDAA    DATAA   ; Get a byte from ACIA (clear)
+0594 ff27 7e ff 8f                   JMP     START   ; Return to MINIMON
+0595 ff2a b6 f4 01           D_CNT   LDAA    CTRLA   ; Read ACIA status
+0596 ff2d 85 01                      BITA    #$01    ; Stop dump ?
+0597 ff2f 26 f3                      BNE     D_END   ; Yes; go clear ACIA etc
+0598 ff31 7a f0 f6                   DEC     T_Q     ; New line needed ?
+0599 ff34 26 e0                      BNE     D_NXT   ; No: Loop back
+0600 ff36 08                         INX             ; Print next byte
+0601 ff37 20 d4                      BRA     D_NEW   ;  on a new line
+0602                         
+0603                         ; -----------------------------------------------------
+0604                         ; FF39
+0605                         ; -----------------------------------------------------
+0606 ff39 bd fc 00           BRPTSET JSR     RD_CMD  ; Read a byte (test for `.`)
+0607 ff3c 81 31                      CMPA    #'1     ; Is it `1` ?
+0608 ff3e 26 12                      BNE     Is2b    ; No: go test for `2`
+0609 ff40 bd fc 65                   JSR     RD_X    ; Read addr value into X
+0610 ff43 a6 00                      LDAA    0,X     ; Get the opcode
+0611 ff45 b7 f0 fb                   STAA    T_BYTE  ; Save it
+0612 ff48 ff f0 f7                   STX     T_ABYT  ; and the address
+0613 ff4b 86 3f              SAME    LDAA    #$3F    ; `SWI` opcode :
+0614 ff4d a7 00                      STAA    0,X     ;   set the breakpoint
+0615 ff4f 7e ff 8f           ENDB    JMP     START   ; Return to MINIMON
+0616 ff52 81 32              Is2b    CMPA    #'2     ; Is it `2` ?
+0617 ff54 26 f9                      BNE     ENDB   ; No: Return to MINIMON
+0618 ff56 bd fc 65                   JSR     RD_X    ; Read address into X
+0619 ff59 a6 00                      LDAA    0,X     ; Get opcode
+0620 ff5b b7 f0 fc                   STAA    T_BYTE+1 ; Save it
+0621 ff5e ff f0 f9                   STX     T_ABYT+2 ; Save address
+0622 ff61 20 e8                      BRA     SAME    ; Set the breakpoint
+0623                         
+0624                         ; -----------------------------------------------------
+0625                         ; FF63
+0626                         ; -----------------------------------------------------
+0627 ff63 bd fc 76           HEADER  JSR     STRING  ; print string...
+0628 ff66 20 43 43                   FCC     " CC"   ;
+0629 ff69 20 42 20                   FCC     " B "   ;
+0630 ff6c 20 41 20                   FCC     " A "   ;
+0631 ff6f 20 20 58                   FCC     "  X"   ;
+0632 ff72 20 20 20                   FCC     "   "   ;
+0633 ff75 20 50 43                   FCC     " PC"   ;
+0634 ff78 20 20 20                   FCC     "   "   ;
+0635 ff7b 53 50                      FCC     "SP"    ;
+0636 ff7d ff                         FCB     $FF     ; End-of-string
+0637 ff7e 20 0f                      BRA     START   ; Return to MINIMON
+0638                         
+0639 ff80 01                         NOP
+0640                         
+0641                         ; -----------------------------------------------------
+0642                         ; FF81
+0643                         ; -----------------------------------------------------
+0644 ff81 8e f0 d0           RESET   LDS     #STACK  ; Set up stack for MINIMON
+0645 ff84 86 03                      LDAA    #$03    ; Reset:
+0646 ff86 b7 f4 01                   STAA    CTRLA   ;   ACIA.A
+0647 ff89 b7 f4 03                   STAA    CTRLB   ;   ACIA.B
+0648                         
+0649                         ; -----------------------------------------------------
+0650                         ; FF8C
+0651                         ; -----------------------------------------------------
+0652 ff8c bf f0 fd           SWI     STS     PSTACK  ; Save callers stack pointer
+0653                         
+0654                         ; -----------------------------------------------------
+0655                         ; FF8F
 0656                         ; -----------------------------------------------------
-0657                         ; FF8C
-0658                         ; -----------------------------------------------------
-0659 ff8c bf f0 fd           SWI     STS     PSTACK  ; Save callers stack pointer
-0660                         
-0661                         ; -----------------------------------------------------
-0662                         ; FF8F
-0663                         ; -----------------------------------------------------
-0664 ff8f 8e f0 d0           START   LDS     #STACK  ; Set up stack for MINMON
-0665 ff92 8d 54                      BSR     SETACIA ; Set up ACIAs
-0666 ff94 bd fc 76                   JSR     STRING  ; Print string...
-0667 ff97 0d 0a 00 2a                FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
-0668 ff9b ff                         FCB     $FF     ; End-of-string
-0669 ff9c bd fc 00                   JSR     RD_CMD  ; Read a byte (test for `.`)
-0670 ff9f ce ff b5                   LDX     #CMDTAB ; point to command table
-0671 ffa2 e6 00              CMDLP   LDAB    0,X     ; B = key byte (0 ends table)
-0672 ffa4 27 e9                      BEQ     START   ; end of table → default to START
-0673 ffa6 11                         CBA             ; compare A vs B
-0674 ffa7 27 05                      BEQ     FOUND   ; match → dispatch
-0675 ffa9 08                         INX             ; skip key
-0676 ffaa 08                         INX             ; skip FDB high
-0677 ffab 08                         INX             ; skip FDB low
-0678 ffac 20 f4                      BRA      CMDLP  ; try next entry
-0679                         
-0680 ffae e6 01              FOUND   LDAB    1,X     ; B = target high byte (FDB stores high,low)
-0681 ffb0 a6 02                      LDAA    2,X     ; A = target low byte
-0682 ffb2 36                         PSHA            ; push high first
-0683 ffb3 37                         PSHB            ; push low — now low is on top of stack
-0684 ffb4 39                         RTS             ; jump to target
-0685                         
-0686                         ; This can probably be removed...
-0687                         ;.DEFAULT JMP     START ; unknown command → ignore
-0688                         
-0689                         ; Command table: key, then FDB routine
-0690 ffb5 53                 CMDTAB  FCB     'S
-0691 ffb6 ff 39                      FDB     BRPTSET
-0692 ffb8 48                         FCB     'H
-0693 ffb9 ff 63                      FDB     HEADER
-0694 ffbb 50                         FCB     'P
-0695 ffbc fd e2                      FDB     PUNCH
-0696 ffbe 4c                         FCB     'L
-0697 ffbf fc e3                      FDB     LOAD
-0698 ffc1 52                         FCB     'R
-0699 ffc2 fd 36                      FDB     REGPRT
-0700 ffc4 4d                         FCB     'M
-0701 ffc5 fe 43                      FDB     MODIFY
-0702 ffc7 47                         FCB     'G
-0703 ffc8 fe c2                      FDB     GO
-0704 ffca 43                         FCB     'C
-0705 ffcb fe d9                      FDB     CONTNU
-0706 ffcd 44                         FCB     'D
-0707 ffce ff 07                      FDB     DUMP
-0708 ffd0 54                         FCB     'T'
-0709 ffd1 fd 62                      FDB     MEMTEST
-0710 ffd3 00                         FCB     0       ; terminator
-0711 ffd4 ff 8f                      FDB     START   ; not used (any value ok after 0)
-0712                         
-0713                         ; Transmit an address '0000' S9 terminating record
-0714 ffd6 bd fc 76           STERMS  JSR     STRING
-0715 ffd9 0d 0a                      FCB     $0D,$0A
-0716 ffdb 53 39 30 33 30 30          FCC     "S9030000FC"
+0657 ff8f 8e f0 d0           START   LDS     #STACK  ; Set up stack for MINMON
+0658 ff92 8d 57                      BSR     SETACIA ; Set up ACIAs
+0659 ff94 bd fc 76                   JSR     STRING  ; Print string...
+0660 ff97 0d 0a 00 2a                FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
+0661 ff9b ff                         FCB     $FF     ; End-of-string
+0662 ff9c bd fc 00                   JSR     RD_CMD  ; Read a byte (test for `.`)
+0663 ff9f ce ff b5                   LDX     #CMDTAB ; point to command table
+0664 ffa2 e6 00              CMDLP   LDAB    0,X     ; B = key byte (0 ends table)
+0665 ffa4 27 e9                      BEQ     START   ; end of table → default to START
+0666 ffa6 11                         CBA             ; compare A vs B
+0667 ffa7 27 05                      BEQ     FOUND   ; match → dispatch
+0668 ffa9 08                         INX             ; skip key
+0669 ffaa 08                         INX             ; skip FDB high
+0670 ffab 08                         INX             ; skip FDB low
+0671 ffac 20 f4                      BRA      CMDLP  ; try next entry
+0672                         
+0673 ffae e6 01              FOUND   LDAB    1,X     ; B = target high byte (FDB stores high,low)
+0674 ffb0 a6 02                      LDAA    2,X     ; A = target low byte
+0675 ffb2 36                         PSHA            ; push high first
+0676 ffb3 37                         PSHB            ; push low — now low is on top of stack
+0677 ffb4 39                         RTS             ; jump to target
+0678                         
+0679                         ; This can probably be removed...
+0680                         ;.DEFAULT JMP     START ; unknown command → ignore
+0681                         
+0682                         ; Command table: key, then FDB routine
+0683 ffb5 53                 CMDTAB  FCB     'S
+0684 ffb6 ff 39                      FDB     BRPTSET
+0685 ffb8 48                         FCB     'H
+0686 ffb9 ff 63                      FDB     HEADER
+0687 ffbb 50                         FCB     'P
+0688 ffbc fd e2                      FDB     PUNCH
+0689 ffbe 4c                         FCB     'L
+0690 ffbf fc e3                      FDB     LOAD
+0691 ffc1 52                         FCB     'R
+0692 ffc2 fd 36                      FDB     REGPRT
+0693 ffc4 4d                         FCB     'M
+0694 ffc5 fe 43                      FDB     MODIFY
+0695 ffc7 47                         FCB     'G
+0696 ffc8 fe c2                      FDB     GO
+0697 ffca 43                         FCB     'C
+0698 ffcb fe d9                      FDB     CONTNU
+0699 ffcd 44                         FCB     'D
+0700 ffce ff 07                      FDB     DUMP
+0701 ffd0 54                         FCB     'T'
+0702 ffd1 fd 62                      FDB     MEMTEST
+0703 ffd3 56                         FCB     'V'
+0704 ffd4 fd c3                      FDB     VERSION
+0705 ffd6 00                         FCB     0       ; terminator
+0706 ffd7 ff 8f                      FDB     START   ; not used (any value ok after 0)
+0707                         
+0708                         ; Transmit an address '0000' S9 terminating record
+0709 ffd9 bd fc 76           STERMS  JSR     STRING
+0710 ffdc 0d 0a                      FCB     $0D,$0A
+0711 ffde 53 39 30 33 30 30          FCC     "S9030000FC"
      30 30 46 43
-0717 ffe5 ff                         FCB     $FF
-0718 ffe6 20 a7                      BRA     START
-0719                         
-0720                         ; Reset the ACIAs
-0721 ffe8 86 11              SETACIA LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
-0722 ffea b7 f4 01                   STAA    CTRLA   ;   ACIA.A
-0723 ffed 86 01                      LDAA     #$01    ; 7 Data, Even Parity, 2 Stop Bits
-0724 ffef b7 f4 03                   STAA     CTRLB   ;   ACIA.B
-0725 fff2 39                         RTS
-0726                         
-0727 fff3 01                         NOP
-0728 fff4 01                         NOP
-0729 fff5 01                         NOP
-0730 fff6 01                         NOP
-0731 fff7 01                         NOP
-0732                         
+0712 ffe8 ff                         FCB     $FF
+0713 ffe9 20 a4                      BRA     START
+0714                         
+0715                         ; Reset the ACIAs
+0716 ffeb 86 11              SETACIA LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
+0717 ffed b7 f4 01                   STAA    CTRLA   ;   ACIA.A
+0718 fff0 86 01                      LDAA    #$01    ; 7 Data, Even Parity, 2 Stop Bits
+0719 fff2 b7 f4 03                   STAA    CTRLB   ;   ACIA.B
+0720 fff5 39                         RTS
+0721                         
+0722 fff6 01                         NOP
+0723 fff7 01                         NOP
+0724                         
+0725                         ; -----------------------------------------------------
+0726                         ; Vectors
+0727                         ; FFF8
+0728                         ; -----------------------------------------------------
+0729 fff8 f0 e0                      FDB     JIRQ    ; IRQ
+0730 fffa ff 8c                      FDB     SWI     ; SWI
+0731 fffc f0 dd                      FDB     JNMI    ; NMI
+0732 fffe ff 81                      FDB     RESET   ; Reset
 0733                         
-0734                         ; -----------------------------------------------------
-0735                         ; Vectors
-0736                         ; FFF8
-0737                         ; -----------------------------------------------------
-0738 fff8 f0 e0                      FDB     JIRQ    ; IRQ
-0739 fffa ff 8c                      FDB     SWI     ; SWI
-0740 fffc f0 dd                      FDB     JNMI    ; NMI
-0741 fffe ff 81                      FDB     RESET   ; Reset
-0742                         
-0743                         ;       The End
-0744                         
+0734                         ;       The End
+0735                         

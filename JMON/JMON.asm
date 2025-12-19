@@ -389,21 +389,14 @@ MEMTEST JSR     GETADD      ; get the start and finish addresses
         FCB     $FF
         JMP START
 
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
+; -----------------------------------------------------
+; FDC3
+; -----------------------------------------------------
+VERSION JSR     STRING
+        FCC     " VER 1.0"
+        FCB     $FF
+        JMP     START
+
         NOP
         NOP
         NOP
@@ -707,6 +700,8 @@ CMDTAB  FCB     'S
         FDB     DUMP
         FCB     'T'
         FDB     MEMTEST
+        FCB     'V'
+        FDB     VERSION
         FCB     0       ; terminator
         FDB     START   ; not used (any value ok after 0)
 
@@ -720,16 +715,12 @@ STERMS  JSR     STRING
 ; Reset the ACIAs
 SETACIA LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
         STAA    CTRLA   ;   ACIA.A
-        LDAA     #$01    ; 7 Data, Even Parity, 2 Stop Bits
-        STAA     CTRLB   ;   ACIA.B
+        LDAA    #$01    ; 7 Data, Even Parity, 2 Stop Bits
+        STAA    CTRLB   ;   ACIA.B
         RTS
 
         NOP
         NOP
-        NOP
-        NOP
-        NOP
-
 
 ; -----------------------------------------------------
 ; Vectors
