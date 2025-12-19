@@ -60,4 +60,3 @@ MEMTEST JSR     STRING
         FCC     " FLT"
         FCB     $FF
         JMP     START
-PRCR

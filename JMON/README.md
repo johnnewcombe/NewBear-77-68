@@ -2,7 +2,7 @@
 
 
 Created by GlassTTY, Jan. 2026, using MINIMON (ACH, Dec. 1978) as a base
-with additional code from Motorola's MIKBUG.
+with additional code including SRec routines from Motorola's MIKBUG.
 
 Special thanks to Chris Carter for inspiration and help.
 
@@ -22,11 +22,11 @@ rarely used as all cross-assemblers perform these calculations
 automatically. In addition BLOCKMOVE command (Cmd 'B') has been removed
 to allow for a memory test command to be added (Cmd 'T')'.
 
-One other minor change is that the terminal along with any devices sending
-S19 format files have been configured for 8 Data Bits, No Parity, 2 Stop
-Bits.
+The terminal should be connected to ACIA(A) and configured for either 7E2
+or 8N2.
 
-The following is a list of routines within MINIMON.
+The following is a list of routines within MINIMON. The locations of these
+are fixed.
 
 ```text
 RD_CMD  FC00 - Inputs a character from the JMON prompt and echos the character. The routine restarts JMON if a

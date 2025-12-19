@@ -266,13 +266,13 @@ ZIN2    JSR     BINARY  ; Convert A:B to binary to A
 
 ; -----------------------------------------------------
 ; S19 format data load : Modded version of Mikbug code
+; FCE3
 ; -----------------------------------------------------
 LOAD    EQU     *       ; L = Load = Input an S19 file
         BSR     STRING
         FCB     $0D,$0A ; c/r l/f
         FCB     $FF     ; End-Of-String
 LREAD   JSR     RD_CMD  ; Read+Echo, test for '.'
-        ANDA    #$7F    ; Mask off parity bit if it exists
         CMPA    #'S     ; Is it `S` ?
         BNE     LREAD   ; No: Keep waiting for `S`
         JSR     RD_CMD  ; Read+Echo, test for '.'
@@ -303,6 +303,8 @@ PR_QM   LDAA #'?        ; Put '?' character in A
         NOP
         NOP
         NOP
+        NOP
+        NOP
 
 ; -----------------------------------------------------
 ; Read byte from ACIA.A to A
@@ -311,8 +313,10 @@ PR_QM   LDAA #'?        ; Put '?' character in A
 RD_A    LDAA    CTRLA   ; Get ACIA.A status byte
         BITA    #$01    ; Is byte ready in DATAA
         BEQ     RD_A    ; No: Try again
-        LDAA    DATAA   ; Get the data byte to A
-        RTS             ; RETURN
+        JMP     PARITY  ; Need to clear parity as we
+                        ; need to support 7E2 & 8N2
+
+        NOP
 
 ; -----------------------------------------------------
 ; FD36
@@ -393,13 +397,14 @@ MEMTEST JSR     GETADD      ; get the start and finish addresses
 ; FDC3
 ; -----------------------------------------------------
 VERSION JSR     STRING
-        FCC     " VER 1.0"
+        FCC     " 1.0 "
         FCB     $FF
         JMP     START
 
-        NOP
-        NOP
-        NOP
+PARITY  LDAA    DATAA   ; Get the data byte to A
+        ANDA    #$7F    ; Mask off parity bit if it exists
+        RTS             ; RETURN
+
         NOP
 
 ; -----------------------------------------------------
