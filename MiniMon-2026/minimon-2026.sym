@@ -1,16 +1,5 @@
 output:  minimon-2026.s19
-.CMDLP     ffa5
-.FOUND     ffb1
-.fOut1     fdeb
-.fOut2     fdfd
-.fOut3     fdff
-.fOut4     fe24
-.fOutH2    fea8
-.sChk      fd1a
-.sDoByt    fd0d
-.sRead     fce8
-.sRead1    fcfb
-ADD        fcb8
+ADD        fcb8
 AGAIN      fc7a
 AND        fcab
 ASCII      fc9e
@@ -18,6 +7,7 @@ BINARY     fc31
 BLKMOV     fd62
 BRPTSET    ff39
 CARYON     fe58
+CMDLP      ffa5
 CMDTAB     ffb8
 CONTNU     fed9
 CONT_A     fd90
@@ -35,6 +25,7 @@ D_NEW      ff0d
 D_NXT      ff16
 ENDB       ff4f
 ENDSTR     fc85
+FOUND      ffb1
 GETADD     fc89
 GO         fec2
 GOTO       fece
@@ -48,14 +39,23 @@ IsHex      fc25
 IsIt2      fef0
 JIRQ       f0e0
 JNMI       f0dd
+LCHK       fd1a
+LDOBYT     fd0d
 LETTA      fc41
 LETTB      fc45
 LOAD       fce3
+LREAD      fce8
+LREAD1     fcfb
 MODIFY     fe43
 NEWLINE    fe97
 NEW_1      fe60
 NotHex     fc2f
 NotNum     fc27
+POUT1      fdeb
+POUT2      fdfd
+POUT3      fdff
+POUT4      fe24
+POUTH2     fea8
 PR2        fd59
 PR4        fd53
 PR4X       fd54
@@ -91,6 +91,8 @@ SUBT       fcb4
 SWI        ff8c
 T_ABYT     f0f7
 T_BYTE     f0fb
+T_COUNT    f0d4
+T_CSUM     f0d3
 T_M        f0ec
 T_NEW      f0ea
 T_P        f0e5
@@ -99,7 +101,9 @@ T_R        f0f5
 T_SAVE     f0e3
 T_STOP     f0f1
 T_STRT     f0ef
+T_TEMP     f0d5
 T_TMPX     f0ed
+T_TW       f0d1
 T_X        f0e6
 T_Y        f0e8
 T_Z        f0f3
@@ -110,7 +114,3 @@ ZIN        fc49
 ZIN2       fcd8
 ZOUT       fcc9
 Z_PRQM     fc5f
-b_Count    f0d4
-b_Csum     f0d3
-b_Temp     f0d5
-d_TW       f0d1

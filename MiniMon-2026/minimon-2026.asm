@@ -46,10 +46,10 @@ STACK   EQU     $F0D0   ; tack goes down from $F0D0
 ; -----------------------------------------------------
 
 ; $F0D1 to $F0DC is unused RAM in original  MINIMON
-d_TW    RMB     2       ; New additions to support SRec
-b_Csum  RMB     1       ;            "
-b_Count RMB     1       ;            "
-b_Temp  RMB     1       ;            "
+T_TW    RMB     2       ; New additions to support SRec
+T_CSUM  RMB     1       ;            "
+T_COUNT RMB     1       ;            "
+T_TEMP  RMB     1       ;            "
 
 ; -----------------------------------------------------
         ORG     $F0E3   ; Start of RAM variables
@@ -86,6 +86,7 @@ RD_CMD  JSR     RD_A    ; Input one character
         CMPA    #'.     ; Was it a fullstop ?
         BNE     PRA_END ;
         JMP     START   ; Yes: Go to start of MINIMON
+
         NOP
 
 ; -----------------------------------------------------
@@ -231,6 +232,7 @@ PRX     STX     T_TMPX  ; Save X
         BSR     ZOUT    ; Print A as 2 hex digits
         LDAA    T_TMPX+1; Get low order byte to A
         BRA     ZOUT    ; Print A as 2 hex digits
+
         NOP
 
 ; -----------------------------------------------------
@@ -254,8 +256,8 @@ ZOUT    PSHB            ; Save B to STACK
 ; second part of S19 version of ZIN
 ZIN2    JSR     BINARY  ; Convert A:B to binary to A
         TAB             ; B=A
-        ADDB    b_Csum  ; Add this value
-        STAB    b_Csum  ; to the Checksum (for S19)
+        ADDB    T_CSUM  ; Add this value
+        STAB    T_CSUM  ; to the Checksum (for S19)
         RTS             ; RETURN
 
 ; -----------------------------------------------------
@@ -265,34 +267,34 @@ LOAD    EQU     *       ; L = Load = Input an S19 file
         BSR     STRING
         FCB     $0D,$0A ; c/r l/f
         FCB     $FF     ; End-Of-String
-.sRead  JSR     RD_CMD  ; Read+Echo, test for '.'
+LREAD   JSR     RD_CMD  ; Read+Echo, test for '.'
         ANDA    #$7F    ; Mask off parity bit if it exists
         CMPA    #'S     ; Is it `S` ?
-        BNE     .sRead  ; No: Keep waiting for `S`
+        BNE     LREAD   ; No: Keep waiting for `S`
         JSR     RD_CMD  ; Read+Echo, test for '.'
         CMPA    #'9     ; Is it `9` ?  ( `S9` record )
-        BNE     .sRead1
+        BNE     LREAD1
         JMP     STERMR  ; handle termination record
-.sRead1 CMPA    #'1     ; Is it `1` ?  ( `S1` record )
-        BNE     .sRead  ; No: Wait for next `S`
-        CLR     b_Csum  ; Clear checksum
+LREAD1  CMPA    #'1     ; Is it `1` ?  ( `S1` record )
+        BNE     LREAD   ; No: Wait for next `S`
+        CLR     T_CSUM  ; Clear checksum
         JSR     ZIN     ; Read 2xHex = data.byte count to A
         SUBA    #2      ; Subtract 2 (to get bytes left in line)
-        STAA    b_Count ; Store byte count
+        STAA    T_COUNT ; Store byte count
         JSR     RD_X    ; Read 4xHex digit address to X
-.sDoByt JSR     ZIN     ; Read 2xHex digits, value to A
-        DEC     b_Count ; Decrement our byte count
-        BEQ     .sChk   ; If end-of-line, go look at checksum
+LDOBYT  JSR     ZIN     ; Read 2xHex digits, value to A
+        DEC     T_COUNT ; Decrement our byte count
+        BEQ     LCHK    ; If end-of-line, go look at checksum
         STAA    0,X     ; Save byte where X points
         INX             ; Point X at next byte
-        BRA     .sDoByt ; Go get next byte
-.sChk   INC     b_Csum  ; Add 1 to checksum
-        BEQ     .sRead  ; OK: Go read next record
+        BRA     LDOBYT  ; Go get next byte
+LCHK    INC     T_CSUM  ; Add 1 to checksum
+        BEQ     LREAD   ; OK: Go read next record
         BSR     PR_QM   ; Print "?"
         BRA     STARTR  ; Go to START
 
-PR_QM   LDAA #'?            ; Put '?' character in A
-        JMP     PR_A        ; Print it and return via PR_As RTS
+PR_QM   LDAA #'?        ; Put '?' character in A
+        JMP     PR_A    ; Print it and return via PR_As RTS
 
         NOP
         NOP
@@ -406,50 +408,50 @@ SUB     LDX     #T_X    ; Point X to start of T_X data
 ; S format data output : Modded version of Mikbug code
 ; -----------------------------------------------------
 PUNCH   JSR     GETADD      ; Prompt for "Start:","Stop:"
-        LDX     T_STRT     ; Get start address
-        STX     d_TW        ; save it to work area
-.fOut1  LDAA    T_STOP+1    ; get low order of end address
-        SUBA    d_TW+1      ; Subtract low order start
+        LDX     T_STRT      ; Get start address
+        STX     T_TW        ; save it to work area
+POUT1   LDAA    T_STOP+1    ; get low order of end address
+        SUBA    T_TW+1      ; Subtract low order start
         LDAB    T_STOP      ; ( carry not affected by LDA )
-        SBCB    d_TW        ; Subtract with Carry
-        BNE     .fOut2
+        SBCB    T_TW        ; Subtract with Carry
+        BNE     POUT2
         CMPA    #16
-        BCS     .fOut3
-.fOut2  LDAA    #15
-.fOut3  ADDA    #4
-        STAA    b_Count     ; FRAME COUNT THIS RECORD
+        BCS     POUT3
+POUT2   LDAA    #15
+POUT3   ADDA    #4
+        STAA    T_COUNT     ; FRAME COUNT THIS RECORD
         SUBA    #3
-        STAA    b_Temp      ; BYTE COUNT THIS RECORD
+        STAA    T_TEMP      ; BYTE COUNT THIS RECORD
         JSR     STRING      ; Output this string...
-        FCB     $0D,$0A       ; c/r l/f
+        FCB     $0D,$0A     ; c/r l/f
         FCB     'S,'1       ; S1
         FCB     $FF         ; End-Of-String
         CLRB                ; Clear checksum
 
 ; Output frame count...
-        LDX     #b_Count    ; X = Address of Framecount
-        JSR     .fOutH2    ; O/P byte <-X and inc X
+        LDX     #T_COUNT    ; X = Address of Framecount
+        JSR     POUTH2      ; O/P byte <-X and inc X
 
 ; Output address...
-        LDX     #d_TW
-        JSR     .fOutH2    ; O/P byte <-X and inc X
-        JSR     .fOutH2    ; O/P byte <-X and inc X
+        LDX     #T_TW
+        JSR     POUTH2      ; O/P byte <-X and inc X
+        JSR     POUTH2      ; O/P byte <-X and inc X
 
 ; Output data...
-        LDX     d_TW
-.fOut4  JSR     .fOutH2    ; O/P byte <-X and inc X
-        DEC     b_Temp      ; Decrement `bytes left` count
-        BNE     .fOut4      ; Loop back if any left
-        STX     d_TW
+        LDX     T_TW
+POUT4   JSR     POUTH2      ; O/P byte <-X and inc X
+        DEC     T_TEMP      ; Decrement `bytes left` count
+        BNE     POUT4       ; Loop back if any left
+        STX     T_TW
         COMB
         PSHB
-        TSX                 ; X = S + 1
-        BSR     .fOutH2    ; PUNCH CHECKSUM
+        TSX                ; X = S + 1
+        BSR     POUTH2     ; PUNCH CHECKSUM
         PULB
-        LDX     d_TW
+        LDX     T_TW
         DEX
         CPX     T_STOP
-        BNE     .fOut1
+        BNE     POUT1
         JMP     STERMS
 
         NOP
@@ -508,26 +510,26 @@ NEWLINE STX     T_SAVE  ; Save X
         JSR     PRX     ; Print X
         RTS             ; RETURN
 
-.fOutH2 ADDB    0,X         ; Update checksum
-        PSHA                ; Push A to STACK
-        LDAA    0,X         ; Load byte to be o/p
-        JSR     ZOUT        ; O/P byte <- X
-        PULA                ; Pull A off STACK
-        INX                 ; Increment X
-        RTS                 ; RETURN
+POUTH2 ADDB    0,X      ; Update checksum
+        PSHA            ; Push A to STACK
+        LDAA    0,X     ; Load byte to be o/p
+        JSR     ZOUT    ; O/P byte <- X
+        PULA            ; Pull A off STACK
+        INX             ; Increment X
+        RTS             ; RETURN
 
 ; Processes the termination record which, if we get here is an S9 record
 ; A will contain the umber of bytes to follow (should be 39h i.e. ASCII '9')
 ; which means there are left to absorb.
-STERMR      LDX     #8          ; get the number of bytes left in record
-STERM1      JSR     RD_CMD      ; read and echo from ACIA and ignore
-            DEX
-            BNE     STERM1      ; loop for remaining bytes
-STARTS      JMP     START
+STERMR  LDX     #8      ; get the number of bytes left in record
+STERM1  JSR     RD_CMD  ; read and echo from ACIA and ignore
+        DEX
+        BNE     STERM1   ; loop for remaining bytes
+STARTS  JMP     START
 
-            NOP
-            NOP
-            NOP
+        NOP
+        NOP
+        NOP
 
 ; -----------------------------------------------------
 ; FEC2
@@ -625,6 +627,7 @@ HEADER  JSR     STRING  ; print string...
         FCC     "SP"    ;
         FCB     $FF     ; End-of-string
         BRA     START   ; Return to MINIMON
+
         NOP
 
 ; -----------------------------------------------------
@@ -644,28 +647,26 @@ SWI     STS     PSTACK  ; Save callers stack pointer
 ; FF8F
 ; -----------------------------------------------------
 START   LDS     #STACK  ; Set up stack for MINMON
-       ;LDAA    #$11    ; Set up: 8N2
-        LDAA    #$09    ; Set up: 7E1
+        LDAA    #$11    ; Set up: 8N2
         STAA    CTRLA   ;   ACIA.A
         JSR     STRING  ; Print string...
         FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
         FCB     $FF     ; End-of-string
         JSR     RD_CMD  ; Read a byte (test for `.`)
         LDX     #CMDTAB     ; point to command table
-.CMDLP  LDAB    0,X         ; B = key byte (0 ends table)
+CMDLP   LDAB    0,X         ; B = key byte (0 ends table)
         BEQ     START       ; end of table → default to START
         CBA                 ; compare A vs B
-        BEQ     .FOUND      ; match → dispatch
+        BEQ     FOUND       ; match → dispatch
         INX                 ; skip key
         INX                 ; skip FDB high
         INX                 ; skip FDB low
-        BRA     .CMDLP      ; try next entry
+        BRA      CMDLP      ; try next entry
 
-.FOUND  LDAB    1,X        ; B = target high byte (FDB stores high,low)
+FOUND   LDAB    1,X        ; B = target high byte (FDB stores high,low)
         LDAA    2,X        ; A = target low byte
         PSHA                ; push high first
         PSHB                ; push low — now low is on top of stack
-;        WAI
         RTS                 ; jump to target
 
 ; This can probably be removed...
@@ -696,25 +697,25 @@ CMDTAB  FCB     'S
         FDB     START       ; not used (any value ok after 0)
 
 ; Transmit an address '0000' S9 terminating record
-STERMS      JSR     STRING
-            FCB     $0D,$0A
-            FCC     "S9030000FC"
-            FCB $FF
-            BRA START
+STERMS  JSR     STRING
+        FCB     $0D,$0A
+        FCC     "S9030000FC"
+        FCB     $FF
+        BRA     START
 
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
-            NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
 
 ; -----------------------------------------------------
 ; Vectors
