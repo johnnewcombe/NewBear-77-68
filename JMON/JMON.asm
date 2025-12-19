@@ -347,9 +347,7 @@ PR2     INX             ; Point X to next character
 ; -----------------------------------------------------
 ; FD62
 ; -----------------------------------------------------
-MEMTEST
-
-        JSR     GETADD      ; get the start and finish addresses
+MEMTEST JSR     GETADD      ; get the start and finish addresses
         JSR     STRING
         FCC     " TESTING..."
         FCB     $0D,$0A,$FF
@@ -381,6 +379,9 @@ MEMTEST
         INCB                ; change the pattern and repeat
         BNE     .TST        ; we loop the test 256 times
 .END    LDAA    DATAA       ; Clear a byte from ACIA
+        JSR     STRING
+        FCC     " OK"
+        FCB     $FF
         JMP     START
 .FAULT  JSR     NEWLINE
         JSR     STRING
@@ -388,13 +389,6 @@ MEMTEST
         FCB     $FF
         JMP START
 
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
         NOP
         NOP
         NOP

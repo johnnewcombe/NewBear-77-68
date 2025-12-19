@@ -1,20 +1,36 @@
-# MiniMon-2026
+# JMON
 
 
-This is an updated version of MINIMON with *S Record Format* LOAD and PUNCH routines. All entry points and labels as published in
-the MINIMON documentation have been preserved with the exception of the LOAD and PUNCH commands, see list below.
+Created by GlassTTY, Jan. 2026, using MINIMON (ACH, Dec. 1978) as a base
+with additional code from Motorola's MIKBUG.
 
-In order to make space for the additional code required, the ALTER and OFFSET CALCULATION commands have been removed.
-The MODIFY command has very similar functionality to ALTER making ALTER unnecessary, and the OFFSET CALCULATION routines
-(commands X and Y) have been removed as all cross-assemblers perform these calculations automatically.
+Special thanks to Chris Carter for inspiration and help.
 
-The Terminal and any devices sending S19 format files should be configured for 8 Data Bits, No Parity, 2 Stop Bits.
+This is a MINIMON compatible monitor for the 77-68 Bear/Newbear system with
+the LOAD and PUNCH commands replaced for versions that support the
+Motorola S Record Format (.s19) files.
+
+All entry points and source code labels as published in the MINIMON
+documentation have been preserved with the exception of the LOAD and PUNCH
+commands.
+
+In order to make space for the additional code required, the ALTER and
+OFFSET CALCULATION commands have been removed. This has been justified as
+the MODIFY command has very similar functionality to ALTER making ALTER
+unnecessary, and the OFFSET CALCULATION routines (commands X and Y) are
+rarely used as all cross-assemblers perform these calculations
+automatically. In addition BLOCKMOVE command (Cmd 'B') has been removed
+to allow for a memory test command to be added (Cmd 'T')'.
+
+One other minor change is that the terminal along with any devices sending
+S19 format files have been configured for 8 Data Bits, No Parity, 2 Stop
+Bits.
 
 The following is a list of routines within MINIMON.
 
 ```text
-RD_CMD  FC00 - Inputs a character from the MiniMon prompt and echos the character. The routine restarts MiniMon if a
-                full stop is entered. The value is returned in A.
+RD_CMD  FC00 - Inputs a character from the JMON prompt and echos the character. The routine restarts JMON if a
+               full stop is entered. The value is returned in A.
 PR_A    FC0F - Sends the character in A to ACIA(a). Address T_R contains the number of characters printed.character
 VHEX    FC1D - Checks that A contains a HEX character
 BINARY  FC31 - Converts ASCII hex digits in A and B to binary?
@@ -25,24 +41,23 @@ GETADD  FC89 - Get Address, read 4 digit hex value.
 ASCII   FC9E - Convert value in A to 2 x ASCII hex digits in A and B.
 PRX     FCBB - Print value in X as 4 hex digits.
 ZOUT    FCC9 - Print value in A as 2 hex digits.
-PUNCH   FDE2 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
-LOAD    FCE3 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
-BIN     FD01 - Inistialise ACIA(a) to 8N2 (MiniMon terminal originally used 7E1 for normal interaction).
+PUNCH   FDE2 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
+LOAD    FCE3 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 RD_A    FD2B - Read byte from ACIA.A to A.
-REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts MiniMon.
+REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 PRSP    FD4D - Prints a space.
-BLKMOV  FD62 - Invokes the BLOCK MOVE command.
+MEMTEST FD62 - Invokes the MEMORY TEST command.
 SUB     FDD6 - Subtract uses T_X 16 bit data area at F0E6.
 PRP     FE33 - Prints he string " P ".
 PRD     FE3B - Prints he string " D ".
 MODIFY  FE43 - Invokes the MODIFY command.
 GO      FEC2 - Invokes the GO command, This is an SW1 call.
-CONTNU  FED9 - Invokes the CONTINUE command, as THIS IS NOT A SUBROUTINE but restarts MiniMon.
+CONTNU  FED9 - Invokes the CONTINUE command, as THIS IS NOT A SUBROUTINE but restarts JMON.
 DUMP    FF07 - Invokes the DUMP command.
 BRPTSET FF39 - Invokes the SET BREAKPOINT command.terminal
 HEADER  FF63 - Prints the header used for the register display.
-RESET   FF81 - Resets ACIAs saves the callers stack pointer and restarts MiniMon.
-SWI     FF8C - Saves callers stack pointer and restarts MiniMon.
+RESET   FF81 - Resets ACIAs saves the callers stack pointer and restarts JMON.
+SWI     FF8C - Saves callers stack pointer and restarts JMON.
 START   FF8F - Restarts MniMon.
 ```
 
