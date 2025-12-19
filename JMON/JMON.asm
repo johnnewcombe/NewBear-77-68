@@ -676,9 +676,6 @@ FOUND   LDAB    1,X     ; B = target high byte (FDB stores high,low)
         PSHB            ; push low — now low is on top of stack
         RTS             ; jump to target
 
-; This can probably be removed...
-;.DEFAULT JMP     START ; unknown command → ignore
-
 ; Command table: key, then FDB routine
 CMDTAB  FCB     'S
         FDB     BRPTSET

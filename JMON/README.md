@@ -47,6 +47,7 @@ RD_A    FD2B - Read byte from ACIA.A to A.
 REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 PRSP    FD4D - Prints a space.
 MEMTEST FD62 - Invokes the MEMORY TEST command.
+VERSION FDC3 - Reports JMON version.
 SUB     FDD6 - Subtract uses T_X 16 bit data area at F0E6.
 PRP     FE33 - Prints he string " P ".
 PRD     FE3B - Prints he string " D ".
