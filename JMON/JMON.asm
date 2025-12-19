@@ -1,11 +1,17 @@
 ; ----------------------------------------------------------------------------
-; Minimon (Jan. 2026)
+; JMON (Jan. 2026)
 ; ----------------------------------------------------------------------------
-; Original author ACH, Dec. 1978;
+;
+; Created by GlassTTY, Jan. 2026, using MINIMON (ACH, Dec. 1978) as a base
+; with additional code from Motorola's MIKBUG.
+;
+; Special thanks to Chris Carter for inspiration and help.
+;
 ; ----------------------------------------------------------------------------
-; This is an updated version of MINIMON with the LOAD and PUNCH commands
-; replaced for versions that support the Motorola S Record Format (.s19)
-; files.
+;
+; This is a MINIMON compatible monitor for the 77-68 Bear/Newbear system with
+; the LOAD and PUNCH commands replaced for versions that support the
+; Motorola S Record Format (.s19) files.
 ;
 ; All entry points and source code labels as published in the MINIMON
 ; documentation have been preserved with the exception of the LOAD and PUNCH
@@ -16,15 +22,13 @@
 ; the MODIFY command has very similar functionality to ALTER making ALTER
 ; unnecessary, and the OFFSET CALCULATION routines (commands X and Y) are
 ; rarely used as all cross-assemblers perform these calculations
-; automatically.
+; automatically. In addition BLOCKMOVE command (Cmd 'B') has been removed
+; to allow for a memory test command to be added (Cmd 'T')'.
 ;
 ; One other minor change is that the terminal along with any devices sending
-; S19 format files should be configured for 8 Data Bits, No Parity, 2 Stop
+; S19 format files have been configured for 8 Data Bits, No Parity, 2 Stop
 ; Bits.
 ;
-; ----------------------------------------------------------------------------
-; Updated by GlassTTY, Jan. 2026, using code from Motorola's Mikbug.
-; Thanks to Chris Carter for inspiration and help.
 ; ----------------------------------------------------------------------------
 
 CTRLA   EQU     $F401   ; ACIA.A Ctrl/Status
@@ -322,9 +326,8 @@ REGPRT  BSR     PRSP    ; Print a space
         BSR     PR4     ; Print PC
         LDX     #PSTACK ; Point X at stack pointer
         BSR     PR4X    ; Print stack pointer
-STARTR  BRA     STARTB  ; (RETURN) to MINIMON
+STARTR  JMP     START  ; (RETURN) to MINIMON
 
-        NOP
 
 ; -----------------------------------------------------
 ; FD4D
@@ -344,54 +347,72 @@ PR2     INX             ; Point X to next character
 ; -----------------------------------------------------
 ; FD62
 ; -----------------------------------------------------
-BLKMOV  JSR     GETADD  ; Prompt for boundary addresses
-        JSR     STRING  ; Print string...
-        FCC     " To"   ;
-        FCB     $FF     ; End-of-string
-        JSR     RD_X    ; Read 4 hex digit value into X
-        STX     T_NEW   ; Store it as NEW start address
-        STX     T_X     ;   "    "
-        LDX     T_STRT  ; Put start address into X
-        STX     T_Y     ; Store it
-        BSR     SUB     ; Perform T_X minus T_Y
-        BPL     DOWN    ; Go to Move downwards
-        LDX     T_STOP  ; Get the STOP stop address
-        INX             ; Add 1 to it
-        STX     T_STOP  ; and save it
-DO_UP   LDX     T_STRT  ; Get START address
-        CPX     T_STOP  ; Compare it with STOP
-        BNE     CONT_A  ; Finished ?
-STARTB  BRA     STARTR  ; Yes: back to MINIMON
-CONT_A  LDAA    0,X     ; No: Get data
-        INX             ; Point X to next `old` address
-        STX     T_STRT  ; and store it
-        LDX     T_NEW   ; get address of NEW location
-        STAA    0,X     ; Store the data at NEW address
-        INX             ; Point X to next `new` address
-        STX     T_NEW   ; and store it
-        BRA     DO_UP   ; loop back for next byte
-DOWN    LDX     T_STOP  ; Get end address
-        STX     T_X     ; Store it
-        BSR     SUB     ; Perform T_X minus T_Y
-        ADDA    T_NEW+1 ; Add NEW (low.byte) to A
-        ADDB    T_NEW   ; Add NEW (high.byte) to B
-        STAA    T_NEW+1 ; Save NEW (low.byte)
-        STAB    T_NEW   ;         (high.byte)
-        LDX     T_STRT  ; Get START address
-        DEX             ; Subract 1 from X
-        STX     T_STRT  ; Store it
-DO_DOWN LDX     T_STOP  ; Get STOP address
-        CPX     T_STRT  ; Compare it with START address
-        BEQ     STARTB  ; Effecively `JMP START`
-        LDAA    0,X     ; Get data
-        DEX             ; Subract 1 from X
-        STX     T_STOP  ; Store it
-        LDX     T_NEW   ; Load NEW loc address into X
-        STAA    0,X     ; Store the data as NEW address
-        DEX             ; Point X to next `new` address
-        STX     T_NEW   ; Store it
-        BRA     DO_DOWN ; Loop back for next byte
+MEMTEST
 
+        JSR     GETADD      ; get the start and finish addresses
+        JSR     STRING
+        FCC     " TESTING..."
+        FCB     $0D,$0A,$FF
+        CLRB                ; set up accumulators
+.TST    PSHB
+        JSR     STRING
+        FCB     $0D,$FF
+        PULB
+        TBA
+        JSR     ZOUT
+        LDX     T_STRT      ; put start address in X
+        CLRA
+.LOOP1  ABA                 ; create the pattern
+        STAA    0,X         ; Write to memory
+        INX
+        CPX     T_STOP      ; Check for end of memory
+        BNE     .LOOP1
+        LDX     T_STRT
+        CLRA
+.LOOP2  ABA
+        CMPA     0,X        ; Read from memory
+        BNE     .FAULT
+.NOPR   INX
+        CPX     T_STOP
+        BNE     .LOOP2
+        LDAA    CTRLA       ; Read ACIA status
+        BITA    #$01        ; Key waiting?
+        BNE     .END        ; Yes so end the test
+        INCB                ; change the pattern and repeat
+        BNE     .TST        ; we loop the test 256 times
+.END    LDAA    DATAA       ; Clear a byte from ACIA
+        JMP     START
+.FAULT  JSR     NEWLINE
+        JSR     STRING
+        FCC     " FLT"
+        FCB     $FF
+        JMP START
+
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
         NOP
 
 ; -----------------------------------------------------
@@ -647,30 +668,29 @@ SWI     STS     PSTACK  ; Save callers stack pointer
 ; FF8F
 ; -----------------------------------------------------
 START   LDS     #STACK  ; Set up stack for MINMON
-        LDAA    #$11    ; Set up: 8N2
-        STAA    CTRLA   ;   ACIA.A
+        BSR     SETACIA ; Set up ACIAs
         JSR     STRING  ; Print string...
         FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
         FCB     $FF     ; End-of-string
         JSR     RD_CMD  ; Read a byte (test for `.`)
-        LDX     #CMDTAB     ; point to command table
-CMDLP   LDAB    0,X         ; B = key byte (0 ends table)
-        BEQ     START       ; end of table → default to START
-        CBA                 ; compare A vs B
-        BEQ     FOUND       ; match → dispatch
-        INX                 ; skip key
-        INX                 ; skip FDB high
-        INX                 ; skip FDB low
-        BRA      CMDLP      ; try next entry
+        LDX     #CMDTAB ; point to command table
+CMDLP   LDAB    0,X     ; B = key byte (0 ends table)
+        BEQ     START   ; end of table → default to START
+        CBA             ; compare A vs B
+        BEQ     FOUND   ; match → dispatch
+        INX             ; skip key
+        INX             ; skip FDB high
+        INX             ; skip FDB low
+        BRA      CMDLP  ; try next entry
 
-FOUND   LDAB    1,X        ; B = target high byte (FDB stores high,low)
-        LDAA    2,X        ; A = target low byte
-        PSHA                ; push high first
-        PSHB                ; push low — now low is on top of stack
-        RTS                 ; jump to target
+FOUND   LDAB    1,X     ; B = target high byte (FDB stores high,low)
+        LDAA    2,X     ; A = target low byte
+        PSHA            ; push high first
+        PSHB            ; push low — now low is on top of stack
+        RTS             ; jump to target
 
 ; This can probably be removed...
-;.DEFAULT JMP     START      ; unknown command → ignore
+;.DEFAULT JMP     START ; unknown command → ignore
 
 ; Command table: key, then FDB routine
 CMDTAB  FCB     'S
@@ -683,8 +703,6 @@ CMDTAB  FCB     'S
         FDB     LOAD
         FCB     'R
         FDB     REGPRT
-        FCB     'B
-        FDB     BLKMOV
         FCB     'M
         FDB     MODIFY
         FCB     'G
@@ -693,8 +711,10 @@ CMDTAB  FCB     'S
         FDB     CONTNU
         FCB     'D
         FDB     DUMP
-        FCB     0           ; terminator
-        FDB     START       ; not used (any value ok after 0)
+        FCB     'T'
+        FDB     MEMTEST
+        FCB     0       ; terminator
+        FDB     START   ; not used (any value ok after 0)
 
 ; Transmit an address '0000' S9 terminating record
 STERMS  JSR     STRING
@@ -703,19 +723,19 @@ STERMS  JSR     STRING
         FCB     $FF
         BRA     START
 
+; Reset the ACIAs
+SETACIA LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
+        STAA    CTRLA   ;   ACIA.A
+        LDAA     #$01    ; 7 Data, Even Parity, 2 Stop Bits
+        STAA     CTRLB   ;   ACIA.B
+        RTS
+
         NOP
         NOP
         NOP
         NOP
         NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
+
 
 ; -----------------------------------------------------
 ; Vectors
