@@ -262,7 +262,6 @@ ZOUT    PSHB            ; Save B to STACK
         PULB            ; Recover B from STACK
         RTS             ; RETURN
 
-
 ; second part of S19 version of ZIN
 ZIN2    JSR     BINARY  ; Convert A:B to binary to A
         TAB             ; B=A
@@ -360,14 +359,9 @@ PR2     INX             ; Point X to next character
 MEMTEST JSR     GETADD      ; get the start and finish addresses
         JSR     STRING
         FCC     " TESTING..."
-        FCB     $0D,$0A,$FF
+        FCB     $FF
         CLRB                ; set up accumulators
-.TST    PSHB
-        JSR     STRING
-        FCB     $0D,$FF
-        PULB
-        TBA
-        JSR     ZOUT
+.TST    TBA
         LDX     T_STRT      ; put start address in X
         CLRA
 .LOOP1  ABA                 ; create the pattern
@@ -400,10 +394,10 @@ MEMTEST JSR     GETADD      ; get the start and finish addresses
         JMP START
 
 ; -----------------------------------------------------
-; FDC3
+; FDB7
 ; -----------------------------------------------------
 VERSION JSR     STRING
-        FCC     " 1.00" ;
+        FCC     " 0.01" ;
         FCB     $FF
         JMP     START
 
@@ -411,6 +405,18 @@ PARITY  LDAA    DATAA   ; Get the data byte to A
         ANDA    #$7F    ; Mask off parity bit if it exists
         RTS             ; RETURN
 
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
         NOP
 
 ; -----------------------------------------------------
