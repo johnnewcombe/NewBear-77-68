@@ -94,8 +94,8 @@ SUBT       fcb4
 SWI        ff8c
 T_ABYT     f0f7
 T_BYTE     f0fb
-T_COUNT    f0d4
-T_CSUM     f0d3
+T_COUNT    f0db
+T_CSUM     f0da
 T_M        f0ec
 T_NEW      f0ea
 T_P        f0e5
@@ -104,9 +104,9 @@ T_R        f0f5
 T_SAVE     f0e3
 T_STOP     f0f1
 T_STRT     f0ef
-T_TEMP     f0d5
+T_TEMP     f0dc
 T_TMPX     f0ed
-T_TW       f0d1
+T_TW       f0d8
 T_X        f0e6
 T_Y        f0e8
 T_Z        f0f3

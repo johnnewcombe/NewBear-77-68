@@ -43,13 +43,14 @@ DATAB   EQU     $F402   ; ACIA.B Data register
 ; -----------------------------------------------------
 JNMI    EQU     $F0DD   ; 3 bytes for jump to NMI sub.
 JIRQ    EQU     $F0E0   ; 3 bytes for jump to IRQ sub.
-STACK   EQU     $F0D0   ; tack goes down from $F0D0
+STACK   EQU     $F0D0   ; Stack goes down from $F0D0
 
 ; -----------------------------------------------------
-        ORG     $F0D1
+        ORG     $F0D8
+; -----------------------------------------------------
+; $F0D1 to $F0DC APPREARS TO BE unused RAM
 ; -----------------------------------------------------
 
-; $F0D1 to $F0DC is unused RAM in original  MINIMON
 T_TW    RMB     2       ; New additions to support SRec
 T_CSUM  RMB     1       ;            "
 T_COUNT RMB     1       ;            "
@@ -397,7 +398,7 @@ MEMTEST JSR     GETADD      ; get the start and finish addresses
 ; FDC3
 ; -----------------------------------------------------
 VERSION JSR     STRING
-        FCC     " 1.0 "
+        FCC     " 1.00" ;
         FCB     $FF
         JMP     START
 
@@ -659,7 +660,7 @@ SWI     STS     PSTACK  ; Save callers stack pointer
 ; -----------------------------------------------------
 ; FF8F
 ; -----------------------------------------------------
-START   LDS     #STACK  ; Set up stack for MINMON
+START   LDS     #STACK  ; Set up stack for JMON
         BSR     SETACIA ; Set up ACIAs
         JSR     STRING  ; Print string...
         FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
