@@ -8,58 +8,61 @@ output:  memtest.s19
 0007                         ; Load and run from F000, e.g.
 0008                         ;
 0009                         ;
-0010 fc76                    STRING  EQU $FC76 ; Prints a string. The string should follow JSR and be terminated with $FF.
-0011 fc89                    GETADD  EQU $FC89 ; Get Address, read 4 digit hex value.
-0012 fcc9                    ZOUT    EQU $FCC9 ; Print value in A as 2 hex digits.
-0013 fe97                    NEWLINE EQU $FE97 ; Prints a new line.
-0014 ff8f                    START   EQU $FF8F ; Restarts MniMon.
-0015 f0ef                    T_STRT  EQU $F0EF ; Temp storage for GETADDRESS
-0016 f0f1                    T_STOP  EQU $F0F1 ; Temp storage for GETADDRESS
-0017 f401                    CTRLA   EQU $F401 ; ACIA.A Ctrl/Status
-0018 f400                    DATAA   EQU $F400 ; ACIA.A Data register
-0019                         
-0020 f000                    	    ORG $F000
-0021                         
-0022 f000 bd fc 76           MEMTEST JSR     STRING
-0023 f003 4d 45 4d 54 45 53          FCC     "MEMTEST"
+0010                         ; MINIMON Variables
+0011 f0ef                    T_STRT  EQU $F0EF ; Temp storage for GETADDRESS
+0012 f0f1                    T_STOP  EQU $F0F1 ; Temp storage for GETADDRESS
+0013                         
+0014                         ; 7768 ACIA(a)
+0015 f401                    CTRLA   EQU $F401 ; ACIA.A Ctrl/Status
+0016 f400                    DATAA   EQU $F400 ; ACIA.A Data register
+0017                         
+0018                         ; MINIMON routines
+0019 fc76                    STRING  EQU $FC76 ; Prints a string. The string should follow JSR and be terminated with $FF.
+0020 fc89                    GETADD  EQU $FC89 ; Get Address, read 4 digit hex value.
+0021 fcc9                    ZOUT    EQU $FCC9 ; Print value in A as 2 hex digits.
+0022 fe97                    NEWLINE EQU $FE97 ; Prints a new line.
+0023 ff8f                    START   EQU $FF8F ; Restarts MniMon.
+0024                         
+0025 f000                    	    ORG $F000
+0026                         
+0027 f000 bd fc 76           MEMTEST JSR     STRING
+0028 f003 4d 45 4d 54 45 53          FCC     "MEMTEST"
      54
-0024 f00a 0d 0a ff                   FCB     $0D, $0A,$FF
-0025 f00d bd fc 89                   JSR     GETADD      ; get the start and finish addresses
-0026 f010 bd fc 76                   JSR     STRING
-0027 f013 20 54 45 53 54 49          FCC     " TESTING..."
-     4e 47 2e 2e 2e
-0028 f01e 0d 0a ff                   FCB     $0D,$0A,$FF
-0029 f021 5f                         CLRB                ; set up accumulators
-0030 f022 37                 .TST    PSHB
-0031 f023 bd fc 76                   JSR     STRING
-0032 f026 0d ff                      FCB     $0D,$FF
-0033 f028 33                         PULB
-0034 f029 17                         TBA
-0035 f02a bd fc c9                   JSR     ZOUT
-0036 f02d fe f0 ef                   LDX     T_STRT      ; put start address in X
-0037 f030 4f                         CLRA
-0038 f031 1b                 .LOOP1  ABA                 ; create the pattern
-0039 f032 a7 00                      STAA    0,X         ; Write to memory
-0040 f034 08                         INX
-0041 f035 bc f0 f1                   CPX     T_STOP      ; Check for end of memory
-0042 f038 26 f7                      BNE     .LOOP1
-0043 f03a fe f0 ef                   LDX     T_STRT
-0044 f03d 4f                         CLRA
-0045 f03e 1b                 .LOOP2  ABA
-0046 f03f a1 00                      CMPA     0,X        ; Read from memory
-0047 f041 26 16                      BNE     .FAULT
-0048 f043 08                 .NOPR   INX
-0049 f044 bc f0 f1                   CPX     T_STOP
-0050 f047 26 f5                      BNE     .LOOP2
-0051 f049 b6 f4 01                   LDAA    CTRLA       ; Read ACIA status
-0052 f04c 85 01                      BITA    #$01        ; Key waiting?
-0053 f04e 26 03                      BNE     .END        ; Yes so end the test
-0054 f050 5c                         INCB                ; change the pattern and repeat
-0055 f051 26 cf                      BNE     .TST        ; we loop the test 256 times
-0056 f053 b6 f4 00           .END    LDAA    DATAA       ; Clear a byte from ACIA
-0057 f056 7e ff 8f                   JMP     START
-0058 f059 bd fe 97           .FAULT  JSR     NEWLINE
-0059 f05c bd fc 76                   JSR     STRING
-0060 f05f 20 46 4c 54                FCC     " FLT"
-0061 f063 ff                         FCB     $FF
-0062 f064 7e ff 8f                   JMP     START
+0029 f00a 0d 0a ff                   FCB     $0D, $0A,$FF
+0030 f00d bd fc 89                   JSR     GETADD      ; get the start and finish addresses
+0031 f010 bd fc 76                   JSR     STRING
+0032 f013 20 54 45 53 54 49          FCC     " TESTING... "
+     4e 47 2e 2e 2e 20
+0033 f01f ff                         FCB     $FF
+0034 f020 5f                         CLRB                ; set up accumulators
+0035 f021 17                 .TST    TBA
+0036 f022 fe f0 ef                   LDX     T_STRT      ; put start address in X
+0037 f025 4f                         CLRA
+0038 f026 1b                 .LOOP1  ABA                 ; create the pattern
+0039 f027 a7 00                      STAA    0,X         ; Write to memory
+0040 f029 08                         INX
+0041 f02a bc f0 f1                   CPX     T_STOP      ; Check for end of memory
+0042 f02d 26 f7                      BNE     .LOOP1
+0043 f02f fe f0 ef                   LDX     T_STRT
+0044 f032 4f                         CLRA
+0045 f033 1b                 .LOOP2  ABA
+0046 f034 a1 00                      CMPA     0,X        ; Read from memory
+0047 f036 26 1c                      BNE     .FAULT
+0048 f038 08                 .NOPR   INX
+0049 f039 bc f0 f1                   CPX     T_STOP
+0050 f03c 26 f5                      BNE     .LOOP2
+0051 f03e b6 f4 01                   LDAA    CTRLA       ; Read ACIA status
+0052 f041 85 01                      BITA    #$01        ; Key waiting?
+0053 f043 26 03                      BNE     .END        ; Yes so end the test
+0054 f045 5c                         INCB                ; change the pattern and repeat
+0055 f046 26 d9                      BNE     .TST        ; we loop the test 256 times
+0056 f048 b6 f4 00           .END    LDAA    DATAA       ; Clear a byte from ACIA
+0057 f04b bd fc 76                   JSR     STRING
+0058 f04e 4f 4b                      FCC     "OK"
+0059 f050 ff                         FCB     $FF
+0060 f051 7e ff 8f                   JMP     START
+0061 f054 bd fe 97           .FAULT  JSR     NEWLINE
+0062 f057 bd fc 76                   JSR     STRING
+0063 f05a 46 4c 54                   FCC     "FLT"
+0064 f05d ff                         FCB     $FF
+0065 f05e 7e ff 8f                   JMP     START

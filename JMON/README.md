@@ -26,7 +26,7 @@ to allow for a memory test command to be added (Cmd 'T')'.
 The terminal should be connected to ACIA(A) and configured for either 7E2
 or 8N2.
 
-The following is a list of routines within MINIMON. The locations of these
+The following is a list of routines within JMON. The locations of these
 are fixed.
 
 ```text
@@ -53,21 +53,19 @@ CONTNU  FED9 - Invokes the CONTINUE command, as THIS IS NOT A SUBROUTINE but res
 SWI     FF8C - Saves callers stack pointer and restarts JMON.
 START   FF8F - Restarts MniMon.
 ```
-The following is a list of commands within MINIMON. The locations of these
-are fixed.
+The following is a list of commands within JMON.
 
 ```text
 P PUNCH   FDE2 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 L LOAD    FCE3 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 T MEMTEST FD62 - Invokes the MEMORY TEST command.
-V VERSION FDC3 - Reports JMON version.
+V VERSION FDB7 - Reports JMON version.
 R REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 M MODIFY  FE43 - Invokes the MODIFY command.
 D DUMP    FF07 - Invokes the DUMP command.
 S BRPTSET FF39 - Invokes the SET BREAKPOINT command.terminal
 H HEADER  FF63 - Prints the header used for the register display.
 N RESET   FF81 - Resets ACIAs saves the callers stack pointer and restarts JMON.
-
 ```
 
 **Notes:**
