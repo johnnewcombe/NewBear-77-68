@@ -42,26 +42,32 @@ GETADD  FC89 - Get Address, read 4 digit hex value.
 ASCII   FC9E - Convert value in A to 2 x ASCII hex digits in A and B.
 PRX     FCBB - Print value in X as 4 hex digits.
 ZOUT    FCC9 - Print value in A as 2 hex digits.
-PUNCH   FDE2 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
-LOAD    FCE3 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 RD_A    FD2B - Read byte from ACIA.A to A.
-REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 PRSP    FD4D - Prints a space.
-MEMTEST FD62 - Invokes the MEMORY TEST command.
-VERSION FDC3 - Reports JMON version.
 SUB     FDD6 - Subtract uses T_X 16 bit data area at F0E6.
 PRP     FE33 - Prints he string " P ".
 PRD     FE3B - Prints he string " D ".
-MODIFY  FE43 - Invokes the MODIFY command.
 NEWLINE FE97 - Prints a CR/LF to the console and then pints the value of X. X is preserved.
 GO      FEC2 - Invokes the GO command, This is an SW1 call.
 CONTNU  FED9 - Invokes the CONTINUE command, as THIS IS NOT A SUBROUTINE but restarts JMON.
-DUMP    FF07 - Invokes the DUMP command.
-BRPTSET FF39 - Invokes the SET BREAKPOINT command.terminal
-HEADER  FF63 - Prints the header used for the register display.
-RESET   FF81 - Resets ACIAs saves the callers stack pointer and restarts JMON.
 SWI     FF8C - Saves callers stack pointer and restarts JMON.
 START   FF8F - Restarts MniMon.
+```
+The following is a list of commands within MINIMON. The locations of these
+are fixed.
+
+```text
+P PUNCH   FDE2 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
+L LOAD    FCE3 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
+T MEMTEST FD62 - Invokes the MEMORY TEST command.
+V VERSION FDC3 - Reports JMON version.
+R REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
+M MODIFY  FE43 - Invokes the MODIFY command.
+D DUMP    FF07 - Invokes the DUMP command.
+S BRPTSET FF39 - Invokes the SET BREAKPOINT command.terminal
+H HEADER  FF63 - Prints the header used for the register display.
+N RESET   FF81 - Resets ACIAs saves the callers stack pointer and restarts JMON.
+
 ```
 
 **Notes:**
