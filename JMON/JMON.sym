@@ -12,8 +12,8 @@ ASCII      fc9e
 BINARY     fc31
 BRPTSET    ff39
 CARYON     fe58
-CMDLP      ffa2
-CMDTAB     ffb5
+CMDLP      ffa5
+CMDTAB     ffb8
 CONTNU     fed9
 CTRLA      f401
 CTRLB      f403
@@ -26,7 +26,7 @@ D_NEW      ff0d
 D_NXT      ff16
 ENDB       ff4f
 ENDSTR     fc85
-FOUND      ffae
+FOUND      ffb1
 GETADD     fc89
 GO         fec2
 GOTO       fece
@@ -79,14 +79,13 @@ RESET      ff81
 RIDA       fc35
 RIDB       fc3d
 SAME       ff4b
-SETACIA    ffeb
 STACK      f0d0
 START      ff8f
 STARTR     fd4a
 STARTS     febc
 STERM1     feb6
 STERMR     feb3
-STERMS     ffd9
+STERMS     ffdf
 STRING     fc76
 STRT       fe46
 SUB        fdd6

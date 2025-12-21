@@ -44,11 +44,16 @@ DATAB   EQU     $F402   ; ACIA.B Data register
 JNMI    EQU     $F0DD   ; 3 bytes for jump to NMI sub.
 JIRQ    EQU     $F0E0   ; 3 bytes for jump to IRQ sub.
 STACK   EQU     $F0D0   ; Stack goes down from $F0D0
+                        ; The bytes above STACK, in
+                        ; particular STACK+7 and
+                        ; STACK+6 are used when the RTI
+                        ; instruction is issued as part
+                        ; of the GO command. Everything
+                        ; from $F0D8 to $F0DC is unused
+                        ; RAM.
 
 ; -----------------------------------------------------
         ORG     $F0D8
-; -----------------------------------------------------
-; $F0D1 to $F0DC APPREARS TO BE unused RAM
 ; -----------------------------------------------------
 
 T_TW    RMB     2       ; New additions to support SRec
@@ -661,7 +666,8 @@ SWI     STS     PSTACK  ; Save callers stack pointer
 ; FF8F
 ; -----------------------------------------------------
 START   LDS     #STACK  ; Set up stack for JMON
-        BSR     SETACIA ; Set up ACIAs
+        LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
+        STAA    CTRLA   ;   ACIA.A
         JSR     STRING  ; Print string...
         FCB     $0D,$0A,$00,'*    ; c/r l/f null `*`
         FCB     $FF     ; End-of-string
@@ -705,6 +711,8 @@ CMDTAB  FCB     'S
         FDB     MEMTEST
         FCB     'V'
         FDB     VERSION
+        FCB     'N'
+        FDB     RESET
         FCB     0       ; terminator
         FDB     START   ; not used (any value ok after 0)
 
@@ -715,13 +723,12 @@ STERMS  JSR     STRING
         FCB     $FF
         BRA     START
 
-; Reset the ACIAs
-SETACIA LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
-        STAA    CTRLA   ;   ACIA.A
-        LDAA    #$01    ; 7 Data, Even Parity, 2 Stop Bits
-        STAA    CTRLB   ;   ACIA.B
-        RTS
 
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
         NOP
         NOP
 
