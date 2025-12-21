@@ -17,3 +17,12 @@ build:
 	echo -n "SS" > $(NAME).ptp
 	cat  $(NAME).bin >> $(NAME).ptp
 
+clean:
+	rm $(NAME).bin
+	rm $(NAME).c
+	rm $(NAME).hex
+	rm $(NAME).lst
+	rm $(NAME).obj
+	rm $(NAME).ptp
+	rm $(NAME).s19
+	rm $(NAME).sym
