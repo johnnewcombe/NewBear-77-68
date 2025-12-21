@@ -1,5 +1,6 @@
 # JMON
 
+THIS IS A WORK IN PROGRESS PLEASE DON'T USE!!
 
 Created by GlassTTY, Jan. 2026, using MINIMON (ACH, Dec. 1978) as a base
 with additional code including SRec routines from Motorola's MIKBUG.
@@ -52,6 +53,7 @@ SUB     FDD6 - Subtract uses T_X 16 bit data area at F0E6.
 PRP     FE33 - Prints he string " P ".
 PRD     FE3B - Prints he string " D ".
 MODIFY  FE43 - Invokes the MODIFY command.
+NEWLINE FE97 - Prints a CR/LF to the console and then pints the value of X. X is preserved.
 GO      FEC2 - Invokes the GO command, This is an SW1 call.
 CONTNU  FED9 - Invokes the CONTINUE command, as THIS IS NOT A SUBROUTINE but restarts JMON.
 DUMP    FF07 - Invokes the DUMP command.
