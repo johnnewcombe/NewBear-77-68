@@ -360,6 +360,8 @@ MEMTEST JSR     GETADD      ; get the start and finish addresses
         JSR     STRING
         FCC     " TESTING..."
         FCB     $FF
+        CLRB                ; clearing B means that we go through
+                            ;  process 256 times
 .TST    LDX     T_STRT      ; put start address in X
         CLRA
 .LOOP1  ABA                 ; create the pattern
