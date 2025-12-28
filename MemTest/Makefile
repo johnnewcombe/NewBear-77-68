@@ -1,5 +1,5 @@
 
-NAME=memtest_v2
+NAME=memtest
 ASSEMBLER=../Tools/as6800
 CCS19 = ../Tools/ccs19
 
