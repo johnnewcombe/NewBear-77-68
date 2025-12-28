@@ -578,7 +578,7 @@ output:  JMON.s19
 0576 fee0 fe f0 f7                   LDX     T_ABYT      ; Get address of break.point
 0577 fee3 b6 f0 fb                   LDAA    T_BYTE      ; Get saved opcode
 0578 fee6 a7 00                      STAA    0,X         ; Put it back in the program
-0579 fee8 b6 f0 f8                   LDAA    T_ABYT+1    ; Get address at which
+0579 fee8 b6 f0 f8                   LDAA    T_ABYT+1     ; Get address at which
 0580 feeb f6 f0 f7                   LDAB    T_ABYT      ;   to re-enter program
 0581 feee 20 de                      BRA     GOTO        ; Go to calling program
 0582                         
