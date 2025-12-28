@@ -358,10 +358,10 @@ PR2     INX                 ; Point X to next character
 ; -----------------------------------------------------
 MEMTEST JSR     GETADD      ; get the start and finish addresses
         JSR     STRING
-        FCC     " TESTING... "
+        FCC     " TESTING..."
         FCB     $FF
-.TST     LDX     T_STRT     ; put start address in X
-         CLRA
+.TST    LDX     T_STRT      ; put start address in X
+        CLRA
 .LOOP1  ABA                 ; create the pattern
         STAA    0,X         ; Write to memory
         INX
