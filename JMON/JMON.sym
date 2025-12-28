@@ -1,10 +1,11 @@
 output:  JMON.s19
-.END       fd9c
-.FAULT     fda9
-.LOOP1     fd7a
-.LOOP2     fd87
-.NOPR      fd8c
+.END       fd9b
+.FAULT     fda8
+.LOOP1     fd79
+.LOOP2     fd86
+.NOPR      fd8b
 .TST       fd75
+.VEND      fdcd
 ADD        fcb8
 AGAIN      fc7a
 AND        fcab
@@ -53,7 +54,7 @@ NEWLINE    fe97
 NEW_1      fe60
 NotHex     fc2f
 NotNum     fc27
-PARITY     fdc3
+PARITY     fdd0
 POUT1      fdeb
 POUT2      fdfd
 POUT3      fdff
@@ -85,7 +86,7 @@ STARTR     fd4a
 STARTS     febc
 STERM1     feb6
 STERMR     feb3
-STERMS     ffdf
+STERMS     ffdd
 STRING     fc76
 STRT       fe46
 SUB        fdd6
@@ -109,7 +110,7 @@ T_TW       f0d8
 T_X        f0e6
 T_Y        f0e8
 T_Z        f0f3
-VERSION    fdb7
+VERSION    fdc4
 VHEX       fc1d
 WATSIT     fe51
 WHAT       fe54

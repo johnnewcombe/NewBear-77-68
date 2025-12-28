@@ -1,4 +1,4 @@
-# JMON
+# JMON (Ver 0.01)
 
 THIS IS A WORK IN PROGRESS PLEASE DON'T USE!!
 
@@ -32,7 +32,7 @@ are fixed.
 ```text
 RD_CMD  FC00 - Inputs a character from the JMON prompt and echos the character. The routine restarts JMON if a
                full stop is entered. The value is returned in A.
-PR_A    FC0F - Sends the character in A to ACIA(a). Address T_R contains the number of characters printed.character
+PR_A    FC0F - Sends the character in A to ACIA(a). Address T_R contains the number of characters sent.
 VHEX    FC1D - Checks that A contains a HEX character
 BINARY  FC31 - Converts ASCII hex digits in A and B to binary?
 ZIN     FC49 - Reads a 2 digit hex value from ACIA(a) and puts it into A.
@@ -59,7 +59,7 @@ The following is a list of commands within JMON.
 P PUNCH   FDE2 - Invokes the PUNCH command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 L LOAD    FCE3 - Invokes the LOAD command use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 T MEMTEST FD62 - Invokes the MEMORY TEST command.
-V VERSION FDB7 - Reports JMON version.
+V VERSION FDC4 - Reports JMON version.
 R REGPRT  FD36 - Invoke the REGISTER PRINT Command, use JMP as THIS IS NOT A SUBROUTINE but restarts JMON.
 M MODIFY  FE43 - Invokes the MODIFY command.
 D DUMP    FF07 - Invokes the DUMP command.
