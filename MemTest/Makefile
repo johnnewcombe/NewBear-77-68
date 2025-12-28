@@ -12,8 +12,6 @@ build:
 	$(CCS19) $(NAME).s19 $(NAME).c -ofc
 	$(CCS19) $(NAME).s19 $(NAME).bin -ofb
 	unix2dos -r $(NAME).s19 $(NAME).s19
-
-	# Multiple ORGs in source so .ptp vrsion not valid
 	echo -n "SS" > $(NAME).ptp
 	cat  $(NAME).bin >> $(NAME).ptp
 

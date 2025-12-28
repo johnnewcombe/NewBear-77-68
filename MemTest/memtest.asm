@@ -31,9 +31,8 @@ MEMTEST JSR     STRING
         JSR     STRING
         FCC     " TESTING..."
         FCB     $FF
-        CLRB                ; set up accumulators
-.TST    TBA
-        LDX     T_STRT      ; put start address in X
+
+.TST    LDX     T_STRT      ; put start address in X
         CLRA
 .LOOP1  ABA                 ; create the pattern
         STAA    0,X         ; Write to memory

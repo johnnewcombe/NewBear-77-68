@@ -31,38 +31,37 @@ output:  memtest.s19
 0029 f00a 0d 0a ff                   FCB     $0D, $0A,$FF
 0030 f00d bd fc 89                   JSR     GETADD      ; get the start and finish addresses
 0031 f010 bd fc 76                   JSR     STRING
-0032 f013 20 54 45 53 54 49          FCC     " TESTING... "
-     4e 47 2e 2e 2e 20
-0033 f01f ff                         FCB     $FF
-0034 f020 5f                         CLRB                ; set up accumulators
-0035 f021 17                 .TST    TBA
-0036 f022 fe f0 ef                   LDX     T_STRT      ; put start address in X
-0037 f025 4f                         CLRA
-0038 f026 1b                 .LOOP1  ABA                 ; create the pattern
-0039 f027 a7 00                      STAA    0,X         ; Write to memory
-0040 f029 08                         INX
-0041 f02a bc f0 f1                   CPX     T_STOP      ; Check for end of memory
-0042 f02d 26 f7                      BNE     .LOOP1
-0043 f02f fe f0 ef                   LDX     T_STRT
-0044 f032 4f                         CLRA
-0045 f033 1b                 .LOOP2  ABA
-0046 f034 a1 00                      CMPA     0,X        ; Read from memory
-0047 f036 26 1c                      BNE     .FAULT
-0048 f038 08                 .NOPR   INX
-0049 f039 bc f0 f1                   CPX     T_STOP
-0050 f03c 26 f5                      BNE     .LOOP2
-0051 f03e b6 f4 01                   LDAA    CTRLA       ; Read ACIA status
-0052 f041 85 01                      BITA    #$01        ; Key waiting?
-0053 f043 26 03                      BNE     .END        ; Yes so end the test
-0054 f045 5c                         INCB                ; change the pattern and repeat
-0055 f046 26 d9                      BNE     .TST        ; we loop the test 256 times
-0056 f048 b6 f4 00           .END    LDAA    DATAA       ; Clear a byte from ACIA
-0057 f04b bd fc 76                   JSR     STRING
-0058 f04e 4f 4b                      FCC     "OK"
-0059 f050 ff                         FCB     $FF
-0060 f051 7e ff 8f                   JMP     START
-0061 f054 bd fe 97           .FAULT  JSR     NEWLINE
-0062 f057 bd fc 76                   JSR     STRING
-0063 f05a 46 4c 54                   FCC     "FLT"
-0064 f05d ff                         FCB     $FF
-0065 f05e 7e ff 8f                   JMP     START
+0032 f013 20 54 45 53 54 49          FCC     " TESTING..."
+     4e 47 2e 2e 2e
+0033 f01e ff                         FCB     $FF
+0034                         
+0035 f01f fe f0 ef           .TST    LDX     T_STRT      ; put start address in X
+0036 f022 4f                         CLRA
+0037 f023 1b                 .LOOP1  ABA                 ; create the pattern
+0038 f024 a7 00                      STAA    0,X         ; Write to memory
+0039 f026 08                         INX
+0040 f027 bc f0 f1                   CPX     T_STOP      ; Check for end of memory
+0041 f02a 26 f7                      BNE     .LOOP1
+0042 f02c fe f0 ef                   LDX     T_STRT
+0043 f02f 4f                         CLRA
+0044 f030 1b                 .LOOP2  ABA
+0045 f031 a1 00                      CMPA     0,X        ; Read from memory
+0046 f033 26 1d                      BNE     .FAULT
+0047 f035 08                 .NOPR   INX
+0048 f036 bc f0 f1                   CPX     T_STOP
+0049 f039 26 f5                      BNE     .LOOP2
+0050 f03b b6 f4 01                   LDAA    CTRLA       ; Read ACIA status
+0051 f03e 85 01                      BITA    #$01        ; Key waiting?
+0052 f040 26 03                      BNE     .END        ; Yes so end the test
+0053 f042 5c                         INCB                ; change the pattern and repeat
+0054 f043 26 da                      BNE     .TST        ; we loop the test 256 times
+0055 f045 b6 f4 00           .END    LDAA    DATAA       ; Clear a byte from ACIA
+0056 f048 bd fc 76                   JSR     STRING
+0057 f04b 20 4f 4b                   FCC     " OK"
+0058 f04e ff                         FCB     $FF
+0059 f04f 7e ff 8f                   JMP     START
+0060 f052 bd fe 97           .FAULT  JSR     NEWLINE
+0061 f055 bd fc 76                   JSR     STRING
+0062 f058 20 46 4c 54                FCC     " FLT"
+0063 f05c ff                         FCB     $FF
+0064 f05d 7e ff 8f                   JMP     START
