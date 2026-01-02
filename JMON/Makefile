@@ -17,6 +17,8 @@ build:
 	echo -n "SS" > $(NAME).ptp
 	cat  $(NAME).bin >> $(NAME).ptp
 
+	cp $(NAME).bin ../Releases
+
 clean:
 	rm $(NAME).bin
 	rm $(NAME).c
