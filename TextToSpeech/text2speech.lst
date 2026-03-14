@@ -1,0 +1,199 @@
+output:  text2speech.s19
+0001                         ;------------------------------------------------------------------
+0002                         ; text2speech.asm
+0003                         ;------------------------------------------------------------------
+0004                         
+0005                         ; 7768 ACIA
+0006 f400                    DATAA   EQU $F400 ; ACIA(a) Data register
+0007 f401                    CTRLA   EQU $F401 ; ACIA(a) Ctrl/Status
+0008 f402                    DATAB   EQU $F402 ; ACIA(b) Data register
+0009 f403                    CTRLB   EQU $F403 ; ACIA(b) Ctrl/Status
+0010                         
+0011                         ; MINIMON routines
+0012 fc76                    STRING  EQU $FC76 ; Prints a string. The string should follow JSR and be terminated with $FF.
+0013 fc89                    GETADD  EQU $FC89 ; Get Address, read 4 digit hex value.
+0014 fcc9                    ZOUT    EQU $FCC9 ; Print value in A as 2 hex digits.
+0015 fe97                    NEWLINE EQU $FE97 ; Prints a new line.
+0016 ff8f                    START   EQU $FF8F ; Restarts MniMon.
+0017 fc0f                    PR_A    EQU $FC0F ; Print char in A to ACIA (a)
+0018 fd2b                    RD_A    EQU $FD2B ; Read char from A
+0019 fd4d                    PRSP    EQU $FD4D ; Print a space
+0020 fc31                    BINARY  EQU $FC31 ; Converts ASCII hex digits in A and B to binary?
+0021 fc65                    RD_X    EQU $FC65 ; Read 4 hex digits Value from ACIA(a) and put value into X.
+0022 fc1d                    VHEX    EQU $FC1D ; Checks that A contains a HEX character
+0023 0200                    	    ORG $0200
+0024                         
+0025                         ; initialise serial port B
+0026 0200 86 11              TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
+0027 0202 b7 f4 03                   STAA    CTRLB   ;   ACIA.A
+0028                         
+0029                         LOOP:
+0030                                 ; -----------------------------------------------------
+0031                                 ; Data arrives at port B as four hex characters
+0032                                 ; -----------------------------------------------------
+0033 0205 bd 02 c5                   JSR     RD_XB           ; read 4 hex characters into X
+0034 0208 ff 02 dd                   STX     TEMP            ; save X
+0035                         
+0036 020b bd 02 d4                   JSR     PRSPB
+0037 020e b6 02 dd                   LDAA    TEMP            ; Load high byte of X into Accumulator A
+0038 0211 bd 02 60                   JSR     PR_DEC          ; puts 3 decimal digits in DEC, DEC+1 and DEC+2
+0039                         
+0040 0214 b6 02 e0                   LDAA    DEC+1           ; don't care about the hundreds
+0041 0217 8b 30                      ADDA    #$30
+0042 0219 bd 02 ba                   JSR     PR_B
+0043                         
+0044 021c b6 02 e1                   LDAA    DEC+2
+0045 021f 8b 30                      ADDA    #$30
+0046 0221 bd 02 ba                   JSR     PR_B
+0047                         
+0048                         ;--------------------------------------------------------------
+0049                         ; SECOND DIGIT
+0050                         ;--------------------------------------------------------------
+0051                         
+0052 0224 bd 02 d4                   JSR     PRSPB
+0053 0227 b6 02 de                   LDAA    TEMP+1            ; Load high byte of X into Accumulator A
+0054 022a bd 02 60                   JSR     PR_DEC
+0055                         
+0056 022d b6 02 e0                   LDAA    DEC+1             ; don't care about the hundreds
+0057 0230 8b 30                      ADDA    #$30
+0058 0232 bd 02 ba                   JSR     PR_B
+0059                         
+0060 0235 b6 02 e1                   LDAA    DEC+2
+0061 0238 8b 30                      ADDA    #$30
+0062 023a bd 02 ba                   JSR     PR_B
+0063                         
+0064                         
+0065                         
+0066                         
+0067                         
+0068 023d bd 02 7e                   JSR     STRINGB
+0069 0240 0d 0a                      FCB     $0D, $0A
+0070 0242 53 68 61 6c 6c 20          FCC     "Shall I tell you a joke?"
+     49 20 74 65 6c 6c
+     20 79 6f 75 20 61
+     20 6a 6f 6b 65 3f
+0071 025a 0d 0a ff                   FCB     $0D, $0A,$FF
+0072                         
+0073 025d 7e 02 05           .END    JMP     LOOP  ;START   ; all done
+0074                         
+0075                         ; -----------------------------------------------------
+0076                         ; PR_DEC: Puts 3 decimal digits in DEC, DEC+1 and DEC+2
+0077                         ;
+0078                         ;       !! ONLY WORKS WITH VALUES BELOW 128 !!
+0079                         ; -----------------------------------------------------
+0080 0260 5f                 PR_DEC  CLRB            ; Clear B for hundreds
+0081                         
+0082 0261 81 64              HUND    CMPA    #100    ; 100 or more?
+0083                         
+0084 0263 2d 05                      BLT     TENS
+0085 0265 80 64                      SUBA    #100    ; Sub 100
+0086 0267 5c                         INCB            ; Increment hundred counter
+0087 0268 20 f7                      BRA     HUND
+0088                         
+0089 026a f7 02 df           TENS    STAB    DEC     ; store the hundreds
+0090                         
+0091 026d 5f                         CLRB
+0092 026e 81 0a              TENS1   CMPA    #10     ; 10 or more?
+0093 0270 2d 05                      BLT     UNITS
+0094 0272 80 0a                      SUBA    #10     ; Sub 10
+0095 0274 5c                         INCB            ; Increment ten counter
+0096 0275 20 f7                      BRA     TENS1
+0097                         
+0098 0277 f7 02 e0           UNITS   STAB    DEC+1
+0099 027a b7 02 e1                   STAA    DEC+2   ; Final remainder is units
+0100                         
+0101 027d 39                         RTS
+0102                         
+0103                         
+0104                         ; -----------------------------------------------------
+0105                         ; Print string FOLLOWING JSR ( terminated by $FF ) to
+0106                         ; ACIA(b) and ACIA(b)
+0107                         ; -----------------------------------------------------
+0108 027e 30                 STRINGB TSX             ; Get loc. of return addr to X
+0109 027f ee 00                      LDX     0,X     ; Get return addr to X
+0110 0281 09                         DEX             ; Point to byte before
+0111 0282 08                 AGAIN   INX             ; Point to next byte
+0112 0283 a6 00                      LDAA    0,X     ; Get byte to be printed
+0113 0285 81 ff                      CMPA    #$FF    ; End-string ?
+0114 0287 27 07                      BEQ     ENDSTR  ; Yes: Go to finish up
+0115 0289 bd fc 0f                   JSR     PR_A    ; Print the byte to ACIA(a) (A is maintained)
+0116 028c 8d 2c                      BSR     PR_B    ; Print the byte to ACIA(b)
+0117 028e 20 f2                      BRA     AGAIN   ; Go back for next byte
+0118 0290 31                 ENDSTR  INS             ; Clean up stack...
+0119 0291 31                         INS             ;  ( pop off the return addr )
+0120 0292 6e 01                      JMP     1,X     ; Jump back to caller (RETURN)
+0121                         
+0122                         
+0123                         ; -----------------------------------------------------
+0124                         ; Reads a character from ACIA(b) into A
+0125                         ; -----------------------------------------------------
+0126 0294 b6 f4 03           RD_B    LDAA    CTRLB       ; Get ACIA.A status byte
+0127 0297 85 01                      BITA    #01         ; Is byte ready in DATAb
+0128 0299 27 f9                      BEQ     RD_B        ; No: Try again
+0129 029b b6 f4 02                   LDAA    DATAB       ; Get the data byte to A
+0130                                 ;ANDA    #$7F        ; Mask off parity bit if it exists
+0131 029e 39                         RTS                 ; RETURN
+0132                         
+0133                         ; -----------------------------------------------------
+0134                         ;
+0135                         ; -----------------------------------------------------
+0136 029f 8d f3              ZINB    BSR     RD_B    ; Read a character
+0137 02a1 bd fc 1d                   JSR     VHEX    ; Is it a hex character ?
+0138 02a4 25 12                      BCS     Z_PRQM  ; No: go to print `?`
+0139 02a6 b7 02 da                   STAA    T_Q     ; Yes: Save Acc.A
+0140 02a9 8d e9                      BSR     RD_B    ; Read 2nd character
+0141 02ab bd fc 1d                   JSR     VHEX    ; Is it a hex character ?
+0142 02ae 25 08                      BCS     Z_PRQM  ; No: go to print `?`
+0143 02b0 16                         TAB             ; Yes: Put it into Acc.B
+0144 02b1 b6 02 da                   LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
+0145 02b4 bd fc 31                   JSR     BINARY  ; Convert A:B to binary
+0146 02b7 39                         RTS             ; RETURN
+0147                         Z_PRQM  ;LDAA    #'?     ; Load `?` into A
+0148                                 ;BSR     PR_B    ; Print it
+0149 02b8 20 e5                      BRA     ZINB    ; Go back to start of hex input
+0150                         
+0151                         ; -----------------------------------------------------
+0152                         ; Print character in A to ACIA(b)
+0153                         ; -----------------------------------------------------
+0154 02ba f6 f4 03           PR_B    LDAB    CTRLB   ; Get ACIA(a) status byte
+0155 02bd c5 02                      BITB    #02     ; Is it busy ?
+0156 02bf 27 f9                      BEQ     PR_B    ; Yes: Try again
+0157 02c1 b7 f4 02                   STAA    DATAB   ;  No: Send data
+0158 02c4 39                 PRB_END RTS             ; RETURN
+0159                         
+0160                         ; -----------------------------------------------------
+0161                         ; Read 4 hex digits and put value into X
+0162                         ; -----------------------------------------------------
+0163                         RD_XB   ;JSR     PRSPB   ; Print a space
+0164 02c5 8d d8                      BSR     ZINB    ; Read 2 digit hex value into A
+0165 02c7 b7 02 db                   STAA    T_Z     ; Save byte (most significant)
+0166 02ca 8d d3                      BSR     ZINB    ; Read 2 digit hex value into A
+0167 02cc b7 02 dc                   STAA    T_Z+1   ; Save byte (least significant)
+0168 02cf fe 02 db                   LDX     T_Z     ; Load full 4 hex value into X
+0169 02d2 39                         RTS             ; RETURN
+0170                         
+0171                         ; -----------------------------------------------------
+0172                         ; Random idle phrase to ports B
+0173                         ; -----------------------------------------------------
+0174 02d3 39                 IDLE    RTS
+0175                         
+0176                         ; -----------------------------------------------------
+0177                         ; Prints a space
+0178                         ; -----------------------------------------------------
+0179 02d4 86 20              PRSPB   LDAA    #$20        ; Put space character in A
+0180 02d6 bd 02 ba                   JSR     PR_B        ; Print it
+0181 02d9 39                         RTS                 ; RETURN
+0182                         
+0183                         
+0184                         
+0185                         
+0186                         
+0187                         ; -----------------------------------------------------
+0188                         ; Reserved memory
+0189                         ; -----------------------------------------------------
+0190                         
+0191 02da                    T_Q     RMB     1           ;   "     "     "  ZIN,DUMP
+0192 02db                    T_Z     RMB     2           ;   "     "     "   . RDX
+0193 02dd                    TEMP    RMB     2           ; local 16 bit temp location
+0194 02df                    DEC     RMB     3           ; for decimal value
+0195                         
