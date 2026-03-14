@@ -48,17 +48,22 @@ LOOP:
         JSR     RD_XB           ; read 4 hex characters into X
         STX     TEMP            ; save X
 
+;--------------------------------------------------------------
+; FIRST DIGIT
+;--------------------------------------------------------------
+
         JSR     PRSPB
+
         LDAA    TEMP            ; Load high byte of X into Accumulator A
         JSR     PR_DEC          ; puts 3 decimal digits in DEC, DEC+1 and DEC+2
 
-        LDAA    DEC+1           ; don't care about the hundreds
-        ADDA    #$30
-        JSR     PR_B
+        LDAA    DEC+1           ; don't care about the hundreds        ADDA    #$30
+        JSR     PR_NUMB
+
+        JSR     PRSPB
 
         LDAA    DEC+2
-        ADDA    #$30
-        JSR     PR_B
+        JSR     PR_NUMB
 
 
 ;--------------------------------------------------------------
@@ -70,13 +75,16 @@ LOOP:
         JSR     PR_DEC
 
         LDAA    DEC+1             ; don't care about the hundreds
-        ADDA    #$30
-        JSR     PR_B
+        JSR     PR_NUMB
+
+        JSR     PRSPB
 
         LDAA    DEC+2
-        ADDA    #$30
-        JSR     PR_B
+        JSR     PR_NUMB
 
+;--------------------------------------------------------------
+;
+;--------------------------------------------------------------
         JSR     STRINGB
         FCB     $0D, $0A
         FCC     "Shall I tell you a joke?"
