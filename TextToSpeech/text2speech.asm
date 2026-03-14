@@ -26,14 +26,25 @@ VHEX    EQU $FC1D ; Checks that A contains a HEX character
 TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
         STAA    CTRLB   ;   ACIA.A
 
-        LDX     #TEXTBLOCK
-        JSR     STRINGBX
+
+
+        ; -----------------------------------------------------
+        ; PRINT NUMBERS 0 TO 9
+        ; -----------------------------------------------------
+
+        CLRA
+PRNUMS  JSR     PRSPB
+        JSR     PR_NUMB
+        INCA
+        CMPA    #10
+        BNE     PRNUMS
+        JSR     PRSPB
 
 
 LOOP:
-        ; -----------------------------------------------------
-        ; Data arrives at port B as four hex characters
-        ; -----------------------------------------------------
+; -----------------------------------------------------
+; Data arrives at port B as four hex characters
+; -----------------------------------------------------
         JSR     RD_XB           ; read 4 hex characters into X
         STX     TEMP            ; save X
 
@@ -65,10 +76,6 @@ LOOP:
         LDAA    DEC+2
         ADDA    #$30
         JSR     PR_B
-
-
-
-
 
         JSR     STRINGB
         FCB     $0D, $0A
@@ -190,26 +197,79 @@ RD_XB   ;JSR     PRSPB   ; Print a space
 IDLE    RTS
 
 ; -----------------------------------------------------
-; Prints a space
+; Prints a space on both consoles (preserves A)
 ; -----------------------------------------------------
-PRSPB   LDAA    #$20        ; Put space character in A
+PRSPB   PSHA
+        LDAA    #$20        ; Put space character in A
+        JSR     PR_A
         JSR     PR_B        ; Print it
+        PULA
         RTS                 ; RETURN
 
 
+; -----------------------------------------------------
+; Get number word based on value in A
+; -----------------------------------------------------
+PR_NUMB     PSHA
+            INCA
+            LDX     #TEXTBLOCKPTR  ; base of offset table
+PR_NUMB1    DECA
+            BEQ     FOUND
+            INX                 ; move to next address
+            INX
+            BNE     PR_NUMB1    ; loop around to retest
+FOUND
+            LDAA    0,X
+            STAA    $1004
+            LDAA    1,X
+            STAA    $1005
+            LDX     $1004
+            JSR     STRINGBX
+            PULA
+            RTS
 
 ; -----------------------------------------------------
 ; Text pointer table
 ; -----------------------------------------------------
-
+TEXTBLOCKPTR
+        FDB ZERO
+        FDB ONE
+        FDB TWO
+        FDB THREE
+        FDB FOUR
+        FDB FIVE
+        FDB SIX
+        FDB SEVEN
+        FDB EIGHT
+        FDB NINE
 
 ; -----------------------------------------------------
 ; Text block
 ; -----------------------------------------------------
 TEXTBLOCK
-        FCB     $0D, $0A
-        FCC     "Shall I tell you another joke?"
-        FCB     $0D, $0A,$FF
+
+ZERO    FCC     "zero"
+        FCB     $FF
+ONE     FCC     "one"
+        FCB     $FF
+TWO     FCC     "two"
+        FCB     $FF
+THREE   FCC     "three"
+        FCB     $FF
+FOUR    FCC     "four"
+        FCB     $FF
+FIVE    FCC     "five"
+        FCB     $FF
+SIX     FCC     "six"
+        FCB     $FF
+SEVEN   FCC     "seven"
+        FCB     $FF
+EIGHT   FCC     "eight"
+        FCB     $FF
+NINE    FCC     "nine"
+        FCB     $FF
+TEN     FCC     "ten"
+        FCB     $FF
 
 
 

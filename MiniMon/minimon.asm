@@ -112,7 +112,7 @@ LETTB   ADDB    #$09    ; Make Acc.B a binary
         BRA     RIDB    ;  as before
 
 ; -----------------------------------------------------
-; Read a 4 digit HEX value, put result into X
+; Read a 2 digit HEX value, put result into X
 
 ZIN     BSR     RD_CMD  ; Read a character
         BSR     VHEX    ; Is it a hex character ?

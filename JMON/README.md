@@ -36,7 +36,7 @@ PR_A    FC0F - Sends the character in A to ACIA(a). Address T_R contains the num
 VHEX    FC1D - Checks that A contains a HEX character
 BINARY  FC31 - Converts ASCII hex digits in A and B to binary?
 ZIN     FC49 - Reads a 2 digit hex value from ACIA(a) and puts it into A.
-RD_X    FC65 - Read 4 hex digits alue from ACIA(a) and put value into X.
+RD_X    FC65 - Read 4 hex digits value from ACIA(a) and put value into X.
 STRING  FC76 - Prints a string. The string should follow JSR and be terminated with $FF.
 GETADD  FC89 - Get Address, read 4 digit hex value.
 ASCII   FC9E - Convert value in A to 2 x ASCII hex digits in A and B.
@@ -45,8 +45,8 @@ ZOUT    FCC9 - Print value in A as 2 hex digits.
 RD_A    FD2B - Read byte from ACIA.A to A.
 PRSP    FD4D - Prints a space.
 SUB     FDD6 - Subtract uses T_X 16 bit data area at F0E6.
-PRP     FE33 - Prints he string " P ".
-PRD     FE3B - Prints he string " D ".
+PRP     FE33 - Prints the string " P ".
+PRD     FE3B - Prints the string " D ".
 NEWLINE FE97 - Prints a CR/LF to the console and then pints the value of X. X is preserved.
 GO      FEC2 - Invokes the GO command, This is an SW1 call.
 CONTNU  FED9 - Invokes the CONTINUE command, as THIS IS NOT A SUBROUTINE but restarts JMON.
