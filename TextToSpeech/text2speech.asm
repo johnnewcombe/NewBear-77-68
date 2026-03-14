@@ -26,6 +26,10 @@ VHEX    EQU $FC1D ; Checks that A contains a HEX character
 TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
         STAA    CTRLB   ;   ACIA.A
 
+        LDX     #TEXTBLOCK
+        JSR     STRINGBX
+
+
 LOOP:
         ; -----------------------------------------------------
         ; Data arrives at port B as four hex characters
@@ -44,6 +48,7 @@ LOOP:
         LDAA    DEC+2
         ADDA    #$30
         JSR     PR_B
+
 
 ;--------------------------------------------------------------
 ; SECOND DIGIT
@@ -119,6 +124,17 @@ ENDSTR  INS             ; Clean up stack...
         INS             ;  ( pop off the return addr )
         JMP     1,X     ; Jump back to caller (RETURN)
 
+; -----------------------------------------------------
+; Prints a string pointed to by X
+; -----------------------------------------------------
+STRINGBX    LDAA    0,X         ; get char
+            CMPA    #$FF        ; is character NULL?
+            BEQ     DONEB       ; yes, end of string
+            JSR     PR_A        ; Print the byte to ACIA(a) (A is maintained)
+            BSR     PR_B        ; Print the byte to ACIA(b)
+            INX
+            BRA     STRINGBX
+DONEB       RTS
 
 ; -----------------------------------------------------
 ; Reads a character from ACIA(b) into A
@@ -181,6 +197,19 @@ PRSPB   LDAA    #$20        ; Put space character in A
         RTS                 ; RETURN
 
 
+
+; -----------------------------------------------------
+; Text pointer table
+; -----------------------------------------------------
+
+
+; -----------------------------------------------------
+; Text block
+; -----------------------------------------------------
+TEXTBLOCK
+        FCB     $0D, $0A
+        FCC     "Shall I tell you another joke?"
+        FCB     $0D, $0A,$FF
 
 
 
