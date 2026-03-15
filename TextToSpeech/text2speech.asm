@@ -185,18 +185,16 @@ IDLE    RTS
 ; place stones in MSB of X and pound in LSB
 ; -----------------------------------------------------
 PR_WEIGHT
-
-
-        STX     TEMP
+        STX     T_W
         JSR     STRINGB
         FCC     "You weigh "
         FDB     $FF
-        LDAA    TEMP            ; Load high byte of X into Accumulator A
+        LDAA    T_W             ; Load high byte of X into Accumulator A
         JSR     PR_NUMB
         JSR     STRINGB
         FCC     " stones "
         FDB     $FF
-        LDAA    TEMP+1            ; Load high byte of X into Accumulator A
+        LDAA    T_W+1            ; Load high byte of X into Accumulator A
         JSR     PR_NUMB
         JSR     STRINGB
         FCC     " pounds"

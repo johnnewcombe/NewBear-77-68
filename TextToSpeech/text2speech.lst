@@ -186,150 +186,148 @@ output:  text2speech.s19
 0185                         ; place stones in MSB of X and pound in LSB
 0186                         ; -----------------------------------------------------
 0187                         PR_WEIGHT
-0188                         
-0189                         
-0190 0292 ff 03 b1                   STX     TEMP
-0191 0295 bd 02 2d                   JSR     STRINGB
-0192 0298 59 6f 75 20 77 65          FCC     "You weigh "
+0188 0292 ff 03 ac                   STX     T_W
+0189 0295 bd 02 2d                   JSR     STRINGB
+0190 0298 59 6f 75 20 77 65          FCC     "You weigh "
      69 67 68 20
-0193 02a2 00 ff                      FDB     $FF
-0194 02a4 b6 03 b1                   LDAA    TEMP            ; Load high byte of X into Accumulator A
-0195 02a7 bd 02 d6                   JSR     PR_NUMB
-0196 02aa bd 02 2d                   JSR     STRINGB
-0197 02ad 20 73 74 6f 6e 65          FCC     " stones "
+0191 02a2 00 ff                      FDB     $FF
+0192 02a4 b6 03 ac                   LDAA    T_W             ; Load high byte of X into Accumulator A
+0193 02a7 bd 02 d6                   JSR     PR_NUMB
+0194 02aa bd 02 2d                   JSR     STRINGB
+0195 02ad 20 73 74 6f 6e 65          FCC     " stones "
      73 20
-0198 02b5 00 ff                      FDB     $FF
-0199 02b7 b6 03 b2                   LDAA    TEMP+1            ; Load high byte of X into Accumulator A
-0200 02ba bd 02 d6                   JSR     PR_NUMB
-0201 02bd bd 02 2d                   JSR     STRINGB
-0202 02c0 20 70 6f 75 6e 64          FCC     " pounds"
+0196 02b5 00 ff                      FDB     $FF
+0197 02b7 b6 03 ad                   LDAA    T_W+1            ; Load high byte of X into Accumulator A
+0198 02ba bd 02 d6                   JSR     PR_NUMB
+0199 02bd bd 02 2d                   JSR     STRINGB
+0200 02c0 20 70 6f 75 6e 64          FCC     " pounds"
      73
-0203 02c7 0d 0a ff                   FCB     $0D, $0A,$FF
+0201 02c7 0d 0a ff                   FCB     $0D, $0A,$FF
+0202                         
+0203 02ca 39                         RTS
 0204                         
-0205 02ca 39                         RTS
-0206                         
+0205                         ; -----------------------------------------------------
+0206                         ; Prints a space on both consoles (preserves A)
 0207                         ; -----------------------------------------------------
-0208                         ; Prints a space on both consoles (preserves A)
-0209                         ; -----------------------------------------------------
-0210 02cb 36                 PRSPB   PSHA
-0211 02cc 86 20                      LDAA    #$20        ; Put space character in A
-0212 02ce bd fc 0f                   JSR     PR_A
-0213 02d1 bd 02 78                   JSR     PR_B        ; Print it
-0214 02d4 32                         PULA
-0215 02d5 39                         RTS                 ; RETURN
-0216                         
-0217                         
+0208 02cb 36                 PRSPB   PSHA
+0209 02cc 86 20                      LDAA    #$20        ; Put space character in A
+0210 02ce bd fc 0f                   JSR     PR_A
+0211 02d1 bd 02 78                   JSR     PR_B        ; Print it
+0212 02d4 32                         PULA
+0213 02d5 39                         RTS                 ; RETURN
+0214                         
+0215                         
+0216                         ; -----------------------------------------------------
+0217                         ; Get number word based on value in A
 0218                         ; -----------------------------------------------------
-0219                         ; Get number word based on value in A
-0220                         ; -----------------------------------------------------
-0221 02d6 4c                 PR_NUMB     INCA
-0222 02d7 ce 02 f2                       LDX     #TEXTBLOCKPTR  ; base of offset table
-0223 02da 4a                 PR_NUMB1    DECA
-0224 02db 27 04                          BEQ     FOUND
-0225 02dd 08                             INX                 ; move to next address
-0226 02de 08                             INX
-0227 02df 26 f9                          BNE     PR_NUMB1    ; loop around to retest
-0228 02e1 a6 00              FOUND       LDAA    0,X
-0229 02e3 b7 03 aa                       STAA    T_X
-0230 02e6 a6 01                          LDAA    1,X
-0231 02e8 b7 03 ab                       STAA    T_X+1
-0232 02eb fe 03 aa                       LDX     T_X
-0233 02ee bd 02 43                       JSR     STRINGBX
-0234 02f1 39                             RTS
-0235                         
+0219 02d6 4c                 PR_NUMB     INCA
+0220 02d7 ce 02 f2                       LDX     #TEXTBLOCKPTR  ; base of offset table
+0221 02da 4a                 PR_NUMB1    DECA
+0222 02db 27 04                          BEQ     FOUND
+0223 02dd 08                             INX                 ; move to next address
+0224 02de 08                             INX
+0225 02df 26 f9                          BNE     PR_NUMB1    ; loop around to retest
+0226 02e1 a6 00              FOUND       LDAA    0,X
+0227 02e3 b7 03 aa                       STAA    T_X
+0228 02e6 a6 01                          LDAA    1,X
+0229 02e8 b7 03 ab                       STAA    T_X+1
+0230 02eb fe 03 aa                       LDX     T_X
+0231 02ee bd 02 43                       JSR     STRINGBX
+0232 02f1 39                             RTS
+0233                         
+0234                         ; -----------------------------------------------------
+0235                         ; Text pointer table
 0236                         ; -----------------------------------------------------
-0237                         ; Text pointer table
-0238                         ; -----------------------------------------------------
-0239                         TEXTBLOCKPTR
-0240 02f2 03 1c                      FDB ZERO
-0241 02f4 03 21                      FDB ONE
-0242 02f6 03 25                      FDB TWO
-0243 02f8 03 29                      FDB THREE
-0244 02fa 03 2f                      FDB FOUR
-0245 02fc 03 34                      FDB FIVE
-0246 02fe 03 39                      FDB SIX
-0247 0300 03 3d                      FDB SEVEN
-0248 0302 03 43                      FDB EIGHT
-0249 0304 03 49                      FDB NINE
-0250 0306 03 4e                      FDB TEN
-0251 0308 03 52                      FDB ELEVEN
-0252 030a 03 59                      FDB TWELVE
-0253 030c 03 60                      FDB THIRTEEN
-0254 030e 03 69                      FDB FOURTEEN
-0255 0310 03 72                      FDB FIFTEEN
-0256 0312 03 7a                      FDB SIXTEEN
-0257 0314 03 82                      FDB SEVENTEEN
-0258 0316 03 8c                      FDB EIGHTEEN
-0259 0318 03 95                      FDB NINETEEN
-0260 031a 03 9e                      FDB TWENTY
-0261                         
+0237                         TEXTBLOCKPTR
+0238 02f2 03 1c                      FDB ZERO
+0239 02f4 03 21                      FDB ONE
+0240 02f6 03 25                      FDB TWO
+0241 02f8 03 29                      FDB THREE
+0242 02fa 03 2f                      FDB FOUR
+0243 02fc 03 34                      FDB FIVE
+0244 02fe 03 39                      FDB SIX
+0245 0300 03 3d                      FDB SEVEN
+0246 0302 03 43                      FDB EIGHT
+0247 0304 03 49                      FDB NINE
+0248 0306 03 4e                      FDB TEN
+0249 0308 03 52                      FDB ELEVEN
+0250 030a 03 59                      FDB TWELVE
+0251 030c 03 60                      FDB THIRTEEN
+0252 030e 03 69                      FDB FOURTEEN
+0253 0310 03 72                      FDB FIFTEEN
+0254 0312 03 7a                      FDB SIXTEEN
+0255 0314 03 82                      FDB SEVENTEEN
+0256 0316 03 8c                      FDB EIGHTEEN
+0257 0318 03 95                      FDB NINETEEN
+0258 031a 03 9e                      FDB TWENTY
+0259                         
+0260                         ; -----------------------------------------------------
+0261                         ; Text block
 0262                         ; -----------------------------------------------------
-0263                         ; Text block
-0264                         ; -----------------------------------------------------
-0265                         TEXTBLOCK
-0266                         
-0267 031c 7a 65 72 6f        ZERO        FCC     "zero"
-0268 0320 ff                             FCB     $FF
-0269 0321 6f 6e 65           ONE         FCC     "one"
-0270 0324 ff                             FCB     $FF
-0271 0325 74 77 6f           TWO         FCC     "two"
-0272 0328 ff                             FCB     $FF
-0273 0329 74 68 72 65 65     THREE       FCC     "three"
-0274 032e ff                             FCB     $FF
-0275 032f 66 6f 75 72        FOUR        FCC     "four"
-0276 0333 ff                             FCB     $FF
-0277 0334 66 69 76 65        FIVE        FCC     "five"
-0278 0338 ff                             FCB     $FF
-0279 0339 73 69 78           SIX         FCC     "six"
-0280 033c ff                             FCB     $FF
-0281 033d 73 65 76 65 6e     SEVEN       FCC     "seven"
-0282 0342 ff                             FCB     $FF
-0283 0343 65 69 67 68 74     EIGHT       FCC     "eight"
-0284 0348 ff                             FCB     $FF
-0285 0349 6e 69 6e 65        NINE        FCC     "nine"
-0286 034d ff                             FCB     $FF
-0287 034e 74 65 6e           TEN         FCC     "ten"
-0288 0351 ff                             FCB     $FF
-0289 0352 65 6c 65 76 65 6e  ELEVEN      FCC     "eleven"
-0290 0358 ff                             FCB     $FF
-0291 0359 74 77 65 6c 76 65  TWELVE      FCC     "twelve"
-0292 035f ff                             FCB     $FF
-0293 0360 74 68 69 72 74 65  THIRTEEN    FCC     "thirteen"
+0263                         TEXTBLOCK
+0264                         
+0265 031c 7a 65 72 6f        ZERO        FCC     "zero"
+0266 0320 ff                             FCB     $FF
+0267 0321 6f 6e 65           ONE         FCC     "one"
+0268 0324 ff                             FCB     $FF
+0269 0325 74 77 6f           TWO         FCC     "two"
+0270 0328 ff                             FCB     $FF
+0271 0329 74 68 72 65 65     THREE       FCC     "three"
+0272 032e ff                             FCB     $FF
+0273 032f 66 6f 75 72        FOUR        FCC     "four"
+0274 0333 ff                             FCB     $FF
+0275 0334 66 69 76 65        FIVE        FCC     "five"
+0276 0338 ff                             FCB     $FF
+0277 0339 73 69 78           SIX         FCC     "six"
+0278 033c ff                             FCB     $FF
+0279 033d 73 65 76 65 6e     SEVEN       FCC     "seven"
+0280 0342 ff                             FCB     $FF
+0281 0343 65 69 67 68 74     EIGHT       FCC     "eight"
+0282 0348 ff                             FCB     $FF
+0283 0349 6e 69 6e 65        NINE        FCC     "nine"
+0284 034d ff                             FCB     $FF
+0285 034e 74 65 6e           TEN         FCC     "ten"
+0286 0351 ff                             FCB     $FF
+0287 0352 65 6c 65 76 65 6e  ELEVEN      FCC     "eleven"
+0288 0358 ff                             FCB     $FF
+0289 0359 74 77 65 6c 76 65  TWELVE      FCC     "twelve"
+0290 035f ff                             FCB     $FF
+0291 0360 74 68 69 72 74 65  THIRTEEN    FCC     "thirteen"
      65 6e
-0294 0368 ff                             FCB     $FF
-0295 0369 66 6f 75 72 74 65  FOURTEEN    FCC     "fourteen"
+0292 0368 ff                             FCB     $FF
+0293 0369 66 6f 75 72 74 65  FOURTEEN    FCC     "fourteen"
      65 6e
-0296 0371 ff                             FCB     $FF
-0297 0372 66 69 66 74 65 65  FIFTEEN     FCC     "fifteen"
+0294 0371 ff                             FCB     $FF
+0295 0372 66 69 66 74 65 65  FIFTEEN     FCC     "fifteen"
      6e
-0298 0379 ff                             FCB     $FF
-0299 037a 73 69 78 74 65 65  SIXTEEN     FCC     "sixteen"
+0296 0379 ff                             FCB     $FF
+0297 037a 73 69 78 74 65 65  SIXTEEN     FCC     "sixteen"
      6e
-0300 0381 ff                             FCB     $FF
-0301 0382 73 65 76 65 6e 74  SEVENTEEN   FCC     "seventeen"
+0298 0381 ff                             FCB     $FF
+0299 0382 73 65 76 65 6e 74  SEVENTEEN   FCC     "seventeen"
      65 65 6e
-0302 038b ff                             FCB     $FF
-0303 038c 65 69 67 68 74 65  EIGHTEEN    FCC     "eighteen"
+0300 038b ff                             FCB     $FF
+0301 038c 65 69 67 68 74 65  EIGHTEEN    FCC     "eighteen"
      65 6e
-0304 0394 ff                             FCB     $FF
-0305 0395 6e 69 6e 65 74 65  NINETEEN    FCC     "nineteen"
+0302 0394 ff                             FCB     $FF
+0303 0395 6e 69 6e 65 74 65  NINETEEN    FCC     "nineteen"
      65 6e
-0306 039d ff                             FCB     $FF
-0307 039e 6e 69 6e 65 74 65  TWENTY      FCC     "nineteen"
+0304 039d ff                             FCB     $FF
+0305 039e 6e 69 6e 65 74 65  TWENTY      FCC     "nineteen"
      65 6e
-0308 03a6 ff                             FCB     $FF
+0306 03a6 ff                             FCB     $FF
+0307                         
+0308                         
 0309                         
-0310                         
-0311                         
+0310                         ; -----------------------------------------------------
+0311                         ; Reserved memory
 0312                         ; -----------------------------------------------------
-0313                         ; Reserved memory
-0314                         ; -----------------------------------------------------
-0315                         
-0316 03a7                    T_Q     RMB     1           ; Temp storage for ZIN
-0317 03a8                    T_Z     RMB     2           ;   "     "     "  RDX
-0318 03aa                    T_X     RMB     2           ;   "     "     "  PR_NUMB"
-0319 03ac                    T_W     RMB     2           ;   "     "     "  PR_WEIGHT
-0320 03ae                    DEC     RMB     3           ; for decimal value
-0321 03b1                    TEMP    RMB     2           ; local 16 bit temp location
-0322                         
-0323                         
+0313                         
+0314 03a7                    T_Q     RMB     1           ; Temp storage for ZIN
+0315 03a8                    T_Z     RMB     2           ;   "     "     "  RDX
+0316 03aa                    T_X     RMB     2           ;   "     "     "  PR_NUMB"
+0317 03ac                    T_W     RMB     2           ;   "     "     "  PR_WEIGHT
+0318 03ae                    DEC     RMB     3           ; for decimal value
+0319 03b1                    TEMP    RMB     2           ; local 16 bit temp location
+0320                         
+0321                         
