@@ -26,19 +26,16 @@ VHEX    EQU $FC1D ; Checks that A contains a HEX character
 TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
         STAA    CTRLB   ;   ACIA.A
 
-
-
         ; -----------------------------------------------------
         ; PRINT NUMBERS 0 TO 9
         ; -----------------------------------------------------
-
-        CLRA
-PRNUMS  JSR     PRSPB
-        JSR     PR_NUMB
-        INCA
-        CMPA    #10
-        BNE     PRNUMS
-        JSR     PRSPB
+;        CLRA
+;PRNUMS  JSR     PRSPB
+;        JSR     PR_NUMB
+;        INCA
+;        CMPA    #10
+;        BNE     PRNUMS
+;        JSR     PRSPB
 
 
 LOOP:
@@ -49,46 +46,38 @@ LOOP:
         STX     TEMP            ; save X
 
 ;--------------------------------------------------------------
-; FIRST DIGIT
+; Spek the weight
 ;--------------------------------------------------------------
-
-        JSR     PRSPB
-
+        JSR     STRINGB
+        FCC     "You weigh "
+        FDB     $FF
         LDAA    TEMP            ; Load high byte of X into Accumulator A
-        JSR     PR_DEC          ; puts 3 decimal digits in DEC, DEC+1 and DEC+2
-
-        LDAA    DEC+1           ; don't care about the hundreds        ADDA    #$30
         JSR     PR_NUMB
-
-        JSR     PRSPB
-
-        LDAA    DEC+2
-        JSR     PR_NUMB
-
-
-;--------------------------------------------------------------
-; SECOND DIGIT
-;--------------------------------------------------------------
-
-        JSR     PRSPB
+        JSR     STRINGB
+        FCC     " stones "
+        FDB     $FF
         LDAA    TEMP+1            ; Load high byte of X into Accumulator A
-        JSR     PR_DEC
-
-        LDAA    DEC+1             ; don't care about the hundreds
         JSR     PR_NUMB
+        JSR     STRINGB
+        FCC     " pounds"
+        FCB     $0D, $0A,$FF
 
-        JSR     PRSPB
 
-        LDAA    DEC+2
-        JSR     PR_NUMB
+
+        ;JSR     PR_DEC          ; puts 3 decimal digits in DEC, DEC+1 and DEC+2
+        ;LDAA    DEC+1           ; don't care about the hundreds        ADDA    #$30
+        ;JSR     PR_NUMB
+        ;JSR     PRSPB
+        ;LDAA    DEC+2
+        ;JSR     PR_NUMB
 
 ;--------------------------------------------------------------
 ;
 ;--------------------------------------------------------------
-        JSR     STRINGB
-        FCB     $0D, $0A
-        FCC     "Shall I tell you a joke?"
-        FCB     $0D, $0A,$FF
+        ;JSR     STRINGB
+        ;FCB     $0D, $0A
+        ;FCC     "Shall I tell you a joke?"
+        ;FCB     $0D, $0A,$FF
 
 .END    JMP     LOOP  ;START   ; all done
 
@@ -204,6 +193,25 @@ RD_XB   ;JSR     PRSPB   ; Print a space
 ; -----------------------------------------------------
 IDLE    RTS
 
+
+; -----------------------------------------------------
+; Prints the message "You weight n stones n pounds"
+; place stones in A and Pounds in B
+; -----------------------------------------------------
+PRWEIGHT
+
+        LDAA    TEMP            ; Load high byte of X into Accumulator A
+        JSR     PR_NUMB
+        JSR     STRINGB
+        FCC     " stones "
+        fdb     $FF
+        LDAA    TEMP+1            ; Load high byte of X into Accumulator A
+        JSR     PR_NUMB
+        JSR     STRINGB
+        FCC     " pounds"
+        FCB     $0D, $0A,$FF
+
+
 ; -----------------------------------------------------
 ; Prints a space on both consoles (preserves A)
 ; -----------------------------------------------------
@@ -250,34 +258,65 @@ TEXTBLOCKPTR
         FDB SEVEN
         FDB EIGHT
         FDB NINE
+        FDB TEN
+        FDB ELEVEN
+        FDB TWELVE
+        FDB THIRTEEN
+        FDB FOURTEEN
+        FDB FIFTEEN
+        FDB SIXTEEN
+        FDB SEVENTEEN
+        FDB EIGHTEEN
+        FDB NINETEEN
+        FDB TWENTY
 
 ; -----------------------------------------------------
 ; Text block
 ; -----------------------------------------------------
 TEXTBLOCK
 
-ZERO    FCC     "zero"
-        FCB     $FF
-ONE     FCC     "one"
-        FCB     $FF
-TWO     FCC     "two"
-        FCB     $FF
-THREE   FCC     "three"
-        FCB     $FF
-FOUR    FCC     "four"
-        FCB     $FF
-FIVE    FCC     "five"
-        FCB     $FF
-SIX     FCC     "six"
-        FCB     $FF
-SEVEN   FCC     "seven"
-        FCB     $FF
-EIGHT   FCC     "eight"
-        FCB     $FF
-NINE    FCC     "nine"
-        FCB     $FF
-TEN     FCC     "ten"
-        FCB     $FF
+ZERO        FCC     "zero"
+            FCB     $FF
+ONE         FCC     "one"
+            FCB     $FF
+TWO         FCC     "two"
+            FCB     $FF
+THREE       FCC     "three"
+            FCB     $FF
+FOUR        FCC     "four"
+            FCB     $FF
+FIVE        FCC     "five"
+            FCB     $FF
+SIX         FCC     "six"
+            FCB     $FF
+SEVEN       FCC     "seven"
+            FCB     $FF
+EIGHT       FCC     "eight"
+            FCB     $FF
+NINE        FCC     "nine"
+            FCB     $FF
+TEN         FCC     "ten"
+            FCB     $FF
+ELEVEN      FCC     "eleven"
+            FCB     $FF
+TWELVE      FCC     "twelve"
+            FCB     $FF
+THIRTEEN    FCC     "thirteen"
+            FCB     $FF
+FOURTEEN    FCC     "fourteen"
+            FCB     $FF
+FIFTEEN     FCC     "fifteen"
+            FCB     $FF
+SIXTEEN     FCC     "sixteen"
+            FCB     $FF
+SEVENTEEN   FCC     "seventeen"
+            FCB     $FF
+EIGHTEEN    FCC     "eighteen"
+            FCB     $FF
+NINETEEN    FCC     "nineteen"
+            FCB     $FF
+TWENTY      FCC     "nineteen"
+            FCB     $FF
 
 
 
