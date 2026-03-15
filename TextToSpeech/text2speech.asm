@@ -26,27 +26,23 @@ VHEX    EQU $FC1D ; Checks that A contains a HEX character
 TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
         STAA    CTRLB   ;   ACIA.A
 
-        ; -----------------------------------------------------
-        ; PRINT NUMBERS 0 TO 9
-        ; -----------------------------------------------------
-;        CLRA
-;PRNUMS  JSR     PRSPB
-;        JSR     PR_NUMB
-;        INCA
-;        CMPA    #10
-;        BNE     PRNUMS
-;        JSR     PRSPB
 
-
-LOOP:
+MAINLOOP:
 ; -----------------------------------------------------
 ; Data arrives at port B as four hex characters
 ; -----------------------------------------------------
         JSR     RD_XB           ; read 4 hex characters into X
+        STX     TEMP
+        LDAA    TEMP
+        CMPA    #20
+        BHI     END
+        LDAA    TEMP+1
+        CMPA    #15
+        BHI     END
         JSR     PR_WEIGHT       ; stoones in MSB, pounds in LSB
 
 ;--------------------------------------------------------------
-; DECIMAL CONVERSION
+; DECIMAL CONVERSION EXAMPLE
 ;--------------------------------------------------------------
         ;JSR     PR_DEC          ; puts 3 decimal digits in DEC, DEC+1 and DEC+2
         ;LDAA    DEC+1           ; don't care about the hundreds        ADDA    #$30
@@ -63,9 +59,9 @@ LOOP:
         ;FCC     "Shall I tell you a joke?"
         ;FCB     $0D, $0A,$FF
 
-        SWI
+END     SWI
 
-.END    JMP     LOOP  ;START   ; all done
+        JMP     MAINLOOP  ;START   ; all done
 
 ; -----------------------------------------------------
 ; PR_DEC: Puts 3 decimal digits in DEC, DEC+1 and DEC+2
@@ -302,7 +298,7 @@ EIGHTEEN    FCC     "eighteen"
             FCB     $FF
 NINETEEN    FCC     "nineteen"
             FCB     $FF
-TWENTY      FCC     "nineteen"
+TWENTY      FCC     "twenty"
             FCB     $FF
 
 
@@ -316,6 +312,7 @@ T_Z     RMB     2           ;   "     "     "  RDX
 T_X     RMB     2           ;   "     "     "  PR_NUMB"
 T_W     RMB     2           ;   "     "     "  PR_WEIGHT
 DEC     RMB     3           ; for decimal value
-TEMP    RMB     2           ; local 16 bit temp location
+TEMP    RMB     2           ; temp var (non subroutine use)
+
 
 
