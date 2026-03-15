@@ -43,27 +43,11 @@ LOOP:
 ; Data arrives at port B as four hex characters
 ; -----------------------------------------------------
         JSR     RD_XB           ; read 4 hex characters into X
-        STX     TEMP            ; save X
+        JSR     PR_WEIGHT       ; stoones in MSB, pounds in LSB
 
 ;--------------------------------------------------------------
-; Spek the weight
+; DECIMAL CONVERSION
 ;--------------------------------------------------------------
-        JSR     STRINGB
-        FCC     "You weigh "
-        FDB     $FF
-        LDAA    TEMP            ; Load high byte of X into Accumulator A
-        JSR     PR_NUMB
-        JSR     STRINGB
-        FCC     " stones "
-        FDB     $FF
-        LDAA    TEMP+1            ; Load high byte of X into Accumulator A
-        JSR     PR_NUMB
-        JSR     STRINGB
-        FCC     " pounds"
-        FCB     $0D, $0A,$FF
-
-
-
         ;JSR     PR_DEC          ; puts 3 decimal digits in DEC, DEC+1 and DEC+2
         ;LDAA    DEC+1           ; don't care about the hundreds        ADDA    #$30
         ;JSR     PR_NUMB
@@ -78,6 +62,8 @@ LOOP:
         ;FCB     $0D, $0A
         ;FCC     "Shall I tell you a joke?"
         ;FCB     $0D, $0A,$FF
+
+        SWI
 
 .END    JMP     LOOP  ;START   ; all done
 
@@ -196,21 +182,27 @@ IDLE    RTS
 
 ; -----------------------------------------------------
 ; Prints the message "You weight n stones n pounds"
-; place stones in A and Pounds in B
+; place stones in MSB of X and pound in LSB
 ; -----------------------------------------------------
-PRWEIGHT
+PR_WEIGHT
 
+
+        STX     TEMP
+        JSR     STRINGB
+        FCC     "You weigh "
+        FDB     $FF
         LDAA    TEMP            ; Load high byte of X into Accumulator A
         JSR     PR_NUMB
         JSR     STRINGB
         FCC     " stones "
-        fdb     $FF
+        FDB     $FF
         LDAA    TEMP+1            ; Load high byte of X into Accumulator A
         JSR     PR_NUMB
         JSR     STRINGB
         FCC     " pounds"
         FCB     $0D, $0A,$FF
 
+        RTS
 
 ; -----------------------------------------------------
 ; Prints a space on both consoles (preserves A)
@@ -226,22 +218,19 @@ PRSPB   PSHA
 ; -----------------------------------------------------
 ; Get number word based on value in A
 ; -----------------------------------------------------
-PR_NUMB     PSHA
-            INCA
+PR_NUMB     INCA
             LDX     #TEXTBLOCKPTR  ; base of offset table
 PR_NUMB1    DECA
             BEQ     FOUND
             INX                 ; move to next address
             INX
             BNE     PR_NUMB1    ; loop around to retest
-FOUND
-            LDAA    0,X
-            STAA    $1004
+FOUND       LDAA    0,X
+            STAA    T_X
             LDAA    1,X
-            STAA    $1005
-            LDX     $1004
+            STAA    T_X+1
+            LDX     T_X
             JSR     STRINGBX
-            PULA
             RTS
 
 ; -----------------------------------------------------
@@ -324,8 +313,11 @@ TWENTY      FCC     "nineteen"
 ; Reserved memory
 ; -----------------------------------------------------
 
-T_Q     RMB     1           ;   "     "     "  ZIN,DUMP
-T_Z     RMB     2           ;   "     "     "   . RDX
-TEMP    RMB     2           ; local 16 bit temp location
+T_Q     RMB     1           ; Temp storage for ZIN
+T_Z     RMB     2           ;   "     "     "  RDX
+T_X     RMB     2           ;   "     "     "  PR_NUMB"
+T_W     RMB     2           ;   "     "     "  PR_WEIGHT
 DEC     RMB     3           ; for decimal value
+TEMP    RMB     2           ; local 16 bit temp location
+
 
