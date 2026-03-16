@@ -32,6 +32,15 @@ MAINLOOP:
 ; -----------------------------------------------------
         JSR     RD_XB           ; read 4 hex characters into X
         STX     TEMP            ; store X
+
+        ; -----------------------------------------------------
+        ; hello message
+        ; -----------------------------------------------------
+        LDAA    #$0A            ; load phrase number (PTR)
+        JSR     PR_PHRASE
+        JSR     PR_CRB
+        ; -----------------------------------------------------
+
         LDAA    TEMP            ; get fist byte (stones)
         CMPA    #20             ; more that 20 is too heavey
         BHI     TOHEAVY         ; say something rude
@@ -154,11 +163,12 @@ DONEB       RTS
 ; -----------------------------------------------------
 ; Reads a character from ACIA(b) into A
 ; -----------------------------------------------------
-RD_B    LDAA    CTRLB       ; Get ACIA.A status byte
+RD_B    INC     RND         ; simple way to get a random number
+        LDAA    CTRLB       ; Get ACIA.A status byte
         BITA    #01         ; Is byte ready in DATAb
         BEQ     RD_B        ; No: Try again
         LDAA    DATAB       ; Get the data byte to A
-        ;ANDA    #$7F        ; Mask off parity bit if it exists
+        ANDA    #$7F        ; Mask off parity bit if it exists
         RTS                 ; RETURN
 
 ; -----------------------------------------------------
@@ -231,26 +241,43 @@ PR_SPCB   PSHA
         RTS                 ; RETURN
 
 ; -----------------------------------------------------
+; Prints a CRLF on both consoles (preserves A)
+; -----------------------------------------------------
+PR_CRB  PSHA
+        LDAA    #$0D        ; Put CHAR character in A
+        JSR     PR_A
+        JSR     PR_B        ; Print it
+        LDAA    #$0A
+        JSR     PR_A
+        JSR     PR_B        ; Print it
+        PULA
+        RTS                 ; RETURN
+
+; -----------------------------------------------------
 ; Outputs a phrase from the value in A
 ; -----------------------------------------------------
 PR_PHRASE
         INCA
-        LDX     PHRASEPTR   ; load address of phrase ponter
+        LDX     #PHRASEPTR  ; load address of phrase ponter
                             ; table
 PR_PH1  DECA                ; loop through A times to get
         BEQ     FOUNDP      ;   address of phrase
         INX                 ; move to next address
         INX
         BRA     PR_PH1      ; try again
-FOUNDP  STX     T_P         ; phrase found, save X
-        LDAA    0,X         ; get word
+FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
+        STAA    T_P         ; MSB
+        LDAA    1,X         ;
+        STAA    T_P+1       ; LSB
+        LDX     T_P         ; load address of phrase
+PR_PH3  LDAA    0,X         ; get word
         CMPA    #0
         BEQ     PR_PH2      ; no more words
         JSR     PR_WORD     ; print word
+        INC     T_P
         LDX     T_P         ; recover X
-        INX
         JSR     PR_SPCB
-        BRA     FOUNDP      ; next word
+        BRA     PR_PH3      ; next word
 PR_PH2  RTS
 
 ; -----------------------------------------------------
@@ -273,6 +300,7 @@ FOUNDW      LDAA    0,X
 
 ; -----------------------------------------------------
 ; Word pointer table (max words 256)
+; Set A to the pointer ID and call PR_WORD
 ; -----------------------------------------------------
 WORDPTR
 WP00        FDB WZERO
@@ -300,22 +328,26 @@ WP14        FDB WTWENTY
 WP15        FDB WYOU
 WP16        FDB WWEIGH
 WP17        FDB WIS
+WP18        FDB WMY
+WP19        FDB WNAME
+WP1A
 
 ; -----------------------------------------------------
 ; Phrase pointer table (max 256 phases)
+; Set A to the pointer ID and call PR_PHRASE
 ; -----------------------------------------------------
 PHRASEPTR
 PP00        FDB YOUWEIGH
 PP01        FDB TWENTYONE
-PP02
-PP03
-PP04
-PP05
-PP06
-PP07
-PP08
-PP09
-PP0A
+PP02        FDB TWENTYTWO
+PP03        FDB TWENTYTHREE
+PP04        FDB TWENTYFOUR
+PP05        FDB TWENTYFIVE
+PP06        FDB TWENTYSIX
+PP07        FDB TWENTYSEVEN
+PP08        FDB TWENTYEIGHT
+PP09        FDB TWENTYNINE
+PP0A        FDB MYNAME
 PP0B
 PP0C
 PP0D
@@ -323,7 +355,7 @@ PP0E
 PP0F
 
 ; -----------------------------------------------------
-; Phrases (list of word pointers)
+; Phrases (each holds a list of word pointers)
 ; -----------------------------------------------------
 YOUWEIGH    FCB $15,$16,$00
 TWENTYONE   FCB $14,$01,$00  ; i.e. WP14 followed by WP1
@@ -335,6 +367,7 @@ TWENTYSIX   FCB $14,$06,$00
 TWENTYSEVEN FCB $14,$07,$00
 TWENTYEIGHT FCB $14,$08,$00
 TWENTYNINE  FCB $14,$09,$00
+MYNAME      FCB $18,$19,$17,$00
 
 ; -----------------------------------------------------
 ; Words
@@ -391,7 +424,10 @@ WWEIGH      FCC     "weigh"
             FCB     $FF
 WIS         FCC     "is"
             FCB     $FF
-
+WMY         FCC     "my"
+            FCB     $FF
+WNAME       FCC     "name"
+            FCB     $FF
 
 
 ; -----------------------------------------------------
@@ -404,6 +440,7 @@ T_X     RMB     2           ;   "     "     "  PR_WORD
 T_P     RMB     2           ;   "     "     "  PR_PHRASE
 T_W     RMB     2           ;   "     "     "  PR_WEIGHT
 DEC     RMB     3           ; for decimal value
+RND     RMB     1           ; holds a random number (see RD_B
 TEMP    RMB     2           ; temp var (non subroutine use)
 
 

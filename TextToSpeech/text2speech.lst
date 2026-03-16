@@ -31,377 +31,430 @@ output:  text2speech.s19
 0030                         ; -----------------------------------------------------
 0031                         ; Data arrives at port B as four hex characters
 0032                         ; -----------------------------------------------------
-0033 0205 bd 02 c2                   JSR     RD_XB           ; read 4 hex characters into X
-0034 0208 ff 04 36                   STX     TEMP            ; store X
-0035 020b b6 04 36                   LDAA    TEMP            ; get fist byte (stones)
-0036 020e 81 14                      CMPA    #20             ; more that 20 is too heavey
-0037 0210 22 14                      BHI     TOHEAVY         ; say something rude
-0038 0212 b6 04 37                   LDAA    TEMP+1          ; get pounds
-0039 0215 81 0d                      CMPA    #13             ; invalid pounds
-0040 0217 22 0d                      BHI     ERROR           ; error
-0041                         
-0042                                 ; all good so output the weight mesage
-0043 0219 86 00                      LDAA    #0              ; output the 'you weigh' phrase
-0044 021b bd 03 05                   JSR     PR_PHRASE       ; output phrase specified in A
-0045 021e fe 04 36                   LDX     TEMP            ; restore X
-0046 0221 bd 02 d0                   JSR     PR_WEIGHT       ; weight back X so output the weight
-0047                         
-0048 0224 20 00                      BRA     END
-0049                         
-0050                         ; -----------------------------------------------------
-0051                         ; Over 20 stone so random heavy phrase to ports B
-0052                         ; -----------------------------------------------------
-0053                         TOHEAVY
-0054                         ERROR
-0055                         
-0056                         END
-0057 0226 ce 03 79                   LDX     #TWENTYONE
-0058 0229 bd 03 05                   JSR     PR_PHRASE
-0059 022c 7e 02 05                   JMP     MAINLOOP  ;START   ; all done
-0060                         
+0033 0205 bd 02 cf                   JSR     RD_XB           ; read 4 hex characters into X
+0034 0208 ff 04 85                   STX     TEMP            ; store X
+0035                         
+0036                                 ; -----------------------------------------------------
+0037                                 ; hello message
+0038                                 ; -----------------------------------------------------
+0039 020b 86 0a                      LDAA    #$0A            ; load phrase number (PTR)
+0040 020d bd 03 25                   JSR     PR_PHRASE
+0041 0210 bd 03 12                   JSR     PR_CRB
+0042                                 ; -----------------------------------------------------
+0043                         
+0044 0213 b6 04 85                   LDAA    TEMP            ; get fist byte (stones)
+0045 0216 81 14                      CMPA    #20             ; more that 20 is too heavey
+0046 0218 22 14                      BHI     TOHEAVY         ; say something rude
+0047 021a b6 04 86                   LDAA    TEMP+1          ; get pounds
+0048 021d 81 0d                      CMPA    #13             ; invalid pounds
+0049 021f 22 0d                      BHI     ERROR           ; error
+0050                         
+0051                                 ; all good so output the weight mesage
+0052 0221 86 00                      LDAA    #0              ; output the 'you weigh' phrase
+0053 0223 bd 03 25                   JSR     PR_PHRASE       ; output phrase specified in A
+0054 0226 fe 04 85                   LDX     TEMP            ; restore X
+0055 0229 bd 02 dd                   JSR     PR_WEIGHT       ; weight back X so output the weight
+0056                         
+0057 022c 20 00                      BRA     END
+0058                         
+0059                         ; -----------------------------------------------------
+0060                         ; Over 20 stone so random heavy phrase to ports B
 0061                         ; -----------------------------------------------------
-0062                         ; Random idle phrase to ports B
-0063                         ; -----------------------------------------------------
-0064 022f bd 02 6c           IDLE    JSR     STRINGB
-0065 0232 53 68 61 6c 6c 20          FCC     "Shall I tell you a joke?"
+0062                         TOHEAVY
+0063                         ERROR
+0064                         
+0065                         END
+0066 022e ce 03 bb                   LDX     #TWENTYONE
+0067 0231 bd 03 25                   JSR     PR_PHRASE
+0068 0234 7e 02 05                   JMP     MAINLOOP  ;START   ; all done
+0069                         
+0070                         
+0071                         
+0072                         
+0073                         
+0074                         
+0075                         
+0076                         
+0077                         
+0078                         
+0079                         
+0080                         
+0081                         
+0082                         
+0083                         
+0084                         
+0085                         
+0086                         ; -----------------------------------------------------
+0087                         ; Random idle phrase to ports B
+0088                         ; -----------------------------------------------------
+0089 0237 bd 02 74           IDLE    JSR     STRINGB
+0090 023a 53 68 61 6c 6c 20          FCC     "Shall I tell you a joke?"
      49 20 74 65 6c 6c
      20 79 6f 75 20 61
      20 6a 6f 6b 65 3f
-0066 024a 0a 0d ff                   FCB     $0A, $0D, $FF
-0067 024d 39                         RTS
-0068                         
-0069                         ;--------------------------------------------------------------
-0070                         ; DECIMAL CONVERSION EXAMPLE
-0071                         ;--------------------------------------------------------------
-0072                                 ;JSR     PR_DEC          ; puts 3 decimal digits in DEC, DEC+1 and DEC+2
-0073                                 ;LDAA    DEC+1           ; don't care about the hundreds        ADDA    #$30
-0074                                 ;JSR     PR_WORD
-0075                                 ;JSR     PR_SPCB
-0076                                 ;LDAA    DEC+2
-0077                                 ;JSR     PR_WORD
-0078                         
-0079                         ; -----------------------------------------------------
-0080                         ; PR_DEC: Puts 3 decimal digits in DEC, DEC+1 and DEC+2
-0081                         ;
-0082                         ;       !! ONLY WORKS WITH VALUES BELOW 128 !!
-0083                         ; -----------------------------------------------------
-0084 024e 5f                 PR_DEC  CLRB            ; Clear B for hundreds
-0085                         
-0086 024f 81 64              HUND    CMPA    #100    ; 100 or more?
-0087                         
-0088 0251 2d 05                      BLT     TENS
-0089 0253 80 64                      SUBA    #100    ; Sub 100
-0090 0255 5c                         INCB            ; Increment hundred counter
-0091 0256 20 f7                      BRA     HUND
-0092                         
-0093 0258 f7 04 33           TENS    STAB    DEC     ; store the hundreds
-0094                         
-0095 025b 5f                         CLRB
-0096 025c 81 0a              TENS1   CMPA    #10     ; 10 or more?
-0097 025e 2d 05                      BLT     UNITS
-0098 0260 80 0a                      SUBA    #10     ; Sub 10
-0099 0262 5c                         INCB            ; Increment ten counter
-0100 0263 20 f7                      BRA     TENS1
-0101                         
-0102 0265 f7 04 34           UNITS   STAB    DEC+1
-0103 0268 b7 04 35                   STAA    DEC+2   ; Final remainder is units
-0104                         
-0105 026b 39                         RTS
-0106                         
-0107                         
+0091 0252 0a 0d ff                   FCB     $0A, $0D, $FF
+0092 0255 39                         RTS
+0093                         
+0094                         ;--------------------------------------------------------------
+0095                         ; DECIMAL CONVERSION EXAMPLE
+0096                         ;--------------------------------------------------------------
+0097                                 ;JSR     PR_DEC          ; puts 3 decimal digits in DEC, DEC+1 and DEC+2
+0098                                 ;LDAA    DEC+1           ; don't care about the hundreds        ADDA    #$30
+0099                                 ;JSR     PR_WORD
+0100                                 ;JSR     PR_SPCB
+0101                                 ;LDAA    DEC+2
+0102                                 ;JSR     PR_WORD
+0103                         
+0104                         ; -----------------------------------------------------
+0105                         ; PR_DEC: Puts 3 decimal digits in DEC, DEC+1 and DEC+2
+0106                         ;
+0107                         ;       !! ONLY WORKS WITH VALUES BELOW 128 !!
 0108                         ; -----------------------------------------------------
-0109                         ; Print string FOLLOWING JSR ( terminated by $FF ) to
-0110                         ; ACIA(b) and ACIA(b)
-0111                         ; -----------------------------------------------------
-0112 026c 30                 STRINGB TSX             ; Get loc. of return addr to X
-0113 026d ee 00                      LDX     0,X     ; Get return addr to X
-0114 026f 09                         DEX             ; Point to byte before
-0115 0270 08                 AGAIN   INX             ; Point to next byte
-0116 0271 a6 00                      LDAA    0,X     ; Get byte to be printed
-0117 0273 81 ff                      CMPA    #$FF    ; End-string ?
-0118 0275 27 07                      BEQ     ENDSTR  ; Yes: Go to finish up
-0119 0277 bd fc 0f                   JSR     PR_A    ; Print the byte to ACIA(a) (A is maintained)
-0120 027a 8d 3b                      BSR     PR_B    ; Print the byte to ACIA(b)
-0121 027c 20 f2                      BRA     AGAIN   ; Go back for next byte
-0122 027e 31                 ENDSTR  INS             ; Clean up stack...
-0123 027f 31                         INS             ;  ( pop off the return addr )
-0124 0280 6e 01                      JMP     1,X     ; Jump back to caller (RETURN)
-0125                         
-0126                         ; -----------------------------------------------------
-0127                         ; Prints a string pointed to by X
-0128                         ; -----------------------------------------------------
-0129 0282 a6 00              STRINGBX    LDAA    0,X         ; get char
-0130 0284 81 ff                          CMPA    #$FF        ; is character NULL?
-0131 0286 27 08                          BEQ     DONEB       ; yes, end of string
-0132 0288 bd fc 0f                       JSR     PR_A        ; Print the byte to ACIA(a) (A is maintained)
-0133 028b 8d 2a                          BSR     PR_B        ; Print the byte to ACIA(b)
-0134 028d 08                             INX
-0135 028e 20 f2                          BRA     STRINGBX
-0136 0290 39                 DONEB       RTS
-0137                         
-0138                         ; -----------------------------------------------------
-0139                         ; Reads a character from ACIA(b) into A
-0140                         ; -----------------------------------------------------
-0141 0291 b6 f4 03           RD_B    LDAA    CTRLB       ; Get ACIA.A status byte
-0142 0294 85 01                      BITA    #01         ; Is byte ready in DATAb
-0143 0296 27 f9                      BEQ     RD_B        ; No: Try again
-0144 0298 b6 f4 02                   LDAA    DATAB       ; Get the data byte to A
-0145                                 ;ANDA    #$7F        ; Mask off parity bit if it exists
-0146 029b 39                         RTS                 ; RETURN
-0147                         
-0148                         ; -----------------------------------------------------
-0149                         ;
-0150                         ; -----------------------------------------------------
-0151 029c 8d f3              ZINB    BSR     RD_B    ; Read a character
-0152 029e bd fc 1d                   JSR     VHEX    ; Is it a hex character ?
-0153 02a1 25 12                      BCS     Z_PRQM  ; No: go to print `?`
-0154 02a3 b7 04 2a                   STAA    T_Q     ; Yes: Save Acc.A
-0155 02a6 8d e9                      BSR     RD_B    ; Read 2nd character
-0156 02a8 bd fc 1d                   JSR     VHEX    ; Is it a hex character ?
-0157 02ab 25 08                      BCS     Z_PRQM  ; No: go to print `?`
-0158 02ad 16                         TAB             ; Yes: Put it into Acc.B
-0159 02ae b6 04 2a                   LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
-0160 02b1 bd fc 31                   JSR     BINARY  ; Convert A:B to binary
-0161 02b4 39                         RTS             ; RETURN
-0162                         Z_PRQM  ;LDAA    #'?     ; Load `?` into A
-0163                                 ;BSR     PR_B    ; Print it
-0164 02b5 20 e5                      BRA     ZINB    ; Go back to start of hex input
-0165                         
-0166                         ; -----------------------------------------------------
-0167                         ; Print character in A to ACIA(b)
-0168                         ; -----------------------------------------------------
-0169 02b7 f6 f4 03           PR_B    LDAB    CTRLB   ; Get ACIA(a) status byte
-0170 02ba c5 02                      BITB    #02     ; Is it busy ?
-0171 02bc 27 f9                      BEQ     PR_B    ; Yes: Try again
-0172 02be b7 f4 02                   STAA    DATAB   ;  No: Send data
-0173 02c1 39                 PRB_END RTS             ; RETURN
-0174                         
-0175                         ; -----------------------------------------------------
-0176                         ; Read 4 hex digits and put value into X
-0177                         ; -----------------------------------------------------
-0178 02c2 8d d8              RD_XB   BSR     ZINB    ; Read 2 digit hex value into A
-0179 02c4 b7 04 2b                   STAA    T_Z     ; Save byte (most significant)
-0180 02c7 8d d3                      BSR     ZINB    ; Read 2 digit hex value into A
-0181 02c9 b7 04 2c                   STAA    T_Z+1   ; Save byte (least significant)
-0182 02cc fe 04 2b                   LDX     T_Z     ; Load full 4 hex value into X
-0183 02cf 39                         RTS             ; RETURN
-0184                         
-0185                         ; -----------------------------------------------------
-0186                         ; Prints the message " n stones n pounds"
-0187                         ; place stones in MSB of X and pound in LSB
-0188                         ; -----------------------------------------------------
-0189                         PR_WEIGHT
-0190 02d0 ff 04 31                   STX     T_W
-0191                                 ;JSR     STRINGB
-0192                                 ;FCC     "You weigh "
-0193                                 ;FDB     $FF
-0194 02d3 b6 04 31                   LDAA    T_W             ; Load high byte of X into Accumulator A
-0195 02d6 bd 03 26                   JSR     PR_WORD
-0196 02d9 bd 02 6c                   JSR     STRINGB
-0197 02dc 20 73 74 6f 6e 65          FCC     " stones "
+0109 0256 5f                 PR_DEC  CLRB            ; Clear B for hundreds
+0110                         
+0111 0257 81 64              HUND    CMPA    #100    ; 100 or more?
+0112                         
+0113 0259 2d 05                      BLT     TENS
+0114 025b 80 64                      SUBA    #100    ; Sub 100
+0115 025d 5c                         INCB            ; Increment hundred counter
+0116 025e 20 f7                      BRA     HUND
+0117                         
+0118 0260 f7 04 81           TENS    STAB    DEC     ; store the hundreds
+0119                         
+0120 0263 5f                         CLRB
+0121 0264 81 0a              TENS1   CMPA    #10     ; 10 or more?
+0122 0266 2d 05                      BLT     UNITS
+0123 0268 80 0a                      SUBA    #10     ; Sub 10
+0124 026a 5c                         INCB            ; Increment ten counter
+0125 026b 20 f7                      BRA     TENS1
+0126                         
+0127 026d f7 04 82           UNITS   STAB    DEC+1
+0128 0270 b7 04 83                   STAA    DEC+2   ; Final remainder is units
+0129                         
+0130 0273 39                         RTS
+0131                         
+0132                         
+0133                         ; -----------------------------------------------------
+0134                         ; Print string FOLLOWING JSR ( terminated by $FF ) to
+0135                         ; ACIA(b) and ACIA(b)
+0136                         ; -----------------------------------------------------
+0137 0274 30                 STRINGB TSX             ; Get loc. of return addr to X
+0138 0275 ee 00                      LDX     0,X     ; Get return addr to X
+0139 0277 09                         DEX             ; Point to byte before
+0140 0278 08                 AGAIN   INX             ; Point to next byte
+0141 0279 a6 00                      LDAA    0,X     ; Get byte to be printed
+0142 027b 81 ff                      CMPA    #$FF    ; End-string ?
+0143 027d 27 07                      BEQ     ENDSTR  ; Yes: Go to finish up
+0144 027f bd fc 0f                   JSR     PR_A    ; Print the byte to ACIA(a) (A is maintained)
+0145 0282 8d 40                      BSR     PR_B    ; Print the byte to ACIA(b)
+0146 0284 20 f2                      BRA     AGAIN   ; Go back for next byte
+0147 0286 31                 ENDSTR  INS             ; Clean up stack...
+0148 0287 31                         INS             ;  ( pop off the return addr )
+0149 0288 6e 01                      JMP     1,X     ; Jump back to caller (RETURN)
+0150                         
+0151                         ; -----------------------------------------------------
+0152                         ; Prints a string pointed to by X
+0153                         ; -----------------------------------------------------
+0154 028a a6 00              STRINGBX    LDAA    0,X         ; get char
+0155 028c 81 ff                          CMPA    #$FF        ; is character NULL?
+0156 028e 27 08                          BEQ     DONEB       ; yes, end of string
+0157 0290 bd fc 0f                       JSR     PR_A        ; Print the byte to ACIA(a) (A is maintained)
+0158 0293 8d 2f                          BSR     PR_B        ; Print the byte to ACIA(b)
+0159 0295 08                             INX
+0160 0296 20 f2                          BRA     STRINGBX
+0161 0298 39                 DONEB       RTS
+0162                         
+0163                         ; -----------------------------------------------------
+0164                         ; Reads a character from ACIA(b) into A
+0165                         ; -----------------------------------------------------
+0166 0299 7c 04 84           RD_B    INC     RND         ; simple way to get a random number
+0167 029c b6 f4 03                   LDAA    CTRLB       ; Get ACIA.A status byte
+0168 029f 85 01                      BITA    #01         ; Is byte ready in DATAb
+0169 02a1 27 f6                      BEQ     RD_B        ; No: Try again
+0170 02a3 b6 f4 02                   LDAA    DATAB       ; Get the data byte to A
+0171 02a6 84 7f                      ANDA    #$7F        ; Mask off parity bit if it exists
+0172 02a8 39                         RTS                 ; RETURN
+0173                         
+0174                         ; -----------------------------------------------------
+0175                         ;
+0176                         ; -----------------------------------------------------
+0177 02a9 8d ee              ZINB    BSR     RD_B    ; Read a character
+0178 02ab bd fc 1d                   JSR     VHEX    ; Is it a hex character ?
+0179 02ae 25 12                      BCS     Z_PRQM  ; No: go to print `?`
+0180 02b0 b7 04 78                   STAA    T_Q     ; Yes: Save Acc.A
+0181 02b3 8d e4                      BSR     RD_B    ; Read 2nd character
+0182 02b5 bd fc 1d                   JSR     VHEX    ; Is it a hex character ?
+0183 02b8 25 08                      BCS     Z_PRQM  ; No: go to print `?`
+0184 02ba 16                         TAB             ; Yes: Put it into Acc.B
+0185 02bb b6 04 78                   LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
+0186 02be bd fc 31                   JSR     BINARY  ; Convert A:B to binary
+0187 02c1 39                         RTS             ; RETURN
+0188                         Z_PRQM  ;LDAA    #'?     ; Load `?` into A
+0189                                 ;BSR     PR_B    ; Print it
+0190 02c2 20 e5                      BRA     ZINB    ; Go back to start of hex input
+0191                         
+0192                         ; -----------------------------------------------------
+0193                         ; Print character in A to ACIA(b)
+0194                         ; -----------------------------------------------------
+0195 02c4 f6 f4 03           PR_B    LDAB    CTRLB   ; Get ACIA(a) status byte
+0196 02c7 c5 02                      BITB    #02     ; Is it busy ?
+0197 02c9 27 f9                      BEQ     PR_B    ; Yes: Try again
+0198 02cb b7 f4 02                   STAA    DATAB   ;  No: Send data
+0199 02ce 39                 PRB_END RTS             ; RETURN
+0200                         
+0201                         ; -----------------------------------------------------
+0202                         ; Read 4 hex digits and put value into X
+0203                         ; -----------------------------------------------------
+0204 02cf 8d d8              RD_XB   BSR     ZINB    ; Read 2 digit hex value into A
+0205 02d1 b7 04 79                   STAA    T_Z     ; Save byte (most significant)
+0206 02d4 8d d3                      BSR     ZINB    ; Read 2 digit hex value into A
+0207 02d6 b7 04 7a                   STAA    T_Z+1   ; Save byte (least significant)
+0208 02d9 fe 04 79                   LDX     T_Z     ; Load full 4 hex value into X
+0209 02dc 39                         RTS             ; RETURN
+0210                         
+0211                         ; -----------------------------------------------------
+0212                         ; Prints the message " n stones n pounds"
+0213                         ; place stones in MSB of X and pound in LSB
+0214                         ; -----------------------------------------------------
+0215                         PR_WEIGHT
+0216 02dd ff 04 7f                   STX     T_W
+0217                                 ;JSR     STRINGB
+0218                                 ;FCC     "You weigh "
+0219                                 ;FDB     $FF
+0220 02e0 b6 04 7f                   LDAA    T_W             ; Load high byte of X into Accumulator A
+0221 02e3 bd 03 52                   JSR     PR_WORD
+0222 02e6 bd 02 74                   JSR     STRINGB
+0223 02e9 20 73 74 6f 6e 65          FCC     " stones "
      73 20
-0198 02e4 00 ff                      FDB     $FF
-0199 02e6 b6 04 32                   LDAA    T_W+1            ; Load high byte of X into Accumulator A
-0200 02e9 bd 03 26                   JSR     PR_WORD
-0201 02ec bd 02 6c                   JSR     STRINGB
-0202 02ef 20 70 6f 75 6e 64          FCC     " pounds"
+0224 02f1 00 ff                      FDB     $FF
+0225 02f3 b6 04 80                   LDAA    T_W+1            ; Load high byte of X into Accumulator A
+0226 02f6 bd 03 52                   JSR     PR_WORD
+0227 02f9 bd 02 74                   JSR     STRINGB
+0228 02fc 20 70 6f 75 6e 64          FCC     " pounds"
      73
-0203 02f6 0d 0a ff                   FCB     $0D, $0A,$FF
-0204                         
-0205 02f9 39                         RTS
-0206                         
-0207                         ; -----------------------------------------------------
-0208                         ; Prints a space on both consoles (preserves A)
-0209                         ; -----------------------------------------------------
-0210 02fa 36                 PR_SPCB   PSHA
-0211 02fb 86 20                      LDAA    #$20        ; Put space character in A
-0212 02fd bd fc 0f                   JSR     PR_A
-0213 0300 bd 02 b7                   JSR     PR_B        ; Print it
-0214 0303 32                         PULA
-0215 0304 39                         RTS                 ; RETURN
-0216                         
-0217                         ; -----------------------------------------------------
-0218                         ; Outputs a phrase from the value in A
-0219                         ; -----------------------------------------------------
-0220                         PR_PHRASE
-0221 0305 4c                         INCA
-0222 0306 fe 03 72                   LDX     PHRASEPTR   ; load address of phrase ponter
-0223                                                     ; table
-0224 0309 4a                 PR_PH1  DECA                ; loop through A times to get
-0225 030a 27 04                      BEQ     FOUNDP      ;   address of phrase
-0226 030c 08                         INX                 ; move to next address
-0227 030d 08                         INX
-0228 030e 20 f9                      BRA     PR_PH1      ; try again
-0229 0310 ff 04 2f           FOUNDP  STX     T_P         ; phrase found, save X
-0230 0313 a6 00                      LDAA    0,X         ; get word
-0231 0315 81 00                      CMPA    #0
-0232 0317 27 0c                      BEQ     PR_PH2      ; no more words
-0233 0319 bd 03 26                   JSR     PR_WORD     ; print word
-0234 031c fe 04 2f                   LDX     T_P         ; recover X
-0235 031f 08                         INX
-0236 0320 bd 02 fa                   JSR     PR_SPCB
-0237 0323 20 eb                      BRA     FOUNDP      ; next word
-0238 0325 39                 PR_PH2  RTS
-0239                         
-0240                         ; -----------------------------------------------------
-0241                         ; Outputs a word based on value in A
-0242                         ; -----------------------------------------------------
-0243 0326 4c                 PR_WORD     INCA
-0244 0327 ce 03 42                       LDX     #WORDPTR  ; base of offset table
-0245 032a 4a                 PR_WORD1    DECA
-0246 032b 27 04                          BEQ     FOUNDW
-0247 032d 08                             INX                 ; move to next address
-0248 032e 08                             INX
-0249 032f 26 f9                          BNE     PR_WORD1    ; loop around to retest
-0250 0331 a6 00              FOUNDW      LDAA    0,X
-0251 0333 b7 04 2d                       STAA    T_X
-0252 0336 a6 01                          LDAA    1,X
-0253 0338 b7 04 2e                       STAA    T_X+1
-0254 033b fe 04 2d                       LDX     T_X
-0255 033e bd 02 82                       JSR     STRINGBX
-0256 0341 39                             RTS
-0257                         
+0229 0303 0d 0a ff                   FCB     $0D, $0A,$FF
+0230                         
+0231 0306 39                         RTS
+0232                         
+0233                         ; -----------------------------------------------------
+0234                         ; Prints a space on both consoles (preserves A)
+0235                         ; -----------------------------------------------------
+0236 0307 36                 PR_SPCB   PSHA
+0237 0308 86 20                      LDAA    #$20        ; Put space character in A
+0238 030a bd fc 0f                   JSR     PR_A
+0239 030d bd 02 c4                   JSR     PR_B        ; Print it
+0240 0310 32                         PULA
+0241 0311 39                         RTS                 ; RETURN
+0242                         
+0243                         ; -----------------------------------------------------
+0244                         ; Prints a CRLF on both consoles (preserves A)
+0245                         ; -----------------------------------------------------
+0246 0312 36                 PR_CRB  PSHA
+0247 0313 86 0d                      LDAA    #$0D        ; Put CHAR character in A
+0248 0315 bd fc 0f                   JSR     PR_A
+0249 0318 bd 02 c4                   JSR     PR_B        ; Print it
+0250 031b 86 0a                      LDAA    #$0A
+0251 031d bd fc 0f                   JSR     PR_A
+0252 0320 bd 02 c4                   JSR     PR_B        ; Print it
+0253 0323 32                         PULA
+0254 0324 39                         RTS                 ; RETURN
+0255                         
+0256                         ; -----------------------------------------------------
+0257                         ; Outputs a phrase from the value in A
 0258                         ; -----------------------------------------------------
-0259                         ; Word pointer table (max words 256)
-0260                         ; -----------------------------------------------------
-0261                         WORDPTR
-0262 0342 03 94              WP00        FDB WZERO
-0263 0344 03 99              WP01        FDB WONE
-0264 0346 03 9d              WP02        FDB WTWO
-0265 0348 03 a1              WP03        FDB WTHREE
-0266 034a 03 a7              WP04        FDB WFOUR
-0267 034c 03 ac              WP05        FDB WFIVE
-0268 034e 03 b1              WP06        FDB WSIX
-0269 0350 03 b5              WP07        FDB WSEVEN
-0270 0352 03 bb              WP08        FDB WEIGHT
-0271 0354 03 c1              WP09        FDB WNINE
-0272 0356 03 c6              WP0A        FDB WTEN
-0273 0358 03 ca              WP0B        FDB WELEVEN
-0274 035a 03 d1              WP0C        FDB WTWELVE
-0275 035c 03 d8              WP0D        FDB WTHIRTEEN
-0276 035e 03 e1              WP0E        FDB WFOURTEEN
-0277 0360 03 ea              WP0F        FDB WFIFTEEN
-0278 0362 03 f2              WP10        FDB WSIXTEEN
-0279 0364 03 fa              WP11        FDB WSEVENTEEN
-0280 0366 04 04              WP12        FDB WEIGHTEEN
-0281 0368 04 0d              WP13        FDB WNINETEEN
-0282 036a 04 16              WP14        FDB WTWENTY
-0283                         
-0284 036c 04 1d              WP15        FDB WYOU
-0285 036e 04 21              WP16        FDB WWEIGH
-0286 0370 04 27              WP17        FDB WIS
-0287                         
-0288                         ; -----------------------------------------------------
-0289                         ; Phrase pointer table (max 256 phases)
-0290                         ; -----------------------------------------------------
-0291                         PHRASEPTR
-0292 0372 03 76              PP00        FDB YOUWEIGH
-0293 0374 03 79              PP01        FDB TWENTYONE
-0294                         PP02
-0295                         PP03
-0296                         PP04
-0297                         PP05
-0298                         PP06
-0299                         PP07
-0300                         PP08
-0301                         PP09
-0302                         PP0A
-0303                         PP0B
-0304                         PP0C
-0305                         PP0D
-0306                         PP0E
-0307                         PP0F
-0308                         
-0309                         ; -----------------------------------------------------
-0310                         ; Phrases (list of word pointers)
-0311                         ; -----------------------------------------------------
-0312 0376 15 16 00           YOUWEIGH    FCB $15,$16,$00
-0313 0379 14 01 00           TWENTYONE   FCB $14,$01,$00  ; i.e. WP14 followed by WP1
-0314 037c 14 02 00           TWENTYTWO   FCB $14,$02,$00
-0315 037f 14 03 00           TWENTYTHREE FCB $14,$03,$00
-0316 0382 14 04 00           TWENTYFOUR  FCB $14,$04,$00
-0317 0385 14 05 00           TWENTYFIVE  FCB $14,$05,$00
-0318 0388 14 06 00           TWENTYSIX   FCB $14,$06,$00
-0319 038b 14 07 00           TWENTYSEVEN FCB $14,$07,$00
-0320 038e 14 08 00           TWENTYEIGHT FCB $14,$08,$00
-0321 0391 14 09 00           TWENTYNINE  FCB $14,$09,$00
-0322                         
-0323                         ; -----------------------------------------------------
-0324                         ; Words
-0325                         ; -----------------------------------------------------
-0326                         
-0327                         ; numbers
-0328 0394 7a 65 72 6f        WZERO       FCC     "zero"
-0329 0398 ff                             FCB     $FF
-0330 0399 6f 6e 65           WONE        FCC     "one"
-0331 039c ff                             FCB     $FF
-0332 039d 74 77 6f           WTWO        FCC     "two"
-0333 03a0 ff                             FCB     $FF
-0334 03a1 74 68 72 65 65     WTHREE      FCC     "three"
-0335 03a6 ff                             FCB     $FF
-0336 03a7 66 6f 75 72        WFOUR       FCC     "four"
-0337 03ab ff                             FCB     $FF
-0338 03ac 66 69 76 65        WFIVE       FCC     "five"
-0339 03b0 ff                             FCB     $FF
-0340 03b1 73 69 78           WSIX        FCC     "six"
-0341 03b4 ff                             FCB     $FF
-0342 03b5 73 65 76 65 6e     WSEVEN      FCC     "seven"
-0343 03ba ff                             FCB     $FF
-0344 03bb 65 69 67 68 74     WEIGHT      FCC     "eight"
-0345 03c0 ff                             FCB     $FF
-0346 03c1 6e 69 6e 65        WNINE       FCC     "nine"
-0347 03c5 ff                             FCB     $FF
-0348 03c6 74 65 6e           WTEN        FCC     "ten"
-0349 03c9 ff                             FCB     $FF
-0350 03ca 65 6c 65 76 65 6e  WELEVEN     FCC     "eleven"
-0351 03d0 ff                             FCB     $FF
-0352 03d1 74 77 65 6c 76 65  WTWELVE     FCC     "twelve"
-0353 03d7 ff                             FCB     $FF
-0354 03d8 74 68 69 72 74 65  WTHIRTEEN   FCC     "thirteen"
+0259                         PR_PHRASE
+0260 0325 4c                         INCA
+0261 0326 ce 03 a2                   LDX     #PHRASEPTR  ; load address of phrase ponter
+0262                                                     ; table
+0263 0329 4a                 PR_PH1  DECA                ; loop through A times to get
+0264 032a 27 04                      BEQ     FOUNDP      ;   address of phrase
+0265 032c 08                         INX                 ; move to next address
+0266 032d 08                         INX
+0267 032e 20 f9                      BRA     PR_PH1      ; try again
+0268 0330 a6 00              FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
+0269 0332 b7 04 7d                   STAA    T_P         ; MSB
+0270 0335 a6 01                      LDAA    1,X         ;
+0271 0337 b7 04 7e                   STAA    T_P+1       ; LSB
+0272 033a fe 04 7d                   LDX     T_P         ; load address of phrase
+0273 033d a6 00              PR_PH3  LDAA    0,X         ; get word
+0274 033f 81 00                      CMPA    #0
+0275 0341 27 0e                      BEQ     PR_PH2      ; no more words
+0276 0343 bd 03 52                   JSR     PR_WORD     ; print word
+0277 0346 7c 04 7d                   INC     T_P
+0278 0349 fe 04 7d                   LDX     T_P         ; recover X
+0279 034c bd 03 07                   JSR     PR_SPCB
+0280 034f 20 ec                      BRA     PR_PH3      ; next word
+0281 0351 39                 PR_PH2  RTS
+0282                         
+0283                         ; -----------------------------------------------------
+0284                         ; Outputs a word based on value in A
+0285                         ; -----------------------------------------------------
+0286 0352 4c                 PR_WORD     INCA
+0287 0353 ce 03 6e                       LDX     #WORDPTR  ; base of offset table
+0288 0356 4a                 PR_WORD1    DECA
+0289 0357 27 04                          BEQ     FOUNDW
+0290 0359 08                             INX                 ; move to next address
+0291 035a 08                             INX
+0292 035b 26 f9                          BNE     PR_WORD1    ; loop around to retest
+0293 035d a6 00              FOUNDW      LDAA    0,X
+0294 035f b7 04 7b                       STAA    T_X
+0295 0362 a6 01                          LDAA    1,X
+0296 0364 b7 04 7c                       STAA    T_X+1
+0297 0367 fe 04 7b                       LDX     T_X
+0298 036a bd 02 8a                       JSR     STRINGBX
+0299 036d 39                             RTS
+0300                         
+0301                         ; -----------------------------------------------------
+0302                         ; Word pointer table (max words 256)
+0303                         ; Set A to the pointer ID and call PR_WORD
+0304                         ; -----------------------------------------------------
+0305                         WORDPTR
+0306 036e 03 da              WP00        FDB WZERO
+0307 0370 03 df              WP01        FDB WONE
+0308 0372 03 e3              WP02        FDB WTWO
+0309 0374 03 e7              WP03        FDB WTHREE
+0310 0376 03 ed              WP04        FDB WFOUR
+0311 0378 03 f2              WP05        FDB WFIVE
+0312 037a 03 f7              WP06        FDB WSIX
+0313 037c 03 fb              WP07        FDB WSEVEN
+0314 037e 04 01              WP08        FDB WEIGHT
+0315 0380 04 07              WP09        FDB WNINE
+0316 0382 04 0c              WP0A        FDB WTEN
+0317 0384 04 10              WP0B        FDB WELEVEN
+0318 0386 04 17              WP0C        FDB WTWELVE
+0319 0388 04 1e              WP0D        FDB WTHIRTEEN
+0320 038a 04 27              WP0E        FDB WFOURTEEN
+0321 038c 04 30              WP0F        FDB WFIFTEEN
+0322 038e 04 38              WP10        FDB WSIXTEEN
+0323 0390 04 40              WP11        FDB WSEVENTEEN
+0324 0392 04 4a              WP12        FDB WEIGHTEEN
+0325 0394 04 53              WP13        FDB WNINETEEN
+0326 0396 04 5c              WP14        FDB WTWENTY
+0327                         
+0328 0398 04 63              WP15        FDB WYOU
+0329 039a 04 67              WP16        FDB WWEIGH
+0330 039c 04 6d              WP17        FDB WIS
+0331 039e 04 70              WP18        FDB WMY
+0332 03a0 04 73              WP19        FDB WNAME
+0333                         WP1A
+0334                         
+0335                         ; -----------------------------------------------------
+0336                         ; Phrase pointer table (max 256 phases)
+0337                         ; Set A to the pointer ID and call PR_PHRASE
+0338                         ; -----------------------------------------------------
+0339                         PHRASEPTR
+0340 03a2 03 b8              PP00        FDB YOUWEIGH
+0341 03a4 03 bb              PP01        FDB TWENTYONE
+0342 03a6 03 be              PP02        FDB TWENTYTWO
+0343 03a8 03 c1              PP03        FDB TWENTYTHREE
+0344 03aa 03 c4              PP04        FDB TWENTYFOUR
+0345 03ac 03 c7              PP05        FDB TWENTYFIVE
+0346 03ae 03 ca              PP06        FDB TWENTYSIX
+0347 03b0 03 cd              PP07        FDB TWENTYSEVEN
+0348 03b2 03 d0              PP08        FDB TWENTYEIGHT
+0349 03b4 03 d3              PP09        FDB TWENTYNINE
+0350 03b6 03 d6              PP0A        FDB MYNAME
+0351                         PP0B
+0352                         PP0C
+0353                         PP0D
+0354                         PP0E
+0355                         PP0F
+0356                         
+0357                         ; -----------------------------------------------------
+0358                         ; Phrases (each holds a list of word pointers)
+0359                         ; -----------------------------------------------------
+0360 03b8 15 16 00           YOUWEIGH    FCB $15,$16,$00
+0361 03bb 14 01 00           TWENTYONE   FCB $14,$01,$00  ; i.e. WP14 followed by WP1
+0362 03be 14 02 00           TWENTYTWO   FCB $14,$02,$00
+0363 03c1 14 03 00           TWENTYTHREE FCB $14,$03,$00
+0364 03c4 14 04 00           TWENTYFOUR  FCB $14,$04,$00
+0365 03c7 14 05 00           TWENTYFIVE  FCB $14,$05,$00
+0366 03ca 14 06 00           TWENTYSIX   FCB $14,$06,$00
+0367 03cd 14 07 00           TWENTYSEVEN FCB $14,$07,$00
+0368 03d0 14 08 00           TWENTYEIGHT FCB $14,$08,$00
+0369 03d3 14 09 00           TWENTYNINE  FCB $14,$09,$00
+0370 03d6 18 19 17 00        MYNAME      FCB $18,$19,$17,$00
+0371                         
+0372                         ; -----------------------------------------------------
+0373                         ; Words
+0374                         ; -----------------------------------------------------
+0375                         
+0376                         ; numbers
+0377 03da 7a 65 72 6f        WZERO       FCC     "zero"
+0378 03de ff                             FCB     $FF
+0379 03df 6f 6e 65           WONE        FCC     "one"
+0380 03e2 ff                             FCB     $FF
+0381 03e3 74 77 6f           WTWO        FCC     "two"
+0382 03e6 ff                             FCB     $FF
+0383 03e7 74 68 72 65 65     WTHREE      FCC     "three"
+0384 03ec ff                             FCB     $FF
+0385 03ed 66 6f 75 72        WFOUR       FCC     "four"
+0386 03f1 ff                             FCB     $FF
+0387 03f2 66 69 76 65        WFIVE       FCC     "five"
+0388 03f6 ff                             FCB     $FF
+0389 03f7 73 69 78           WSIX        FCC     "six"
+0390 03fa ff                             FCB     $FF
+0391 03fb 73 65 76 65 6e     WSEVEN      FCC     "seven"
+0392 0400 ff                             FCB     $FF
+0393 0401 65 69 67 68 74     WEIGHT      FCC     "eight"
+0394 0406 ff                             FCB     $FF
+0395 0407 6e 69 6e 65        WNINE       FCC     "nine"
+0396 040b ff                             FCB     $FF
+0397 040c 74 65 6e           WTEN        FCC     "ten"
+0398 040f ff                             FCB     $FF
+0399 0410 65 6c 65 76 65 6e  WELEVEN     FCC     "eleven"
+0400 0416 ff                             FCB     $FF
+0401 0417 74 77 65 6c 76 65  WTWELVE     FCC     "twelve"
+0402 041d ff                             FCB     $FF
+0403 041e 74 68 69 72 74 65  WTHIRTEEN   FCC     "thirteen"
      65 6e
-0355 03e0 ff                             FCB     $FF
-0356 03e1 66 6f 75 72 74 65  WFOURTEEN   FCC     "fourteen"
+0404 0426 ff                             FCB     $FF
+0405 0427 66 6f 75 72 74 65  WFOURTEEN   FCC     "fourteen"
      65 6e
-0357 03e9 ff                             FCB     $FF
-0358 03ea 66 69 66 74 65 65  WFIFTEEN    FCC     "fifteen"
+0406 042f ff                             FCB     $FF
+0407 0430 66 69 66 74 65 65  WFIFTEEN    FCC     "fifteen"
      6e
-0359 03f1 ff                             FCB     $FF
-0360 03f2 73 69 78 74 65 65  WSIXTEEN    FCC     "sixteen"
+0408 0437 ff                             FCB     $FF
+0409 0438 73 69 78 74 65 65  WSIXTEEN    FCC     "sixteen"
      6e
-0361 03f9 ff                             FCB     $FF
-0362 03fa 73 65 76 65 6e 74  WSEVENTEEN  FCC     "seventeen"
+0410 043f ff                             FCB     $FF
+0411 0440 73 65 76 65 6e 74  WSEVENTEEN  FCC     "seventeen"
      65 65 6e
-0363 0403 ff                             FCB     $FF
-0364 0404 65 69 67 68 74 65  WEIGHTEEN   FCC     "eighteen"
+0412 0449 ff                             FCB     $FF
+0413 044a 65 69 67 68 74 65  WEIGHTEEN   FCC     "eighteen"
      65 6e
-0365 040c ff                             FCB     $FF
-0366 040d 6e 69 6e 65 74 65  WNINETEEN   FCC     "nineteen"
+0414 0452 ff                             FCB     $FF
+0415 0453 6e 69 6e 65 74 65  WNINETEEN   FCC     "nineteen"
      65 6e
-0367 0415 ff                             FCB     $FF
-0368 0416 74 77 65 6e 74 79  WTWENTY     FCC     "twenty"
-0369 041c ff                             FCB     $FF
-0370                         
-0371                         ; general words
-0372 041d 79 6f 75           WYOU        FCC     "you"
-0373 0420 ff                             FCB     $FF
-0374 0421 77 65 69 67 68     WWEIGH      FCC     "weigh"
-0375 0426 ff                             FCB     $FF
-0376 0427 69 73              WIS         FCC     "is"
-0377 0429 ff                             FCB     $FF
-0378                         
-0379                         
-0380                         
-0381                         ; -----------------------------------------------------
-0382                         ; Reserved memory
-0383                         ; -----------------------------------------------------
-0384                         
-0385 042a                    T_Q     RMB     1           ; Temp storage for ZIN
-0386 042b                    T_Z     RMB     2           ;   "     "     "  RDX
-0387 042d                    T_X     RMB     2           ;   "     "     "  PR_WORD
-0388 042f                    T_P     RMB     2           ;   "     "     "  PR_PHRASE
-0389 0431                    T_W     RMB     2           ;   "     "     "  PR_WEIGHT
-0390 0433                    DEC     RMB     3           ; for decimal value
-0391 0436                    TEMP    RMB     2           ; temp var (non subroutine use)
-0392                         
-0393                         
-0394                         
+0416 045b ff                             FCB     $FF
+0417 045c 74 77 65 6e 74 79  WTWENTY     FCC     "twenty"
+0418 0462 ff                             FCB     $FF
+0419                         
+0420                         ; general words
+0421 0463 79 6f 75           WYOU        FCC     "you"
+0422 0466 ff                             FCB     $FF
+0423 0467 77 65 69 67 68     WWEIGH      FCC     "weigh"
+0424 046c ff                             FCB     $FF
+0425 046d 69 73              WIS         FCC     "is"
+0426 046f ff                             FCB     $FF
+0427 0470 6d 79              WMY         FCC     "my"
+0428 0472 ff                             FCB     $FF
+0429 0473 6e 61 6d 65        WNAME       FCC     "name"
+0430 0477 ff                             FCB     $FF
+0431                         
+0432                         
+0433                         ; -----------------------------------------------------
+0434                         ; Reserved memory
+0435                         ; -----------------------------------------------------
+0436                         
+0437 0478                    T_Q     RMB     1           ; Temp storage for ZIN
+0438 0479                    T_Z     RMB     2           ;   "     "     "  RDX
+0439 047b                    T_X     RMB     2           ;   "     "     "  PR_WORD
+0440 047d                    T_P     RMB     2           ;   "     "     "  PR_PHRASE
+0441 047f                    T_W     RMB     2           ;   "     "     "  PR_WEIGHT
+0442 0481                    DEC     RMB     3           ; for decimal value
+0443 0484                    RND     RMB     1           ; holds a random number (see RD_B
+0444 0485                    TEMP    RMB     2           ; temp var (non subroutine use)
+0445                         
+0446                         
+0447                         
