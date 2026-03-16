@@ -3,6 +3,18 @@
 This is a program designed to control the Apollo Text to Speech unit from the 77-68 NewBear computer.
 
 
+## Modes
+
+Stones = FF - Idle messages (every 90 secs)
+Pounds > 14 - Error, ignore
+Stones > 14 - Too Heavy messages (one two or three messages)
+
+All valid weight messages...
+
+Greeting message (waiting for the weight to settle) followed by the weight message followed by comment.
+
+
+
 
 ## Possible Phrases
 
