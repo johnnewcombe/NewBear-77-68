@@ -26,9 +26,6 @@ VHEX    EQU $FC1D ; Checks that A contains a HEX character
 TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
         STAA    CTRLB   ;   ACIA.A
 
-
-
-
 MAINLOOP:
 ; -----------------------------------------------------
 ; Data arrives at port B as four hex characters
@@ -62,7 +59,6 @@ IDLE    JSR     STRINGB
         FCB     $0A, $0D, $FF
         RTS
 
-
 ;--------------------------------------------------------------
 ; DECIMAL CONVERSION EXAMPLE
 ;--------------------------------------------------------------
@@ -72,8 +68,6 @@ IDLE    JSR     STRINGB
         ;JSR     PR_SPCB
         ;LDAA    DEC+2
         ;JSR     PR_WORD
-
-
 
 ; -----------------------------------------------------
 ; PR_DEC: Puts 3 decimal digits in DEC, DEC+1 and DEC+2
@@ -174,8 +168,7 @@ PRB_END RTS             ; RETURN
 ; -----------------------------------------------------
 ; Read 4 hex digits and put value into X
 ; -----------------------------------------------------
-RD_XB   ;JSR     PR_SPCB   ; Print a space
-        BSR     ZINB    ; Read 2 digit hex value into A
+RD_XB   BSR     ZINB    ; Read 2 digit hex value into A
         STAA    T_Z     ; Save byte (most significant)
         BSR     ZINB    ; Read 2 digit hex value into A
         STAA    T_Z+1   ; Save byte (least significant)
