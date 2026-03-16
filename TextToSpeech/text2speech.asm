@@ -31,25 +31,48 @@ MAINLOOP:
 ; Data arrives at port B as four hex characters
 ; -----------------------------------------------------
         JSR     RD_XB           ; read 4 hex characters into X
-        STX     TEMP
-        LDAA    TEMP
-        CMPA    #20
-        BHI     TOHEAVY
-        LDAA    TEMP+1
-        CMPA    #13
-        BHI     TOHEAVY
-        JSR     PR_WEIGHT       ; stoones in MSB, pounds in LSB
+        STX     TEMP            ; store X
+        LDAA    TEMP            ; get fist byte (stones)
+        CMPA    #20             ; more that 20 is too heavey
+        BHI     TOHEAVY         ; say something rude
+        LDAA    TEMP+1          ; get pounds
+        CMPA    #13             ; invalid pounds
+        BHI     ERROR           ; error
+
+        ; all good so output the weight mesage
+        LDAA    #0              ; output the 'you weigh' phrase
+        JSR     PR_PHRASE       ; output phrase specified in A
+        LDX     TEMP            ; restore X
+        JSR     PR_WEIGHT       ; weight back X so output the weight
+
         BRA     END
 
 ; -----------------------------------------------------
 ; Over 20 stone so random heavy phrase to ports B
 ; -----------------------------------------------------
 TOHEAVY
+ERROR
 
 END
         LDX     #TWENTYONE
         JSR     PR_PHRASE
         JMP     MAINLOOP  ;START   ; all done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ; -----------------------------------------------------
 ; Random idle phrase to ports B
@@ -176,14 +199,14 @@ RD_XB   BSR     ZINB    ; Read 2 digit hex value into A
         RTS             ; RETURN
 
 ; -----------------------------------------------------
-; Prints the message "You weight n stones n pounds"
+; Prints the message " n stones n pounds"
 ; place stones in MSB of X and pound in LSB
 ; -----------------------------------------------------
 PR_WEIGHT
         STX     T_W
-        JSR     STRINGB
-        FCC     "You weigh "
-        FDB     $FF
+        ;JSR     STRINGB
+        ;FCC     "You weigh "
+        ;FDB     $FF
         LDAA    T_W             ; Load high byte of X into Accumulator A
         JSR     PR_WORD
         JSR     STRINGB
@@ -208,33 +231,39 @@ PR_SPCB   PSHA
         RTS                 ; RETURN
 
 ; -----------------------------------------------------
-; Prints a phrase from the PHRASES table
+; Outputs a phrase from the value in A
 ; -----------------------------------------------------
 PR_PHRASE
-PR_PH1  STX     T_P         ; save X
-        LDAA    0,X         ; get word number
+        INCA
+        LDX     PHRASEPTR   ; load address of phrase ponter
+                            ; table
+PR_PH1  DECA                ; loop through A times to get
+        BEQ     FOUNDP      ;   address of phrase
+        INX                 ; move to next address
+        INX
+        BRA     PR_PH1      ; try again
+FOUNDP  STX     T_P         ; phrase found, save X
+        LDAA    0,X         ; get word
         CMPA    #0
         BEQ     PR_PH2      ; no more words
         JSR     PR_WORD     ; print word
         LDX     T_P         ; recover X
         INX
         JSR     PR_SPCB
-        BRA     PR_PH1
-PR_PH2  JSR     STRINGB
-        FCB     $0A,$0D,$FF
-        RTS
+        BRA     FOUNDP      ; next word
+PR_PH2  RTS
 
 ; -----------------------------------------------------
-; Get number word based on value in A
+; Outputs a word based on value in A
 ; -----------------------------------------------------
 PR_WORD     INCA
             LDX     #WORDPTR  ; base of offset table
 PR_WORD1    DECA
-            BEQ     FOUND
+            BEQ     FOUNDW
             INX                 ; move to next address
             INX
             BNE     PR_WORD1    ; loop around to retest
-FOUND       LDAA    0,X
+FOUNDW      LDAA    0,X
             STAA    T_X
             LDAA    1,X
             STAA    T_X+1
@@ -268,9 +297,35 @@ WP12        FDB WEIGHTEEN
 WP13        FDB WNINETEEN
 WP14        FDB WTWENTY
 
+WP15        FDB WYOU
+WP16        FDB WWEIGH
+WP17        FDB WIS
+
+; -----------------------------------------------------
+; Phrase pointer table (max 256 phases)
+; -----------------------------------------------------
+PHRASEPTR
+PP00        FDB YOUWEIGH
+PP01        FDB TWENTYONE
+PP02
+PP03
+PP04
+PP05
+PP06
+PP07
+PP08
+PP09
+PP0A
+PP0B
+PP0C
+PP0D
+PP0E
+PP0F
+
 ; -----------------------------------------------------
 ; Phrases (list of word pointers)
 ; -----------------------------------------------------
+YOUWEIGH    FCB $15,$16,$00
 TWENTYONE   FCB $14,$01,$00  ; i.e. WP14 followed by WP1
 TWENTYTWO   FCB $14,$02,$00
 TWENTYTHREE FCB $14,$03,$00
@@ -284,6 +339,8 @@ TWENTYNINE  FCB $14,$09,$00
 ; -----------------------------------------------------
 ; Words
 ; -----------------------------------------------------
+
+; numbers
 WZERO       FCC     "zero"
             FCB     $FF
 WONE        FCC     "one"
@@ -325,6 +382,14 @@ WEIGHTEEN   FCC     "eighteen"
 WNINETEEN   FCC     "nineteen"
             FCB     $FF
 WTWENTY     FCC     "twenty"
+            FCB     $FF
+
+; general words
+WYOU        FCC     "you"
+            FCB     $FF
+WWEIGH      FCC     "weigh"
+            FCB     $FF
+WIS         FCC     "is"
             FCB     $FF
 
 
