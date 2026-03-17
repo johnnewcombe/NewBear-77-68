@@ -60,6 +60,7 @@ MAINLOOP:
 ; Over 20 stone so random heavy phrase to ports B
 ; -----------------------------------------------------
 TOHEAVY
+        SWI
 ERROR
 
 END
@@ -269,13 +270,13 @@ FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
         STAA    T_P         ; MSB
         LDAA    1,X         ;
         STAA    T_P+1       ; LSB
-        LDX     T_P         ; load address of phrase
-PR_PH3  LDAA    0,X         ; get word
+PR_PH3  LDX     T_P         ; load X
+        LDAA    0,X         ; get word id
+        INX                 ; point X to next word
+        STX     T_P         ; store X away
         CMPA    #0
         BEQ     PR_PH2      ; no more words
-        JSR     PR_WORD     ; print word
-        INC     T_P
-        LDX     T_P         ; recover X
+        JSR     PR_WORD     ; print word based on value in A
         JSR     PR_SPCB
         BRA     PR_PH3      ; next word
 PR_PH2  RTS
