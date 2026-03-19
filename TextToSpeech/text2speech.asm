@@ -34,9 +34,9 @@ MAINLOOP:
         STX     TEMP            ; store X
 
         ; -----------------------------------------------------
-        ; hello message
+        ; hello message "My name is MARVIN"
         ; -----------------------------------------------------
-        LDAA    #$0A            ; load phrase number (PTR)
+        LDAA    #$01            ; load phrase number (PTR)
         JSR     PR_PHRASE
         JSR     PR_CRB
         ; -----------------------------------------------------
@@ -64,7 +64,7 @@ TOHEAVY
 ERROR
 
 END
-        LDX     #TWENTYONE
+        LDX     #MYNAME
         JSR     PR_PHRASE
         JMP     MAINLOOP  ;START   ; all done
 
@@ -87,10 +87,7 @@ END
 ; -----------------------------------------------------
 ; Random idle phrase to ports B
 ; -----------------------------------------------------
-IDLE    JSR     STRINGB
-        FCC     "Shall I tell you a joke?"
-        FCB     $0A, $0D, $FF
-        RTS
+IDLE    RTS
 
 ;--------------------------------------------------------------
 ; DECIMAL CONVERSION EXAMPLE
@@ -215,20 +212,21 @@ RD_XB   BSR     ZINB    ; Read 2 digit hex value into A
 ; -----------------------------------------------------
 PR_WEIGHT
         STX     T_W
-        ;JSR     STRINGB
-        ;FCC     "You weigh "
-        ;FDB     $FF
         LDAA    T_W             ; Load high byte of X into Accumulator A
         JSR     PR_WORD
+
         JSR     STRINGB
         FCC     " stones "
         FDB     $FF
+
         LDAA    T_W+1            ; Load high byte of X into Accumulator A
         JSR     PR_WORD
+
         JSR     STRINGB
         FCC     " pounds"
-        FCB     $0D, $0A,$FF
+        FCB     $FF
 
+        JSR     PR_CRB
         RTS
 
 ; -----------------------------------------------------
@@ -304,6 +302,8 @@ FOUNDW      LDAA    0,X
 ; Set A to the pointer ID and call PR_WORD
 ; -----------------------------------------------------
 WORDPTR
+
+; numbers
 WP00        FDB WZERO
 WP01        FDB WONE
 WP02        FDB WTWO
@@ -326,12 +326,13 @@ WP12        FDB WEIGHTEEN
 WP13        FDB WNINETEEN
 WP14        FDB WTWENTY
 
+; general words
 WP15        FDB WYOU
 WP16        FDB WWEIGH
 WP17        FDB WIS
 WP18        FDB WMY
 WP19        FDB WNAME
-WP1A
+WP1A        FDB WMARVIN
 
 ; -----------------------------------------------------
 ; Phrase pointer table (max 256 phases)
@@ -339,36 +340,40 @@ WP1A
 ; -----------------------------------------------------
 PHRASEPTR
 PP00        FDB YOUWEIGH
-PP01        FDB TWENTYONE
-PP02        FDB TWENTYTWO
-PP03        FDB TWENTYTHREE
-PP04        FDB TWENTYFOUR
-PP05        FDB TWENTYFIVE
-PP06        FDB TWENTYSIX
-PP07        FDB TWENTYSEVEN
-PP08        FDB TWENTYEIGHT
-PP09        FDB TWENTYNINE
-PP0A        FDB MYNAME
-PP0B
-PP0C
-PP0D
-PP0E
-PP0F
+PP01        FDB MYNAME
+PP02
+PP03
+PP04
+PP05
+PP06
 
 ; -----------------------------------------------------
 ; Phrases (each holds a list of word pointers)
 ; -----------------------------------------------------
+;All valid weight messages include ...
+;
+;   Greeting message (waiting for the weight to settle)
+;   the weight message
+;   comment.
+
+; standard weight phrase
 YOUWEIGH    FCB $15,$16,$00
-TWENTYONE   FCB $14,$01,$00  ; i.e. WP14 followed by WP1
-TWENTYTWO   FCB $14,$02,$00
-TWENTYTHREE FCB $14,$03,$00
-TWENTYFOUR  FCB $14,$04,$00
-TWENTYFIVE  FCB $14,$05,$00
-TWENTYSIX   FCB $14,$06,$00
-TWENTYSEVEN FCB $14,$07,$00
-TWENTYEIGHT FCB $14,$08,$00
-TWENTYNINE  FCB $14,$09,$00
-MYNAME      FCB $18,$19,$17,$00
+
+; -----------------------------------------------------
+; Idle Phrases (90 sec intervals?
+; -----------------------------------------------------
+
+MYNAME      FCB $18,$19,$17,$1A,$00
+
+;Machine for Analytical Reasoning with Variable Interest and No Enthusiasm
+;All the diodes on my memory cards hurt.
+;This is very boring.
+;New bear, smarter than the average bear, probably.
+;I know I don't look it but I am actually quite clever.
+
+
+; error phrases
+; i am too hot, turn me off
 
 ; -----------------------------------------------------
 ; Words
@@ -429,7 +434,8 @@ WMY         FCC     "my"
             FCB     $FF
 WNAME       FCC     "name"
             FCB     $FF
-
+WMARVIN     FCC     "marvin"
+            FCB     $FF
 
 ; -----------------------------------------------------
 ; Reserved memory
