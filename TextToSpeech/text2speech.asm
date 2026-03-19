@@ -213,19 +213,16 @@ RD_XB   BSR     ZINB    ; Read 2 digit hex value into A
 PR_WEIGHT
         STX     T_W
         LDAA    T_W             ; Load high byte of X into Accumulator A
-        JSR     PR_WORD
-
-        JSR     STRINGB
-        FCC     " stones "
-        FDB     $FF
-
+        JSR     PR_WORD         ; n
+        JSR     PR_SPCB
+        LDAA    #$1B
+        JSR     PR_WORD         ; "stones"
+        JSR     PR_SPCB
         LDAA    T_W+1            ; Load high byte of X into Accumulator A
-        JSR     PR_WORD
-
-        JSR     STRINGB
-        FCC     " pounds"
-        FCB     $FF
-
+        JSR     PR_WORD         ; n
+        LDAA    #$1C
+        JSR     PR_SPCB
+        JSR     PR_WORD         ; "pounds"
         JSR     PR_CRB
         RTS
 
@@ -301,6 +298,7 @@ FOUNDW      LDAA    0,X
 ; Word pointer table (max words 256)
 ; Set A to the pointer ID and call PR_WORD
 ; -----------------------------------------------------
+; add a pointer to words defined in the WORDTABLE
 WORDPTR
 
 ; numbers
@@ -333,6 +331,8 @@ WP17        FDB WIS
 WP18        FDB WMY
 WP19        FDB WNAME
 WP1A        FDB WMARVIN
+WP1B        FDB WSTONES
+WP1C        FDB WPOUNDS
 
 ; -----------------------------------------------------
 ; Phrase pointer table (max 256 phases)
@@ -376,7 +376,7 @@ MYNAME      FCB $18,$19,$17,$1A,$00
 ; i am too hot, turn me off
 
 ; -----------------------------------------------------
-; Words
+; Word Table
 ; -----------------------------------------------------
 
 ; numbers
@@ -435,6 +435,10 @@ WMY         FCC     "my"
 WNAME       FCC     "name"
             FCB     $FF
 WMARVIN     FCC     "marvin"
+            FCB     $FF
+WSTONES     FCC     "stones"
+            FCB     $FF
+WPOUNDS     FCC     "pounds"
             FCB     $FF
 
 ; -----------------------------------------------------
