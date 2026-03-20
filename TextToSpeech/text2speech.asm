@@ -34,17 +34,9 @@ MAINLOOP:
         JSR     RD_XB           ; read 4 hex characters into X
         STX     TEMP            ; store X
 
-        ; -----------------------------------------------------
-        ; hello message "My name is MARVIN"
-        ; -----------------------------------------------------
-        ;LDAA    #$01            ; load phrase number (PTR)
-        LDX     #MYNAME
-        JSR     PR_PHRASE
-        JSR     PR_CRB
-
-        ; -----------------------------------------------------
 
         LDAA    TEMP            ; get fist byte (stones)
+        BEQ     IDLE
         CMPA    #20             ; more that 20 is too heavey
         BHI     TOHEAVY         ; say something rude
         LDAA    TEMP+1          ; get pounds
@@ -52,47 +44,34 @@ MAINLOOP:
         BHI     ERROR           ; error
 
         ; all good so output the weight mesage
-        LDX     #YOUWEIGH              ; output the 'you weigh' phrase
+        LDX     #YOUWEIGH       ; output the 'you weigh' phrase
         JSR     PR_PHRASE       ; output phrase specified in A
         LDX     TEMP            ; restore X
         JSR     PR_WEIGHT       ; weight back X so output the weight
 
         BRA     END
 
+IDLE
+        ;LDAA    #$01            ; load phrase number (PTR)
+        LDX     #MYNAME
+        JSR     PR_PHRASE
+        JSR     PR_CRB
+        BRA     END
+
+
 ; -----------------------------------------------------
 ; Over 20 stone so random heavy phrase to ports B
 ; -----------------------------------------------------
 TOHEAVY
-        SWI
+        BRA END
 ERROR
 
 END
         ; comment message goes here
-
         ;LDX     #MYNAME
         ;JSR     PR_PHRASE
         JMP     MAINLOOP  ;START   ; all done
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-; -----------------------------------------------------
-; Random idle phrase to ports B
-; -----------------------------------------------------
-IDLE    RTS
 
 ;--------------------------------------------------------------
 ; DECIMAL CONVERSION EXAMPLE
@@ -272,30 +251,30 @@ PR_PHRASE
 PR_END  RTS
 
 
-PR_PHRASE_OLD
-        INCA
-        LDX     #PHRASEPTR  ; load address of phrase ponter
-                            ; table
-PR_PH1  DECA                ; loop through A times to get
-        BEQ     FOUNDP      ;   address of phrase
-        INX                 ; move to next address
-        INX
-        BRA     PR_PH1      ; try again
-
-FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
-        STAA    T_P         ; MSB
-        LDAA    1,X         ;
-        STAA    T_P+1       ; LSB
-PR_PH3  LDX     T_P         ; load X
-        LDAA    0,X         ; get word id
-        INX                 ; point X to next word
-        STX     T_P         ; store X away
-        CMPA    #0
-        BEQ     PR_PH2      ; no more words
-        JSR     PR_WORD     ; print word based on value in A
-        JSR     PR_SPCB
-        BRA     PR_PH3      ; next word
-PR_PH2  RTS
+;PR_PHRASE_OLD
+;        INCA
+;        LDX     #PHRASEPTR  ; load address of phrase ponter
+;                            ; table
+;PR_PH1  DECA                ; loop through A times to get
+;        BEQ     FOUNDP      ;   address of phrase
+;        INX                 ; move to next address
+;        INX
+;        BRA     PR_PH1      ; try again
+;
+;FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
+;        STAA    T_P         ; MSB
+;        LDAA    1,X         ;
+;        STAA    T_P+1       ; LSB
+;PR_PH3  LDX     T_P         ; load X
+;        LDAA    0,X         ; get word id
+;        INX                 ; point X to next word
+;        STX     T_P         ; store X away
+;        CMPA    #0
+;        BEQ     PR_PH2      ; no more words
+;        JSR     PR_WORD     ; print word based on value in A
+;        JSR     PR_SPCB
+;        BRA     PR_PH3      ; next word
+;PR_PH2  RTS
 
 ; -----------------------------------------------------
 ; Outputs a word based on value in A
@@ -316,25 +295,6 @@ FOUNDW      LDAA    0,X
             RTS
 
 
-
-; ----------------------------------------------------
-; Phrase pointer table (max 256 phases)
-; Set A to the pointer ID and call PR_PHRASE
-; -----------------------------------------------------
-; add a pointer to words defined in the PHRASETABLE
-
-;TODO If we use X
-
-PHRASEPTR
-
-;PP00        FDB YOUWEIGH
-;PP01        FDB MYNAME
-;PP02
-;PP03
-;PP04
-;PP05
-;PP06
-
 ; -----------------------------------------------------
 ; Phrases (each holds a list of word pointers)
 ; -----------------------------------------------------
@@ -344,17 +304,14 @@ PHRASEPTR
 ;   the weight message
 ;   comment.
 
-
-
-
-; "you weigh"
+; -----------------------------------------------------
+; General Phrases
+; -----------------------------------------------------
 YOUWEIGH    FCB $15,$16,$00
 
 ; -----------------------------------------------------
 ; Idle Phrases (90 sec intervals?
 ; -----------------------------------------------------
-
-; My name is MARVIN
 MYNAME      FCB $18,$19,$17,$1A,0
 DIODESHURT  FCB $2E,$2F,$30,$31,$18,$32,$33,$34,0
 BORING      FCB $35,$17,$36,$37,0
