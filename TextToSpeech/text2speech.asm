@@ -26,6 +26,7 @@ VHEX    EQU $FC1D ; Checks that A contains a HEX character
 TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
         STAA    CTRLB   ;   ACIA.A
 
+
 MAINLOOP:
 ; -----------------------------------------------------
 ; Data arrives at port B as four hex characters
@@ -36,9 +37,11 @@ MAINLOOP:
         ; -----------------------------------------------------
         ; hello message "My name is MARVIN"
         ; -----------------------------------------------------
-        LDAA    #$01            ; load phrase number (PTR)
+        ;LDAA    #$01            ; load phrase number (PTR)
+        LDX     #MYNAME
         JSR     PR_PHRASE
         JSR     PR_CRB
+
         ; -----------------------------------------------------
 
         LDAA    TEMP            ; get fist byte (stones)
@@ -49,7 +52,7 @@ MAINLOOP:
         BHI     ERROR           ; error
 
         ; all good so output the weight mesage
-        LDAA    #0              ; output the 'you weigh' phrase
+        LDX     #YOUWEIGH              ; output the 'you weigh' phrase
         JSR     PR_PHRASE       ; output phrase specified in A
         LDX     TEMP            ; restore X
         JSR     PR_WEIGHT       ; weight back X so output the weight
@@ -64,8 +67,10 @@ TOHEAVY
 ERROR
 
 END
-        LDX     #MYNAME
-        JSR     PR_PHRASE
+        ; comment message goes here
+
+        ;LDX     #MYNAME
+        ;JSR     PR_PHRASE
         JMP     MAINLOOP  ;START   ; all done
 
 
@@ -252,7 +257,22 @@ PR_CRB  PSHA
 ; -----------------------------------------------------
 ; Outputs a phrase from the value in A
 ; -----------------------------------------------------
+
 PR_PHRASE
+        LDAA    0,X         ; get word id
+        INX                 ; point X to next word
+        STX     T_P         ; store X away
+        CMPA    #0
+        BEQ     PR_END      ; no more words
+        JSR     PR_WORD     ; print word based on value in A
+        JSR     PR_SPCB
+        LDX     T_P        ; recover X
+
+        BRA     PR_PHRASE   ; next word
+PR_END  RTS
+
+
+PR_PHRASE_OLD
         INCA
         LDX     #PHRASEPTR  ; load address of phrase ponter
                             ; table
@@ -261,6 +281,7 @@ PR_PH1  DECA                ; loop through A times to get
         INX                 ; move to next address
         INX
         BRA     PR_PH1      ; try again
+
 FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
         STAA    T_P         ; MSB
         LDAA    1,X         ;
@@ -293,6 +314,251 @@ FOUNDW      LDAA    0,X
             LDX     T_X
             JSR     STRINGBX
             RTS
+
+
+
+; ----------------------------------------------------
+; Phrase pointer table (max 256 phases)
+; Set A to the pointer ID and call PR_PHRASE
+; -----------------------------------------------------
+; add a pointer to words defined in the PHRASETABLE
+
+;TODO If we use X
+
+PHRASEPTR
+
+;PP00        FDB YOUWEIGH
+;PP01        FDB MYNAME
+;PP02
+;PP03
+;PP04
+;PP05
+;PP06
+
+; -----------------------------------------------------
+; Phrases (each holds a list of word pointers)
+; -----------------------------------------------------
+;All valid weight messages include ...
+;
+;   Greeting message (waiting for the weight to settle)
+;   the weight message
+;   comment.
+
+
+
+
+; "you weigh"
+YOUWEIGH    FCB $15,$16,$00
+
+; -----------------------------------------------------
+; Idle Phrases (90 sec intervals?
+; -----------------------------------------------------
+
+; My name is MARVIN
+MYNAME      FCB $18,$19,$17,$1A,0
+DIODESHURT  FCB $2E,$2F,$30,$31,$18,$32,$33,$34,0
+BORING      FCB $35,$17,$36,$37,0
+SMARTER     FCB $3b,$3C,$3D,$2F,$3E,$3F,$40,0
+CLEVER      FCB $20,$41,$42,$43,$44,$20,$21,$45,$46,$47,0
+
+; it stands for Machine for Analytical Reasoning with Very little Interest and No Enthusiasm
+; All the diodes on my memory cards hurt.
+; This is very boring.
+; Newbear, smarter than the average bear, probably.
+; I know I don't look it but I am actually quite clever.
+
+; -----------------------------------------------------
+; Greetings
+; -----------------------------------------------------
+; Bear with me I was just having a nap.
+; Hello my Name is Marvin.
+; Please stand still and stop fidgeting.
+
+; -----------------------------------------------------
+; Weight < 10 stones
+; -----------------------------------------------------
+
+
+; -----------------------------------------------------
+; Weight >=10 stones < 14 stones
+; -----------------------------------------------------
+; thank goodness a normal person
+; erm, erm, hufflepuff! only kidding
+
+; -----------------------------------------------------
+; Weight >= 14 < 20 stones
+; -----------------------------------------------------
+; we might need to weigh one foot at a time ha ha ha
+; which is within the range of a normal fat person.
+; Maybe eat less pizza ha ha ha
+; You are quite heavy, I probably should have whispered it
+; it might sound better in tonnes ha ha ha
+
+; -----------------------------------------------------
+; Weight  >= 20 stones
+; -----------------------------------------------------
+; You are two heavy please remove all items of clothing and try again.
+; One at a time please!
+
+; -----------------------------------------------------
+; error phrases
+; -----------------------------------------------------
+; i am too hot, turn me off
+
+; -----------------------------------------------------
+; Word Table, add a pointer to each word in WORDPTR table
+; -----------------------------------------------------
+WORDTABLE
+
+; numbers
+WZERO           FCC     "zero"
+                FCB     $FF
+WONE            FCC     "one"
+                FCB     $FF
+WTWO            FCC     "two"
+                FCB     $FF
+WTHREE          FCC     "three"
+                FCB     $FF
+WFOUR           FCC     "four"
+                FCB     $FF
+WFIVE           FCC     "five"
+                FCB     $FF
+WSIX            FCC     "six"
+                FCB     $FF
+WSEVEN          FCC     "seven"
+                FCB     $FF
+WEIGHT          FCC     "eight"
+                FCB     $FF
+WNINE           FCC     "nine"
+                FCB     $FF
+WTEN            FCC     "ten"
+                FCB     $FF
+WELEVEN         FCC     "eleven"
+                FCB     $FF
+WTWELVE         FCC     "twelve"
+                FCB     $FF
+WTHIRTEEN       FCC     "thirteen"
+                FCB     $FF
+WFOURTEEN       FCC     "fourteen"
+                FCB     $FF
+WFIFTEEN        FCC     "fifteen"
+                FCB     $FF
+WSIXTEEN        FCC     "sixteen"
+                FCB     $FF
+WSEVENTEEN      FCC     "seventeen"
+                FCB     $FF
+WEIGHTEEN       FCC     "eighteen"
+                FCB     $FF
+WNINETEEN       FCC     "nineteen"
+                FCB     $FF
+WTWENTY         FCC     "twenty"
+                FCB     $FF
+
+; general words
+WYOU            FCC     "you"
+                FCB     $FF
+WWEIGH          FCC     "weigh"
+                FCB     $FF
+WIS             FCC     "is"
+                FCB     $FF
+WMY             FCC     "my"
+                FCB     $FF
+WNAME           FCC     "name"
+                FCB     $FF
+WMARVIN         FCC     "marvin"
+                FCB     $FF
+WSTONES         FCC     "stones"
+                FCB     $FF
+WPOUNDS         FCC     "pounds"
+                FCB     $FF
+WHA             FCC     "ha"
+                FCB     $FF
+WQUESTION       FCC     "?"
+                FCB     $FF
+WEXCLAMATION    FCC     "!"
+                FCB     $FF
+WFULLTOP        FCC     "."
+                FCB     $FF
+WI              FCC     "I"
+                FCB     $FF
+WAM             FCC     "am"
+                FCB     $FF
+WA              FCC     "a"
+                FCB     $FF
+WMACHINE        FCC     "machine"
+                FCB     $FF
+WFOR            FCC     "for"
+                FCB     $FF
+WANALYTICAL     FCC     "analytical"
+                FCB     $FF
+WREASONING      FCC     "reasoning"
+                FCB     $FF
+WWITH           FCC     "with"
+                FCB     $FF
+WVARIABLE       FCC     "very"
+                FCB     $FF
+WLITTLE         FCC     "little"
+                FCB     $FF
+WINTEREST       FCC     "interest"
+                FCB     $FF
+WAND            FCC     "and"
+                FCB     $FF
+WNO             FCC     "no"
+                FCB     $FF
+WENTHUSIASM     FCC     "enthusiasm"
+                FCB     $FF
+WALL            FCC     "all"
+                FCB     $FF
+WTHE            FCC     "the"
+                FCB     $FF
+WDIODES         FCC     "diodes"
+                FCB     $FF
+WON             FCC     "on"
+                FCB     $FF
+WMEMORY         FCC     "memory"
+                FCB     $FF
+WCARDS          FCC     "cards"
+                FCB     $FF
+WHURT           FCC     "hurt"
+                FCB     $FF
+WTHIS           FCC     "this"
+                FCB     $FF
+WVERY           FCC     "very"
+                FCB     $FF
+WBORING         FCC     "boring"
+                FCB     $FF
+WSHALL          FCC     "shall"
+                FCB     $FF
+WTELL           FCC     "tell"
+                FCB     $FF
+WJOKE           FCC     "joke"
+                FCB     $FF
+WNEWBEAR        FCC     "newbear"
+                FCB     $FF
+WSMARTER        FCC     "smarter"
+                FCB     $FF
+WTHAN           FCC     "than"
+                FCB     $FF
+WAVERAGE        FCC     "average"
+                FCB     $FF
+WBEAR           FCC     "bear"
+                FCB     $FF
+WPROBABLY       FCC     "probably"
+                FCB     $FF
+WKNOW           FCC     "know"
+                FCB     $FF
+WLOOK           FCC     "look"
+                FCB     $FF
+WIT             FCC     "it"
+                FCB     $FF
+WBUT            FCC     "but"
+                FCB     $FF
+WACTUALLY       FCC     "actually"
+                FCB     $FF
+WQUITE          FCC     "quite"
+                FCB     $FF
+WCLEVER         FCC     "clever"
+                FCB     $FF
 
 ; -----------------------------------------------------
 ; Word pointer table (max words 256)
@@ -333,150 +599,50 @@ WP19        FDB WNAME
 WP1A        FDB WMARVIN
 WP1B        FDB WSTONES
 WP1C        FDB WPOUNDS
-
-; -----------------------------------------------------
-; Phrase pointer table (max 256 phases)
-; Set A to the pointer ID and call PR_PHRASE
-; -----------------------------------------------------
-; add a pointer to words defined in the PHRASETABLE
-PHRASEPTR
-
-PP00        FDB YOUWEIGH
-PP01        FDB MYNAME
-PP02
-PP03
-PP04
-PP05
-PP06
-
-; -----------------------------------------------------
-; Phrases (each holds a list of word pointers)
-; -----------------------------------------------------
-;All valid weight messages include ...
-;
-;   Greeting message (waiting for the weight to settle)
-;   the weight message
-;   comment.
-
-; standard weight phrase
-YOUWEIGH    FCB $15,$16,$00
-
-; -----------------------------------------------------
-; Idle Phrases (90 sec intervals?
-; -----------------------------------------------------
-
-MYNAME      FCB $18,$19,$17,$1A,$00
-
-; it stands for Machine for Analytical Reasoning with Variable Interest and No Enthusiasm
-; All the diodes on my memory cards hurt.
-; This is very boring.
-; Newbear, smarter than the average bear, probably.
-; I know I don't look it but I am actually quite clever.
-
-; -----------------------------------------------------
-; Greetings
-; -----------------------------------------------------
-; Bear with me I was just having a nap.
-; Hello my Name is Marvin.
-; Please stand still and stop fidgeting.
-
-; -----------------------------------------------------
-; Weight < 10 stones
-; -----------------------------------------------------
-
-
-; -----------------------------------------------------
-; Weight >=10 stones < 14 stones
-; -----------------------------------------------------
-; thank goodness a normal person
-; erm, erm, hufflepuff! only kidding
-
-; -----------------------------------------------------
-; Weight >= 14 < 20 stones
-; -----------------------------------------------------
-; we might need to weigh one foot at a time ha ha ha
-; which is within the range of a normal fat person.
-; Maybe eat less pizza ha ha ha
-; You are quite heavy, I probably should have whispered it
-; it might sound better in tonnes ha ha ha
-
-; -----------------------------------------------------
-Weight  >= 20 stones
-; -----------------------------------------------------
-; You are two heavy please remove all items of clothing and try again.
-; One at a time please!
-
-; -----------------------------------------------------
-; error phrases
-; -----------------------------------------------------
-; i am too hot, turn me off
-
-; -----------------------------------------------------
-; Word Table
-; -----------------------------------------------------
-WORDTABLE
-
-; numbers
-WZERO       FCC     "zero"
-            FCB     $FF
-WONE        FCC     "one"
-            FCB     $FF
-WTWO        FCC     "two"
-            FCB     $FF
-WTHREE      FCC     "three"
-            FCB     $FF
-WFOUR       FCC     "four"
-            FCB     $FF
-WFIVE       FCC     "five"
-            FCB     $FF
-WSIX        FCC     "six"
-            FCB     $FF
-WSEVEN      FCC     "seven"
-            FCB     $FF
-WEIGHT      FCC     "eight"
-            FCB     $FF
-WNINE       FCC     "nine"
-            FCB     $FF
-WTEN        FCC     "ten"
-            FCB     $FF
-WELEVEN     FCC     "eleven"
-            FCB     $FF
-WTWELVE     FCC     "twelve"
-            FCB     $FF
-WTHIRTEEN   FCC     "thirteen"
-            FCB     $FF
-WFOURTEEN   FCC     "fourteen"
-            FCB     $FF
-WFIFTEEN    FCC     "fifteen"
-            FCB     $FF
-WSIXTEEN    FCC     "sixteen"
-            FCB     $FF
-WSEVENTEEN  FCC     "seventeen"
-            FCB     $FF
-WEIGHTEEN   FCC     "eighteen"
-            FCB     $FF
-WNINETEEN   FCC     "nineteen"
-            FCB     $FF
-WTWENTY     FCC     "twenty"
-            FCB     $FF
-
-; general words
-WYOU        FCC     "you"
-            FCB     $FF
-WWEIGH      FCC     "weigh"
-            FCB     $FF
-WIS         FCC     "is"
-            FCB     $FF
-WMY         FCC     "my"
-            FCB     $FF
-WNAME       FCC     "name"
-            FCB     $FF
-WMARVIN     FCC     "marvin"
-            FCB     $FF
-WSTONES     FCC     "stones"
-            FCB     $FF
-WPOUNDS     FCC     "pounds"
-            FCB     $FF
+WP1D        FDB WQUESTION
+WP1E        FDB WEXCLAMATION
+WP1F        FDB WFULLTOP
+WP20        FDB WI
+WP21        FDB WAM
+WP22        FDB WA
+WP23        FDB WMACHINE
+WP24        FDB WFOR
+WP25        FDB WANALYTICAL
+WP26        FDB WREASONING
+WP27        FDB WWITH
+WP28        FDB WVARIABLE
+WP29        FDB WLITTLE
+WP2A        FDB WINTEREST
+WP2B        FDB WAND
+WP2C        FDB WNO
+WP2D        FDB WENTHUSIASM
+WP2E        FDB WALL
+WP2F        FDB WTHE
+WP30        FDB WDIODES
+WP31        FDB WON
+WP32        FDB WMEMORY
+WP33        FDB WCARDS
+WP34        FDB WHURT
+WP35        FDB WTHIS
+WP36        FDB WVERY
+WP37        FDB WBORING
+WP38        FDB WSHALL
+WP39        FDB WTELL
+WP3A        FDB WJOKE
+WP3B        FDB WNEWBEAR
+WP3C        FDB WSMARTER
+WP3D        FDB WTHAN
+WP3E        FDB WAVERAGE
+WP3F        FDB WBEAR
+WP40        FDB WPROBABLY
+WP41        FDB WKNOW
+WP42        FDB WLOOK
+WP43        FDB WIT
+WP44        FDB WBUT
+WP45        FDB WACTUALLY
+WP46        FDB WQUITE
+WP47        FDB WCLEVER
+WP48        FDB WHA
 
 ; -----------------------------------------------------
 ; Reserved memory
