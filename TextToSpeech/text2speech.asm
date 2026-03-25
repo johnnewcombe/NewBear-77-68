@@ -318,49 +318,7 @@ BORING      FCB $35,$17,$36,$37,0
 SMARTER     FCB $3b,$3C,$3D,$2F,$3E,$3F,$40,0
 CLEVER      FCB $20,$41,$42,$43,$44,$20,$21,$45,$46,$47,0
 
-; it stands for Machine for Analytical Reasoning with Very little Interest and No Enthusiasm
-; All the diodes on my memory cards hurt.
-; This is very boring.
-; Newbear, smarter than the average bear, probably.
-; I know I don't look it but I am actually quite clever.
 
-; -----------------------------------------------------
-; Greetings
-; -----------------------------------------------------
-; Bear with me I was just having a nap.
-; Hello my Name is Marvin.
-; Please stand still and stop fidgeting.
-
-; -----------------------------------------------------
-; Weight < 10 stones
-; -----------------------------------------------------
-
-
-; -----------------------------------------------------
-; Weight >=10 stones < 14 stones
-; -----------------------------------------------------
-; thank goodness a normal person
-; erm, erm, hufflepuff! only kidding
-
-; -----------------------------------------------------
-; Weight >= 14 < 20 stones
-; -----------------------------------------------------
-; we might need to weigh one foot at a time ha ha ha
-; which is within the range of a normal fat person.
-; Maybe eat less pizza ha ha ha
-; You are quite heavy, I probably should have whispered it
-; it might sound better in tonnes ha ha ha
-
-; -----------------------------------------------------
-; Weight  >= 20 stones
-; -----------------------------------------------------
-; You are two heavy please remove all items of clothing and try again.
-; One at a time please!
-
-; -----------------------------------------------------
-; error phrases
-; -----------------------------------------------------
-; i am too hot, turn me off
 
 ; -----------------------------------------------------
 ; Word Table, add a pointer to each word in WORDPTR table
