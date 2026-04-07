@@ -9,19 +9,24 @@ DATAB               EQU $F402 ; ACIA(b) Data register
 CTRLB               EQU $F403 ; ACIA(b) Ctrl/Status
 
 ; MINIMON routines
-STRING              EQU $FC76 ; Prints a string. The string should follow JSR and be terminated with $FF.
-GETADD              EQU $FC89 ; Get Address, read 4 digit hex value.
-ZOUT                EQU $FCC9 ; Print value in A as 2 hex digits.
-NEWLINE             EQU $FE97 ; Prints a new line.
-START               EQU $FF8F ; Restarts MniMon.
-PR_A                EQU $FC0F ; Print char in A to ACIA (a)
-RD_A                EQU $FD2B ; Read char from A
-PRSP                EQU $FD4D ; Print a space
-BINARY              EQU $FC31 ; Converts ASCII hex digits in A and B to binary?
-RD_X                EQU $FC65 ; Read 4 hex digits Value from ACIA(a) and put value into X.
-VHEX                EQU $FC1D ; Checks that A contains a HEX character
+STRING              EQU $FC76   ; Prints a string. The string should follow JSR and be terminated with $FF.
+GETADD              EQU $FC89   ; Get Address, read 4 digit hex value.
+ZOUT                EQU $FCC9   ; Print value in A as 2 hex digits.
+NEWLINE             EQU $FE97   ; Prints a new line.
+START               EQU $FF8F   ; Restarts MniMon.
+PR_A                EQU $FC0F   ; Print char in A to ACIA (a)
+RD_A                EQU $FD2B   ; Read char from A
+PRSP                EQU $FD4D   ; Print a space
+BINARY              EQU $FC31   ; Converts ASCII hex digits in A and B to binary?
+RD_X                EQU $FC65   ; Read 4 hex digits Value from ACIA(a) and put value into X.
+VHEX                EQU $FC1D   ; Checks that A contains a HEX character
 
 IDLE_SECS           EQU 90      ; seconds between idle messages
+LIGHT_WGHT          EQU 6       ; greater than 6 stones
+NORM_WGHT           EQU 10
+HEAVY_WGHT          EQU 13
+SHEAVY_WGHT         EQU 15
+
 IDLE_MSG_CNT        EQU 1       ; number of messages
 GREET_MSG_CNT       EQU 1       ; number of messages
 LIGHT_MSG_CNT       EQU 1       ; number of messages
@@ -42,13 +47,17 @@ MAINLOOP:
 ; Data arrives at port B as four hex characters
 ; -----------------------------------------------------
         JSR     GETDATA         ; value in T_WEIGHT, stones in A
-        BCC     IDLE            ; is it invalid i.e. carry clear
-        CMPA    #20             ; more that 20 is too heavy
+        BCS     ML1             ; is it invalid i.e. carry clear
+        JMP     IDLE
+ML1     CMPA    #20             ; more that 20 is too heavy
         BHI     TOOHEAVY
         LDAA    T_WEIGHT+1      ; validate pounds
         CMPA    #13             ; invalid pounds
         BHI     ERROR           ; error
         JSR GREET               ; send a greeting message
+
+        ; get the weight a second time, this should allow the scles time to settle
+        JSR     GETDATA
 
         ; all good so output the weight mesage
         ; TODO get phrase from phrase table as per other message output routines
@@ -58,8 +67,21 @@ MAINLOOP:
         LDX     T_WEIGHT        ; restore X
         JSR     PR_WEIGHT       ; weight back X so output the weight
 
-        ; TODO determine phrase category (light normal, heavy etc. and jump o the section
-
+        ; determine phrase category (light normal, heavy etc.) and jump to the section
+        LDAA    T_WEIGHT
+        CMPA    #LIGHT_WGHT
+        BHI     ML2             ; less than light weight gets no comment
+        JMP     END
+ML2     CMPA    #NORM_WGHT      ; less than normal is light
+        BHI     ML3
+        JMP     LIGHT
+ML3     CMPA    #HEAVY_WGHT     ; less than heavy is normal
+        BHI     ML4
+        JMP     NORMAL
+ML4     CMPA    #SHEAVY_WGHT    ; less than super heavy is heavy
+        BMI     ML5
+        JMP     HEAVY
+ML5     JMP     SHEAVY
         JMP END
 
 ; -----------------------------------------------------
@@ -67,16 +89,16 @@ MAINLOOP:
 ; -----------------------------------------------------
 TOOHEAVY
         ; TODO get phrase from phrase table
-       JSR      STRINGB
-       FCC      "System overload… and it’s not me."
-       FCB      $00
-       JMP      END
+        JSR      STRINGB
+        FCC      "System overload… and it’s not me."
+        FCB      $00
+        JMP      END
 ERROR
         ; TODO get phrase from phrase table
-       JSR      STRINGB
-       FCC      "Internal error, typical!"
-       FCB      $00
-       JMP      END
+        JSR      STRINGB
+        FCC      "Internal error, typical!"
+        FCB      $00
+        JMP      END
 
 ; NEED TO CYCLE AROUND IDLE MESSAGES
 
@@ -164,9 +186,7 @@ PHRASE_OUT
         JSR     PR_CRB          ; CR/LF
         JMP     END
 
-
-END
-       JMP     MAINLOOP  ;START   ; all done
+END     JMP     MAINLOOP  ;START   ; all done
 
 ;--------------------------------------------------------------
 ; Gets the weight data from the scales and rerurns with carry
