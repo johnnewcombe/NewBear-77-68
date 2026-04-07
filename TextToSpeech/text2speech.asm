@@ -50,7 +50,7 @@ MAINLOOP:
         BCS     ML1             ; is it invalid i.e. carry clear
         JMP     IDLE
 ML1     CMPA    #20             ; more that 20 is too heavy
-        BHI     TOOHEAVY
+        BHI     OVERLOAD
         LDAA    T_WEIGHT+1      ; validate pounds
         CMPA    #13             ; invalid pounds
         BHI     ERROR           ; error
@@ -87,7 +87,7 @@ ML5     JMP     SHEAVY
 ; -----------------------------------------------------
 ; Over 20 stone so random heavy phrase to ports B
 ; -----------------------------------------------------
-TOOHEAVY
+OVERLOAD
         ; TODO get phrase from phrase table
         JSR      STRINGB
         FCC      "System overload… and it’s not me."
@@ -105,8 +105,9 @@ ERROR
 IDLE    INC     IDLE_COUNT      ; increase the idle count
         LDAA    IDLE_COUNT      ; see if idle count = max idle time
         CMPA    #IDLE_SECS      ; a data message appears every second
-        BNE     END             ; not reached the max idle time
-        CLR     IDLE_COUNT      ; time to output an idle message so reset the count
+        BEQ     IDLE1           ; not reached the max idle time
+        JMP     END
+IDLE1   CLR     IDLE_COUNT      ; time to output an idle message so reset the count
 
         ; output the idle message
         INC     IDLE_MSG_ID     ; get next idle message
@@ -129,7 +130,7 @@ GREET   ; output the greeting message
         STAA    GREET_MSG_ID
 
 GREET_OP
-        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        ADDA    GREETTPTR-PHRASEPTR ; add the offset phrase pointers
         JSR     PR_PHRASE       ; output idle message
         JSR     PR_CRB          ; CR/LF
         RTS
@@ -144,6 +145,7 @@ LIGHT   ; output the light message
 
 LIGHT_OP
         ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        ADDA    LIGHTPTR-PHRASEPTR
         JMP     PHRASE_OUT
 
 NORMAL  ; output the normal message
@@ -156,6 +158,7 @@ NORMAL  ; output the normal message
 
 NORMAL_OP
         ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        ADDA    NORMALPTR-PHRASEPTR
         JMP     PHRASE_OUT
 
 HEAVY   ; output the heavy message
@@ -168,6 +171,7 @@ HEAVY   ; output the heavy message
 
 HEAVY_OP
         ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        ADDA    HEAVYPTR-PHRASEPTR
         JMP     PHRASE_OUT
 
 SHEAVY   ; output the heavy message
@@ -180,6 +184,9 @@ SHEAVY   ; output the heavy message
 
 SHEAVY_OP
         ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        ; add PHRASE
+        ; follows on to PHRASE_OUT
+        ADDA    SHEAVYPTR-PHRASEPTR
 
 PHRASE_OUT
         JSR     PR_PHRASE       ; output idle message
@@ -454,6 +461,7 @@ CLEVER      FCB $20,$41,$42,$43,$44,$20,$21,$45,$46,$47,0
 PHRASEPTR
 
 ; idle phrase ponters
+IDLEPTR
 IPP00        FDB MYNAME
 IPP01        FDB DIODESHURT
 IPP02        FDB BORING
@@ -461,16 +469,32 @@ IPP03        FDB SMARTER
 IPP04        FDB CLEVER
 
 ; light weight phrase ponters
+LIGHTPTR
 LPP00       FDB MYNAME
 
 ; normal weight phrase ponters
+NORMALPTR
 NPP00       FDB MYNAME
 
 ; heavy weight phrase ponters
+HEAVYPTR
 HPP00       FDB MYNAME
 
 ; super heavy weight  phrase ponters
+SHEAVYPTR
 SPP00       FDB MYNAME
+
+; greeting phrase ponters
+GREETTPTR
+GPP00       FDB MYNAME
+
+; error phrase pointer
+ERRORTPTR
+EPP00       FDB MYNAME
+
+; overload phrase pointer
+OVERLOADTPTR
+OPP00       FDB MYNAME
 
 ; -----------------------------------------------------
 ; Word Table, add a pointer to each word in WORDPTR table
