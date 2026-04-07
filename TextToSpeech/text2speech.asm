@@ -3,24 +3,34 @@
 ;------------------------------------------------------------------
 
 ; 7768 ACIA
-DATAA   EQU $F400 ; ACIA(a) Data register
-CTRLA   EQU $F401 ; ACIA(a) Ctrl/Status
-DATAB   EQU $F402 ; ACIA(b) Data register
-CTRLB   EQU $F403 ; ACIA(b) Ctrl/Status
+DATAA               EQU $F400 ; ACIA(a) Data register
+CTRLA               EQU $F401 ; ACIA(a) Ctrl/Status
+DATAB               EQU $F402 ; ACIA(b) Data register
+CTRLB               EQU $F403 ; ACIA(b) Ctrl/Status
 
 ; MINIMON routines
-STRING  EQU $FC76 ; Prints a string. The string should follow JSR and be terminated with $FF.
-GETADD  EQU $FC89 ; Get Address, read 4 digit hex value.
-ZOUT    EQU $FCC9 ; Print value in A as 2 hex digits.
-NEWLINE EQU $FE97 ; Prints a new line.
-START   EQU $FF8F ; Restarts MniMon.
-PR_A    EQU $FC0F ; Print char in A to ACIA (a)
-RD_A    EQU $FD2B ; Read char from A
-PRSP    EQU $FD4D ; Print a space
-BINARY  EQU $FC31 ; Converts ASCII hex digits in A and B to binary?
-RD_X    EQU $FC65 ; Read 4 hex digits Value from ACIA(a) and put value into X.
-VHEX    EQU $FC1D ; Checks that A contains a HEX character
+STRING              EQU $FC76 ; Prints a string. The string should follow JSR and be terminated with $FF.
+GETADD              EQU $FC89 ; Get Address, read 4 digit hex value.
+ZOUT                EQU $FCC9 ; Print value in A as 2 hex digits.
+NEWLINE             EQU $FE97 ; Prints a new line.
+START               EQU $FF8F ; Restarts MniMon.
+PR_A                EQU $FC0F ; Print char in A to ACIA (a)
+RD_A                EQU $FD2B ; Read char from A
+PRSP                EQU $FD4D ; Print a space
+BINARY              EQU $FC31 ; Converts ASCII hex digits in A and B to binary?
+RD_X                EQU $FC65 ; Read 4 hex digits Value from ACIA(a) and put value into X.
+VHEX                EQU $FC1D ; Checks that A contains a HEX character
+
+IDLE_SECS           EQU 90      ; seconds between idle messages
+IDLE_MSG_CNT        EQU 1       ; number of messages
+GREET_MSG_CNT       EQU 1       ; number of messages
+LIGHT_MSG_CNT       EQU 1       ; number of messages
+NORM_MSG_CNT        EQU 1       ; number of messages
+HEAVY_MSG_CNT       EQU 1       ; number of messages
+SHEAVY_MSG_CNT      EQU 1       ; number of messages
+
 	    ORG $0200
+
 
 ; initialise serial port B
 TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
@@ -31,47 +41,148 @@ MAINLOOP:
 ; -----------------------------------------------------
 ; Data arrives at port B as four hex characters
 ; -----------------------------------------------------
-        JSR     RD_XB           ; read 4 hex characters into X
-        STX     TEMP            ; store X
-
-
-        LDAA    TEMP            ; get fist byte (stones)
-        BEQ     IDLE
-        CMPA    #20             ; more that 20 is too heavey
-        BHI     TOHEAVY         ; say something rude
-        LDAA    TEMP+1          ; get pounds
+        JSR     GETDATA         ; value in T_WEIGHT, stones in A
+        BCC     IDLE            ; is it invalid i.e. carry clear
+        CMPA    #20             ; more that 20 is too heavy
+        BHI     TOOHEAVY
+        LDAA    T_WEIGHT+1      ; validate pounds
         CMPA    #13             ; invalid pounds
         BHI     ERROR           ; error
+        JSR GREET               ; send a greeting message
 
         ; all good so output the weight mesage
-        LDX     #YOUWEIGH       ; output the 'you weigh' phrase
-        JSR     PR_PHRASE       ; output phrase specified in A
-        LDX     TEMP            ; restore X
+        ; TODO get phrase from phrase table as per other message output routines
+        JSR     STRINGB
+        FCC     "You weigh"
+        FCB     $00
+        LDX     T_WEIGHT        ; restore X
         JSR     PR_WEIGHT       ; weight back X so output the weight
 
-        BRA     END
+        ; TODO determine phrase category (light normal, heavy etc. and jump o the section
 
-IDLE
-        ;LDAA    #$01            ; load phrase number (PTR)
-        LDX     #MYNAME
-        JSR     PR_PHRASE
-        JSR     PR_CRB
-        BRA     END
-
+        JMP END
 
 ; -----------------------------------------------------
 ; Over 20 stone so random heavy phrase to ports B
 ; -----------------------------------------------------
-TOHEAVY
-        BRA END
+TOOHEAVY
+        ; TODO get phrase from phrase table
+       JSR      STRINGB
+       FCC      "System overload… and it’s not me."
+       FCB      $00
+       JMP      END
 ERROR
+        ; TODO get phrase from phrase table
+       JSR      STRINGB
+       FCC      "Internal error, typical!"
+       FCB      $00
+       JMP      END
+
+; NEED TO CYCLE AROUND IDLE MESSAGES
+
+IDLE    INC     IDLE_COUNT      ; increase the idle count
+        LDAA    IDLE_COUNT      ; see if idle count = max idle time
+        CMPA    #IDLE_SECS      ; a data message appears every second
+        BNE     END             ; not reached the max idle time
+        CLR     IDLE_COUNT      ; time to output an idle message so reset the count
+
+        ; output the idle message
+        INC     IDLE_MSG_ID     ; get next idle message
+        LDAA    IDLE_MSG_ID
+        CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
+        BNE     IDLE_OP         ; still at valid id so output idle message
+        LDAA    #0              ; beyond last message so reset the current msg to zero
+        STAA    IDLE_MSG_ID
+
+IDLE_OP
+        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        JMP     PHRASE_OUT
+
+GREET   ; output the greeting message
+        INC     GREET_MSG_ID    ; get next idle message
+        LDAA    GREET_MSG_ID
+        CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
+        BNE     GREET_OP        ; still at valid id so output idle message
+        LDAA    #0              ; beyond last message so reset the current msg to zero
+        STAA    GREET_MSG_ID
+
+GREET_OP
+        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        JSR     PR_PHRASE       ; output idle message
+        JSR     PR_CRB          ; CR/LF
+        RTS
+
+LIGHT   ; output the light message
+        INC     LIGHT_MSG_ID    ; get next idle message
+        LDAA    LIGHT_MSG_ID
+        CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
+        BNE     LIGHT_OP        ; still at valid id so output idle message
+        LDAA    #0              ; beyond last message so reset the current msg to zero
+        STAA    LIGHT_MSG_ID
+
+LIGHT_OP
+        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        JMP     PHRASE_OUT
+
+NORMAL  ; output the normal message
+        INC     NORMAL_MSG_ID   ; get next idle message
+        LDAA    NORMAL_MSG_ID
+        CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
+        BNE     NORMAL_OP       ; still at valid id so output idle message
+        LDAA    #0              ; beyond last message so reset the current msg to zero
+        STAA    NORMAL_MSG_ID
+
+NORMAL_OP
+        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        JMP     PHRASE_OUT
+
+HEAVY   ; output the heavy message
+        INC     HEAVY_MSG_ID    ; get next idle message
+        LDAA    HEAVY_MSG_ID
+        CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
+        BNE     HEAVY_OP        ; still at valid id so output idle message
+        LDAA    #0              ; beyond last message so reset the current msg to zero
+        STAA    HEAVY_MSG_ID
+
+HEAVY_OP
+        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        JMP     PHRASE_OUT
+
+SHEAVY   ; output the heavy message
+        INC     SHEAVY_MSG_ID   ; get next idle message
+        LDAA    SHEAVY_MSG_ID
+        CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
+        BNE     SHEAVY_OP       ; still at valid id so output idle message
+        LDAA    #0              ; beyond last message so reset the current msg to zero
+        STAA    HEAVY_MSG_ID
+
+SHEAVY_OP
+        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+
+PHRASE_OUT
+        JSR     PR_PHRASE       ; output idle message
+        JSR     PR_CRB          ; CR/LF
+        JMP     END
+
 
 END
-        ; comment message goes here
-        ;LDX     #MYNAME
-        ;JSR     PR_PHRASE
-        JMP     MAINLOOP  ;START   ; all done
+       JMP     MAINLOOP  ;START   ; all done
 
+;--------------------------------------------------------------
+; Gets the weight data from the scales and rerurns with carry
+; set if a valid reading, carry clear otherwise. A valid weight
+; reading resets the idle count. Data received is stored in
+; T_WEIGHT and MSB in A.
+;--------------------------------------------------------------
+GETDATA
+        JSR     RD_XB           ; read 4 hex characters into X
+        STX     T_WEIGHT        ; store X
+        CLC
+        LDAA    T_WEIGHT        ; get fist byte (stones)
+        BEQ     GDDONE          ; idle message
+        CLR     IDLE_SECS       ; not an idle message so reset the idle counter
+        SEC                     ; non idle message return with carry set
+GDDONE  RTS
 
 ;--------------------------------------------------------------
 ; DECIMAL CONVERSION EXAMPLE
@@ -237,44 +348,43 @@ PR_CRB  PSHA
 ; Outputs a phrase from the value in A
 ; -----------------------------------------------------
 
-PR_PHRASE
-        LDAA    0,X         ; get word id
-        INX                 ; point X to next word
-        STX     T_P         ; store X away
-        CMPA    #0
-        BEQ     PR_END      ; no more words
-        JSR     PR_WORD     ; print word based on value in A
-        JSR     PR_SPCB
-        LDX     T_P        ; recover X
-
-        BRA     PR_PHRASE   ; next word
-PR_END  RTS
-
-
-;PR_PHRASE_OLD
-;        INCA
-;        LDX     #PHRASEPTR  ; load address of phrase ponter
-;                            ; table
-;PR_PH1  DECA                ; loop through A times to get
-;        BEQ     FOUNDP      ;   address of phrase
-;        INX                 ; move to next address
-;        INX
-;        BRA     PR_PH1      ; try again
-;
-;FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
-;        STAA    T_P         ; MSB
-;        LDAA    1,X         ;
-;        STAA    T_P+1       ; LSB
-;PR_PH3  LDX     T_P         ; load X
+;PR_PHRASE
 ;        LDAA    0,X         ; get word id
 ;        INX                 ; point X to next word
 ;        STX     T_P         ; store X away
 ;        CMPA    #0
-;        BEQ     PR_PH2      ; no more words
+;        BEQ     PR_END      ; no more words
 ;        JSR     PR_WORD     ; print word based on value in A
 ;        JSR     PR_SPCB
-;        BRA     PR_PH3      ; next word
-;PR_PH2  RTS
+;        LDX     T_P        ; recover X
+;        BRA     PR_PHRASE   ; next word
+;PR_END  RTS
+
+
+PR_PHRASE
+        INCA
+        LDX     #PHRASEPTR  ; load address of phrase ponter
+                            ; table
+PR_PH1  DECA                ; loop through A times to get
+        BEQ     FOUNDP      ;   address of phrase
+        INX                 ; move to next address
+        INX
+        BRA     PR_PH1      ; try again
+
+FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
+        STAA    T_P         ; MSB
+        LDAA    1,X         ;
+        STAA    T_P+1       ; LSB
+PR_PH3  LDX     T_P         ; load X
+        LDAA    0,X         ; get word id
+        INX                 ; point X to next word
+        STX     T_P         ; store X away
+        CMPA    #0
+        BEQ     PR_PH2      ; no more words
+        JSR     PR_WORD     ; print word based on value in A
+        JSR     PR_SPCB
+        BRA     PR_PH3      ; next word
+PR_PH2  RTS
 
 ; -----------------------------------------------------
 ; Outputs a word based on value in A
@@ -318,7 +428,29 @@ BORING      FCB $35,$17,$36,$37,0
 SMARTER     FCB $3b,$3C,$3D,$2F,$3E,$3F,$40,0
 CLEVER      FCB $20,$41,$42,$43,$44,$20,$21,$45,$46,$47,0
 
+; -----------------------------------------------------
+; Phrase Pointers to the categorised phases
+; -----------------------------------------------------
+PHRASEPTR
 
+; idle phrase ponters
+IPP00        FDB MYNAME
+IPP01        FDB DIODESHURT
+IPP02        FDB BORING
+IPP03        FDB SMARTER
+IPP04        FDB CLEVER
+
+; light weight phrase ponters
+LPP00       FDB MYNAME
+
+; normal weight phrase ponters
+NPP00       FDB MYNAME
+
+; heavy weight phrase ponters
+HPP00       FDB MYNAME
+
+; super heavy weight  phrase ponters
+SPP00       FDB MYNAME
 
 ; -----------------------------------------------------
 ; Word Table, add a pointer to each word in WORDPTR table
@@ -559,18 +691,25 @@ WP46        FDB WQUITE
 WP47        FDB WCLEVER
 WP48        FDB WHA
 
+
 ; -----------------------------------------------------
 ; Reserved memory
 ; -----------------------------------------------------
 
-T_Q     RMB     1           ; Temp storage for ZIN
-T_Z     RMB     2           ;   "     "     "  RDX
-T_X     RMB     2           ;   "     "     "  PR_WORD
-T_P     RMB     2           ;   "     "     "  PR_PHRASE
-T_W     RMB     2           ;   "     "     "  PR_WEIGHT
-DEC     RMB     3           ; for decimal value
-RND     RMB     1           ; holds a random number (see RD_B
-TEMP    RMB     2           ; temp var (non subroutine use)
-
-
+T_Q             RMB     1       ; Temp storage for ZIN
+T_Z             RMB     2       ;   "     "     "  RDX
+T_X             RMB     2       ;   "     "     "  PR_WORD
+T_P             RMB     2       ;   "     "     "  PR_PHRASE
+T_W             RMB     2       ;   "     "     "  PR_WEIGHT
+DEC             RMB     3       ; for decimal value
+RND             RMB     1       ; holds a random number (see RD_B
+TEMP            RMB     2       ; temp var (non subroutine use)
+T_WEIGHT        RMB     2       ; holds value of weight following a call to GETDATA
+IDLE_COUNT      RMB     1       ; counts the number of empty measurement reports
+IDLE_MSG_ID     RMB     1       ; holds value of next idle message to use
+GREET_MSG_ID    RMB     1       ; holds value of next greeting message to use
+LIGHT_MSG_ID    RMB     1       ; holds value of next light weight message to use
+NORMAL_MSG_ID   RMB     1       ; holds value of next normal weight message to use
+HEAVY_MSG_ID    RMB     1       ; holds value of next heavy weight message to use
+SHEAVY_MSG_ID   RMB     1       ; holds value of next super heavy weight message to use
 
