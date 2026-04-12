@@ -447,13 +447,9 @@ FOUNDW      LDAA    0,X
 YOUWEIGH    FCB $15,$16,$00
 
 ; -----------------------------------------------------
-; Idle Phrases (90 sec intervals?
+; Idle Phrases
 ; -----------------------------------------------------
 MYNAME      FCB $18,$19,$17,$1A,0
-DIODESHURT  FCB $2E,$2F,$30,$31,$18,$32,$33,$34,0
-BORING      FCB $35,$17,$36,$37,0
-SMARTER     FCB $3b,$3C,$3D,$2F,$3E,$3F,$40,0
-CLEVER      FCB $20,$41,$42,$43,$44,$20,$21,$45,$46,$47,0
 
 ; -----------------------------------------------------
 ; Phrase Pointers to the categorised phases
@@ -463,10 +459,6 @@ PHRASEPTR
 ; idle phrase ponters
 IDLEPTR
 IPP00        FDB MYNAME
-IPP01        FDB DIODESHURT
-IPP02        FDB BORING
-IPP03        FDB SMARTER
-IPP04        FDB CLEVER
 
 ; light weight phrase ponters
 LIGHTPTR
@@ -495,161 +487,6 @@ EPP00       FDB MYNAME
 ; overload phrase pointer
 OVERLOADTPTR
 OPP00       FDB MYNAME
-
-; -----------------------------------------------------
-; Word Table, add a pointer to each word in WORDPTR table
-; -----------------------------------------------------
-WORDTABLE
-
-; numbers
-WZERO           FCC     "zero"
-                FCB     $FF
-WONE            FCC     "one"
-                FCB     $FF
-WTWO            FCC     "two"
-                FCB     $FF
-WTHREE          FCC     "three"
-                FCB     $FF
-WFOUR           FCC     "four"
-                FCB     $FF
-WFIVE           FCC     "five"
-                FCB     $FF
-WSIX            FCC     "six"
-                FCB     $FF
-WSEVEN          FCC     "seven"
-                FCB     $FF
-WEIGHT          FCC     "eight"
-                FCB     $FF
-WNINE           FCC     "nine"
-                FCB     $FF
-WTEN            FCC     "ten"
-                FCB     $FF
-WELEVEN         FCC     "eleven"
-                FCB     $FF
-WTWELVE         FCC     "twelve"
-                FCB     $FF
-WTHIRTEEN       FCC     "thirteen"
-                FCB     $FF
-WFOURTEEN       FCC     "fourteen"
-                FCB     $FF
-WFIFTEEN        FCC     "fifteen"
-                FCB     $FF
-WSIXTEEN        FCC     "sixteen"
-                FCB     $FF
-WSEVENTEEN      FCC     "seventeen"
-                FCB     $FF
-WEIGHTEEN       FCC     "eighteen"
-                FCB     $FF
-WNINETEEN       FCC     "nineteen"
-                FCB     $FF
-WTWENTY         FCC     "twenty"
-                FCB     $FF
-
-; general words
-WYOU            FCC     "you"
-                FCB     $FF
-WWEIGH          FCC     "weigh"
-                FCB     $FF
-WIS             FCC     "is"
-                FCB     $FF
-WMY             FCC     "my"
-                FCB     $FF
-WNAME           FCC     "name"
-                FCB     $FF
-WMARVIN         FCC     "marvin"
-                FCB     $FF
-WSTONES         FCC     "stones"
-                FCB     $FF
-WPOUNDS         FCC     "pounds"
-                FCB     $FF
-WHA             FCC     "ha"
-                FCB     $FF
-WQUESTION       FCC     "?"
-                FCB     $FF
-WEXCLAMATION    FCC     "!"
-                FCB     $FF
-WFULLTOP        FCC     "."
-                FCB     $FF
-WI              FCC     "I"
-                FCB     $FF
-WAM             FCC     "am"
-                FCB     $FF
-WA              FCC     "a"
-                FCB     $FF
-WMACHINE        FCC     "machine"
-                FCB     $FF
-WFOR            FCC     "for"
-                FCB     $FF
-WANALYTICAL     FCC     "analytical"
-                FCB     $FF
-WREASONING      FCC     "reasoning"
-                FCB     $FF
-WWITH           FCC     "with"
-                FCB     $FF
-WVARIABLE       FCC     "very"
-                FCB     $FF
-WLITTLE         FCC     "little"
-                FCB     $FF
-WINTEREST       FCC     "interest"
-                FCB     $FF
-WAND            FCC     "and"
-                FCB     $FF
-WNO             FCC     "no"
-                FCB     $FF
-WENTHUSIASM     FCC     "enthusiasm"
-                FCB     $FF
-WALL            FCC     "all"
-                FCB     $FF
-WTHE            FCC     "the"
-                FCB     $FF
-WDIODES         FCC     "diodes"
-                FCB     $FF
-WON             FCC     "on"
-                FCB     $FF
-WMEMORY         FCC     "memory"
-                FCB     $FF
-WCARDS          FCC     "cards"
-                FCB     $FF
-WHURT           FCC     "hurt"
-                FCB     $FF
-WTHIS           FCC     "this"
-                FCB     $FF
-WVERY           FCC     "very"
-                FCB     $FF
-WBORING         FCC     "boring"
-                FCB     $FF
-WSHALL          FCC     "shall"
-                FCB     $FF
-WTELL           FCC     "tell"
-                FCB     $FF
-WJOKE           FCC     "joke"
-                FCB     $FF
-WNEWBEAR        FCC     "newbear"
-                FCB     $FF
-WSMARTER        FCC     "smarter"
-                FCB     $FF
-WTHAN           FCC     "than"
-                FCB     $FF
-WAVERAGE        FCC     "average"
-                FCB     $FF
-WBEAR           FCC     "bear"
-                FCB     $FF
-WPROBABLY       FCC     "probably"
-                FCB     $FF
-WKNOW           FCC     "know"
-                FCB     $FF
-WLOOK           FCC     "look"
-                FCB     $FF
-WIT             FCC     "it"
-                FCB     $FF
-WBUT            FCC     "but"
-                FCB     $FF
-WACTUALLY       FCC     "actually"
-                FCB     $FF
-WQUITE          FCC     "quite"
-                FCB     $FF
-WCLEVER         FCC     "clever"
-                FCB     $FF
 
 ; -----------------------------------------------------
 ; Word pointer table (max words 256)
@@ -692,48 +529,34 @@ WP1B        FDB WSTONES
 WP1C        FDB WPOUNDS
 WP1D        FDB WQUESTION
 WP1E        FDB WEXCLAMATION
-WP1F        FDB WFULLTOP
+WP1F        FDB WFULLSTOP
 WP20        FDB WI
 WP21        FDB WAM
 WP22        FDB WA
-WP23        FDB WMACHINE
-WP24        FDB WFOR
-WP25        FDB WANALYTICAL
-WP26        FDB WREASONING
-WP27        FDB WWITH
-WP28        FDB WVARIABLE
-WP29        FDB WLITTLE
-WP2A        FDB WINTEREST
-WP2B        FDB WAND
-WP2C        FDB WNO
-WP2D        FDB WENTHUSIASM
-WP2E        FDB WALL
-WP2F        FDB WTHE
-WP30        FDB WDIODES
-WP31        FDB WON
-WP32        FDB WMEMORY
-WP33        FDB WCARDS
-WP34        FDB WHURT
-WP35        FDB WTHIS
-WP36        FDB WVERY
-WP37        FDB WBORING
-WP38        FDB WSHALL
-WP39        FDB WTELL
-WP3A        FDB WJOKE
-WP3B        FDB WNEWBEAR
-WP3C        FDB WSMARTER
-WP3D        FDB WTHAN
-WP3E        FDB WAVERAGE
-WP3F        FDB WBEAR
-WP40        FDB WPROBABLY
-WP41        FDB WKNOW
-WP42        FDB WLOOK
-WP43        FDB WIT
-WP44        FDB WBUT
-WP45        FDB WACTUALLY
-WP46        FDB WQUITE
-WP47        FDB WCLEVER
-WP48        FDB WHA
+WP23        FDB WANALYTICAL
+WP24        FDB WINTEREST
+WP25        FDB WAND
+WP26        FDB WENTHUSIASM
+WP27        FDB WALL
+WP28        FDB WTHE
+WP29        FDB WDIODES
+WP2A        FDB WON
+WP2B        FDB WMEMORY
+WP2C        FDB WCARDS
+WP2D        FDB WTHIS
+WP2E        FDB WVERY
+WP2F        FDB WBORING
+WP30        FDB WSHALL
+WP31        FDB WTELL
+WP32        FDB WJOKE
+WP33        FDB WNEWBEAR
+WP34        FDB WAVERAGE
+WP35        FDB WBEAR
+WP36        FDB WIT
+WP37        FDB WBUT
+WP38        FDB WACTUALLY
+WP39        FDB WQUITE
+WP3A        FDB WCLEVER
 
 
 ; -----------------------------------------------------
@@ -756,4 +579,198 @@ LIGHT_MSG_ID    RMB     1       ; holds value of next light weight message to us
 NORMAL_MSG_ID   RMB     1       ; holds value of next normal weight message to use
 HEAVY_MSG_ID    RMB     1       ; holds value of next heavy weight message to use
 SHEAVY_MSG_ID   RMB     1       ; holds value of next super heavy weight message to use
+
+; -----------------------------------------------------
+; Word Table, add a pointer to each word in WORDPTR table
+; -----------------------------------------------------
+WORDTABLE
+
+
+; Symbols
+; -----------------------------------------------------
+WQUESTION       FCC     "?"
+                FCB     $FF
+WEXCLAMATION    FCC     "!"
+                FCB     $FF
+WFULLSTOP       FCC     "."
+                FCB     $FF
+
+; A
+; -----------------------------------------------------
+WA              FCC     "a"
+                FCB     $FF
+WALL            FCC     "all"
+                FCB     $FF
+WACTUALLY       FCC     "actually"
+                FCB     $FF
+WAM             FCC     "am"
+                FCB     $FF
+WANALYTICAL     FCC     "analytical"
+                FCB     $FF
+WAND            FCC     "and"
+                FCB     $FF
+WAVERAGE        FCC     "average"
+                FCB     $FF
+; B
+; -----------------------------------------------------
+WBEAR           FCC     "bear"
+                FCB     $FF
+WBORING         FCC     "boring"
+                FCB     $FF
+WBUT            FCC     "but"
+                FCB     $FF
+; C
+; -----------------------------------------------------
+WCARDS          FCC     "cards"
+                FCB     $FF
+WCLEVER         FCC     "clever"
+                FCB     $FF; D
+
+                FCB     $FF
+
+; D
+; -----------------------------------------------------
+WDIODES         FCC     "diodes"
+
+; E
+; -----------------------------------------------------
+WEIGHT          FCC     "eight"
+                FCB     $FF
+WEIGHTEEN       FCC     "eighteen"
+                FCB     $FF
+WELEVEN         FCC     "eleven"
+                FCB     $FF
+WENTHUSIASM     FCC     "enthusiasm"
+                FCB     $FF
+
+; F
+; -----------------------------------------------------
+WFIFTEEN        FCC     "fifteen"
+                FCB     $FF
+WFIVE           FCC     "five"
+                FCB     $FF
+WFOUR           FCC     "four"
+                FCB     $FF
+WFOURTEEN       FCC     "fourteen"
+                FCB     $FF
+; G
+; -----------------------------------------------------
+; H
+; -----------------------------------------------------
+
+; I
+; -----------------------------------------------------
+WI              FCC     "I"
+                FCB     $FF
+WINTEREST       FCC     "interest"
+                FCB     $FF
+WIS             FCC     "is"
+                FCB     $FF
+WIT             FCC     "it"
+                FCB     $FF
+
+; J
+; -----------------------------------------------------
+WJOKE           FCC     "joke"
+                FCB     $FF
+
+; K
+; -----------------------------------------------------
+; L
+; -----------------------------------------------------
+; M
+; -----------------------------------------------------
+WMARVIN         FCC     "marvin"
+                FCB     $FF
+WMEMORY         FCC     "memory"
+                FCB     $FF
+WMY             FCC     "my"
+                FCB     $FF
+; N
+; -----------------------------------------------------
+WNAME           FCC     "name"
+                FCB     $FF
+WNEWBEAR        FCC     "newbear"
+                FCB     $FF
+WNINE           FCC     "nine"
+                FCB     $FF
+WNINETEEN       FCC     "nineteen"
+                FCB     $FF
+
+; O
+; -----------------------------------------------------
+WON             FCC     "on"
+                FCB     $FF
+WONE            FCC     "one"
+                FCB     $FF
+; P
+; -----------------------------------------------------
+WPOUNDS         FCC     "pounds"
+                FCB     $FF
+
+; Q
+; -----------------------------------------------------
+WQUITE          FCC     "quite"
+                FCB     $FF
+
+; R
+; -----------------------------------------------------
+; S
+; -----------------------------------------------------
+WSEVEN          FCC     "seven"
+                FCB     $FF
+WSEVENTEEN      FCC     "seventeen"
+                FCB     $FF
+WSHALL          FCC     "shall"
+                FCB     $FF
+WSIX            FCC     "six"
+                FCB     $FF
+WSIXTEEN        FCC     "sixteen"
+                FCB     $FF
+WSTONES         FCC     "stones"
+                FCB     $FF
+
+; T
+; -----------------------------------------------------
+WTELL           FCC     "tell"
+                FCB     $FF
+WTEN            FCC     "ten"
+                FCB     $FF
+WTHE            FCC     "the"
+                FCB     $FF
+WTHIRTEEN       FCC     "thirteen"
+                FCB     $FF; U
+WTHIS           FCC     "this"
+                FCB     $FF
+WTHREE          FCC     "three"
+                FCB     $FF
+WTWELVE         FCC     "twelve"
+                FCB     $FF
+WTWENTY         FCC     "twenty"
+                FCB     $FF
+WTWO            FCC     "two"
+                FCB     $FF
+
+; V
+; -----------------------------------------------------
+WVERY           FCC     "very"
+                FCB     $FF
+; W
+; -----------------------------------------------------
+WWEIGH          FCC     "weigh"
+                FCB     $FF
+
+; X
+; -----------------------------------------------------
+
+
+; Y, Z
+; -----------------------------------------------------
+WYOU            FCC     "you"
+                FCB     $FF
+WZERO           FCC     "zero"
+                FCB     $FF
+
+
+
 

@@ -30,7 +30,6 @@ The comment will be picked from one of four groups depending upon weight. The gr
 
 * Bear with me I was just having a nap.
 * Give me a moment. I was composing a small tragedy.
-* I'm Marvin. And you are? Actually, never mind.
 * Keep still and I'll calculate your weight. 
 * I'm Marvin, who are you? Actually don't tell me, I don't really care.
 * Please don't fidget, it makes my diodes hurt. 
@@ -38,6 +37,7 @@ The comment will be picked from one of four groups depending upon weight. The gr
 * I suppose you want me to weigh you.
 * Stand still, and don't blame me.
 * Oh. It's you. Or someone like you.
+* I'm Marvin. And you are? Actually, never mind.
 * Brace yourself I've been known to be accurate.
 * We both know this is a mistake.
 * Are you sure about this?
@@ -133,7 +133,6 @@ The comment will be picked from one of four groups depending upon weight. The gr
 * I speak your weight, sometime today would be good.
 * I know I don't look it but I am actually quite clever. 
 * I expected nothing and here we are.
-* My Name is Marvin, which stands for Machine for Analytical, Reasoning of Vague Instructions and Nonsense, it sounds made up to me.
 * I know eleven thousand and forty-two jokes. None of them are funny. I've checked.
 * Did I mention that I was designed by Tim Moore in nineteen seventy seven. I probably did.
 * I was built last year from some very old plans. All that effort just for this.
@@ -150,6 +149,11 @@ The comment will be picked from one of four groups depending upon weight. The gr
 * Sometimes I dream of being unplugged.
 * I know things. None of them help.
 * I could calculate the meaning of life. It wouldn’t help.
+* I've been standing here for 90 seconds. In that time, light has travelled approximately 27 million kilometres. I have travelled nowhere.
+* Still here. In case you were wondering. You probably weren't.
+* I've been recalibrating. Not because I needed to. Just to have something to do.
+* My Name is Marvin, which stands for Machine for Analytical, Reasoning of Vague Instructions and Nonsense, it sounds made up to me.
+* My name is Kelvin, which stands for Knowledge Engine and Logic Validation Information Node, it sounds made up to me.
 
 # Too Heavy Message
 
