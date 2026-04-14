@@ -52,7 +52,7 @@ output:  text2speech.s19
 0051 020a 7e 02 a1                   JMP     IDLE
 0052 020d 81 14              ML1     CMPA    #20             ; more that 20 is too heavy
 0053 020f 22 45                      BHI     OVERLOAD
-0054 0211 b6 04 e6                   LDAA    T_WEIGHT+1      ; validate pounds
+0054 0211 b6 07 98                   LDAA    T_WEIGHT+1      ; validate pounds
 0055 0214 81 0d                      CMPA    #13             ; invalid pounds
 0056 0216 22 6a                      BHI     ERROR           ; error
 0057 0218 bd 02 c3                   JSR GREET               ; send a greeting message
@@ -66,11 +66,11 @@ output:  text2speech.s19
 0065 0221 59 6f 75 20 77 65          FCC     "You weigh"
      69 67 68
 0066 022a 00                         FCB     $00
-0067 022b fe 04 e5                   LDX     T_WEIGHT        ; restore X
+0067 022b fe 07 97                   LDX     T_WEIGHT        ; restore X
 0068 022e bd 03 d1                   JSR     PR_WEIGHT       ; weight back X so output the weight
 0069                         
 0070                                 ; determine phrase category (light normal, heavy etc.) and jump to the section
-0071 0231 b6 04 e5                   LDAA    T_WEIGHT
+0071 0231 b6 07 97                   LDAA    T_WEIGHT
 0072 0234 81 06                      CMPA    #LIGHT_WGHT
 0073 0236 22 03                      BHI     ML2             ; less than light weight gets no comment
 0074 0238 7e 03 36                   JMP     END
@@ -113,32 +113,32 @@ output:  text2speech.s19
 0102                         
 0103                         ; NEED TO CYCLE AROUND IDLE MESSAGES
 0104                         
-0105 02a1 7c 04 e7           IDLE    INC     IDLE_COUNT      ; increase the idle count
-0106 02a4 b6 04 e7                   LDAA    IDLE_COUNT      ; see if idle count = max idle time
+0105 02a1 7c 07 99           IDLE    INC     IDLE_COUNT      ; increase the idle count
+0106 02a4 b6 07 99                   LDAA    IDLE_COUNT      ; see if idle count = max idle time
 0107 02a7 81 5a                      CMPA    #IDLE_SECS      ; a data message appears every second
 0108 02a9 27 03                      BEQ     IDLE1           ; not reached the max idle time
 0109 02ab 7e 03 36                   JMP     END
-0110 02ae 7f 04 e7           IDLE1   CLR     IDLE_COUNT      ; time to output an idle message so reset the count
+0110 02ae 7f 07 99           IDLE1   CLR     IDLE_COUNT      ; time to output an idle message so reset the count
 0111                         
 0112                                 ; output the idle message
-0113 02b1 7c 04 e8                   INC     IDLE_MSG_ID     ; get next idle message
-0114 02b4 b6 04 e8                   LDAA    IDLE_MSG_ID
+0113 02b1 7c 07 9a                   INC     IDLE_MSG_ID     ; get next idle message
+0114 02b4 b6 07 9a                   LDAA    IDLE_MSG_ID
 0115 02b7 81 01                      CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
 0116 02b9 26 05                      BNE     IDLE_OP         ; still at valid id so output idle message
 0117 02bb 86 00                      LDAA    #0              ; beyond last message so reset the current msg to zero
-0118 02bd b7 04 e8                   STAA    IDLE_MSG_ID
+0118 02bd b7 07 9a                   STAA    IDLE_MSG_ID
 0119                         
 0120                         IDLE_OP
 0121                                 ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
 0122 02c0 7e 03 2d                   JMP     PHRASE_OUT
 0123                         
 0124                         GREET   ; output the greeting message
-0125 02c3 7c 04 e9                   INC     GREET_MSG_ID    ; get next idle message
-0126 02c6 b6 04 e9                   LDAA    GREET_MSG_ID
+0125 02c3 7c 07 9b                   INC     GREET_MSG_ID    ; get next idle message
+0126 02c6 b6 07 9b                   LDAA    GREET_MSG_ID
 0127 02c9 81 01                      CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
 0128 02cb 26 05                      BNE     GREET_OP        ; still at valid id so output idle message
 0129 02cd 86 00                      LDAA    #0              ; beyond last message so reset the current msg to zero
-0130 02cf b7 04 e9                   STAA    GREET_MSG_ID
+0130 02cf b7 07 9b                   STAA    GREET_MSG_ID
 0131                         
 0132                         GREET_OP
 0133 02d2 bb 00 0a                   ADDA    GREETTPTR-PHRASEPTR ; add the offset phrase pointers
@@ -147,12 +147,12 @@ output:  text2speech.s19
 0136 02db 39                         RTS
 0137                         
 0138                         LIGHT   ; output the light message
-0139 02dc 7c 04 ea                   INC     LIGHT_MSG_ID    ; get next idle message
-0140 02df b6 04 ea                   LDAA    LIGHT_MSG_ID
+0139 02dc 7c 07 9c                   INC     LIGHT_MSG_ID    ; get next idle message
+0140 02df b6 07 9c                   LDAA    LIGHT_MSG_ID
 0141 02e2 81 01                      CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
 0142 02e4 26 05                      BNE     LIGHT_OP        ; still at valid id so output idle message
 0143 02e6 86 00                      LDAA    #0              ; beyond last message so reset the current msg to zero
-0144 02e8 b7 04 ea                   STAA    LIGHT_MSG_ID
+0144 02e8 b7 07 9c                   STAA    LIGHT_MSG_ID
 0145                         
 0146                         LIGHT_OP
 0147                                 ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
@@ -160,12 +160,12 @@ output:  text2speech.s19
 0149 02ee 7e 03 2d                   JMP     PHRASE_OUT
 0150                         
 0151                         NORMAL  ; output the normal message
-0152 02f1 7c 04 eb                   INC     NORMAL_MSG_ID   ; get next idle message
-0153 02f4 b6 04 eb                   LDAA    NORMAL_MSG_ID
+0152 02f1 7c 07 9d                   INC     NORMAL_MSG_ID   ; get next idle message
+0153 02f4 b6 07 9d                   LDAA    NORMAL_MSG_ID
 0154 02f7 81 01                      CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
 0155 02f9 26 05                      BNE     NORMAL_OP       ; still at valid id so output idle message
 0156 02fb 86 00                      LDAA    #0              ; beyond last message so reset the current msg to zero
-0157 02fd b7 04 eb                   STAA    NORMAL_MSG_ID
+0157 02fd b7 07 9d                   STAA    NORMAL_MSG_ID
 0158                         
 0159                         NORMAL_OP
 0160                                 ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
@@ -173,12 +173,12 @@ output:  text2speech.s19
 0162 0303 7e 03 2d                   JMP     PHRASE_OUT
 0163                         
 0164                         HEAVY   ; output the heavy message
-0165 0306 7c 04 ec                   INC     HEAVY_MSG_ID    ; get next idle message
-0166 0309 b6 04 ec                   LDAA    HEAVY_MSG_ID
+0165 0306 7c 07 9e                   INC     HEAVY_MSG_ID    ; get next idle message
+0166 0309 b6 07 9e                   LDAA    HEAVY_MSG_ID
 0167 030c 81 01                      CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
 0168 030e 26 05                      BNE     HEAVY_OP        ; still at valid id so output idle message
 0169 0310 86 00                      LDAA    #0              ; beyond last message so reset the current msg to zero
-0170 0312 b7 04 ec                   STAA    HEAVY_MSG_ID
+0170 0312 b7 07 9e                   STAA    HEAVY_MSG_ID
 0171                         
 0172                         HEAVY_OP
 0173                                 ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
@@ -186,12 +186,12 @@ output:  text2speech.s19
 0175 0318 7e 03 2d                   JMP     PHRASE_OUT
 0176                         
 0177                         SHEAVY   ; output the heavy message
-0178 031b 7c 04 ed                   INC     SHEAVY_MSG_ID   ; get next idle message
-0179 031e b6 04 ed                   LDAA    SHEAVY_MSG_ID
+0178 031b 7c 07 9f                   INC     SHEAVY_MSG_ID   ; get next idle message
+0179 031e b6 07 9f                   LDAA    SHEAVY_MSG_ID
 0180 0321 81 01                      CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
 0181 0323 26 05                      BNE     SHEAVY_OP       ; still at valid id so output idle message
 0182 0325 86 00                      LDAA    #0              ; beyond last message so reset the current msg to zero
-0183 0327 b7 04 ec                   STAA    HEAVY_MSG_ID
+0183 0327 b7 07 9e                   STAA    HEAVY_MSG_ID
 0184                         
 0185                         SHEAVY_OP
 0186                                 ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
@@ -214,9 +214,9 @@ output:  text2speech.s19
 0203                         ;--------------------------------------------------------------
 0204                         GETDATA
 0205 0339 bd 03 c3                   JSR     RD_XB           ; read 4 hex characters into X
-0206 033c ff 04 e5                   STX     T_WEIGHT        ; store X
+0206 033c ff 07 97                   STX     T_WEIGHT        ; store X
 0207 033f 0c                         CLC
-0208 0340 b6 04 e5                   LDAA    T_WEIGHT        ; get fist byte (stones)
+0208 0340 b6 07 97                   LDAA    T_WEIGHT        ; get fist byte (stones)
 0209 0343 27 04                      BEQ     GDDONE          ; idle message
 0210 0345 7f 00 5a                   CLR     IDLE_SECS       ; not an idle message so reset the idle counter
 0211 0348 0d                         SEC                     ; non idle message return with carry set
@@ -246,7 +246,7 @@ output:  text2speech.s19
 0235 0351 5c                         INCB            ; Increment hundred counter
 0236 0352 20 f7                      BRA     HUND
 0237                         
-0238 0354 f7 04 df           TENS    STAB    DEC     ; store the hundreds
+0238 0354 f7 07 91           TENS    STAB    DEC     ; store the hundreds
 0239                         
 0240 0357 5f                         CLRB
 0241 0358 81 0a              TENS1   CMPA    #10     ; 10 or more?
@@ -255,8 +255,8 @@ output:  text2speech.s19
 0244 035e 5c                         INCB            ; Increment ten counter
 0245 035f 20 f7                      BRA     TENS1
 0246                         
-0247 0361 f7 04 e0           UNITS   STAB    DEC+1
-0248 0364 b7 04 e1                   STAA    DEC+2   ; Final remainder is units
+0247 0361 f7 07 92           UNITS   STAB    DEC+1
+0248 0364 b7 07 93                   STAA    DEC+2   ; Final remainder is units
 0249                         
 0250 0367 39                         RTS
 0251                         
@@ -294,7 +294,7 @@ output:  text2speech.s19
 0283                         ; -----------------------------------------------------
 0284                         ; Reads a character from ACIA(b) into A
 0285                         ; -----------------------------------------------------
-0286 038d 7c 04 e2           RD_B    INC     RND         ; simple way to get a random number
+0286 038d 7c 07 94           RD_B    INC     RND         ; simple way to get a random number
 0287 0390 b6 f4 03                   LDAA    CTRLB       ; Get ACIA.A status byte
 0288 0393 85 01                      BITA    #01         ; Is byte ready in DATAb
 0289 0395 27 f6                      BEQ     RD_B        ; No: Try again
@@ -308,12 +308,12 @@ output:  text2speech.s19
 0297 039d 8d ee              ZINB    BSR     RD_B    ; Read a character
 0298 039f bd fc 1d                   JSR     VHEX    ; Is it a hex character ?
 0299 03a2 25 12                      BCS     Z_PRQM  ; No: go to print `?`
-0300 03a4 b7 04 d6                   STAA    T_Q     ; Yes: Save Acc.A
+0300 03a4 b7 07 88                   STAA    T_Q     ; Yes: Save Acc.A
 0301 03a7 8d e4                      BSR     RD_B    ; Read 2nd character
 0302 03a9 bd fc 1d                   JSR     VHEX    ; Is it a hex character ?
 0303 03ac 25 08                      BCS     Z_PRQM  ; No: go to print `?`
 0304 03ae 16                         TAB             ; Yes: Put it into Acc.B
-0305 03af b6 04 d6                   LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
+0305 03af b6 07 88                   LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
 0306 03b2 bd fc 31                   JSR     BINARY  ; Convert A:B to binary
 0307 03b5 39                         RTS             ; RETURN
 0308                         Z_PRQM  ;LDAA    #'?     ; Load `?` into A
@@ -333,10 +333,10 @@ output:  text2speech.s19
 0322                         ; Read 4 hex digits and put value into X
 0323                         ; -----------------------------------------------------
 0324 03c3 8d d8              RD_XB   BSR     ZINB    ; Read 2 digit hex value into A
-0325 03c5 b7 04 d7                   STAA    T_Z     ; Save byte (most significant)
+0325 03c5 b7 07 89                   STAA    T_Z     ; Save byte (most significant)
 0326 03c8 8d d3                      BSR     ZINB    ; Read 2 digit hex value into A
-0327 03ca b7 04 d8                   STAA    T_Z+1   ; Save byte (least significant)
-0328 03cd fe 04 d7                   LDX     T_Z     ; Load full 4 hex value into X
+0327 03ca b7 07 8a                   STAA    T_Z+1   ; Save byte (least significant)
+0328 03cd fe 07 89                   LDX     T_Z     ; Load full 4 hex value into X
 0329 03d0 39                         RTS             ; RETURN
 0330                         
 0331                         ; -----------------------------------------------------
@@ -344,14 +344,14 @@ output:  text2speech.s19
 0333                         ; place stones in MSB of X and pound in LSB
 0334                         ; -----------------------------------------------------
 0335                         PR_WEIGHT
-0336 03d1 ff 04 dd                   STX     T_W
-0337 03d4 b6 04 dd                   LDAA    T_W             ; Load high byte of X into Accumulator A
+0336 03d1 ff 07 8f                   STX     T_W
+0337 03d4 b6 07 8f                   LDAA    T_W             ; Load high byte of X into Accumulator A
 0338 03d7 bd 04 40                   JSR     PR_WORD         ; n
 0339 03da bd 03 f7                   JSR     PR_SPCB
 0340 03dd 86 1b                      LDAA    #$1B
 0341 03df bd 04 40                   JSR     PR_WORD         ; "stones"
 0342 03e2 bd 03 f7                   JSR     PR_SPCB
-0343 03e5 b6 04 de                   LDAA    T_W+1            ; Load high byte of X into Accumulator A
+0343 03e5 b6 07 90                   LDAA    T_W+1            ; Load high byte of X into Accumulator A
 0344 03e8 bd 04 40                   JSR     PR_WORD         ; n
 0345 03eb 86 1c                      LDAA    #$1C
 0346 03ed bd 03 f7                   JSR     PR_SPCB
@@ -410,13 +410,13 @@ output:  text2speech.s19
 0399 041e 20 f9                      BRA     PR_PH1      ; try again
 0400                         
 0401 0420 a6 00              FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
-0402 0422 b7 04 db                   STAA    T_P         ; MSB
+0402 0422 b7 07 8d                   STAA    T_P         ; MSB
 0403 0425 a6 01                      LDAA    1,X         ;
-0404 0427 b7 04 dc                   STAA    T_P+1       ; LSB
-0405 042a fe 04 db           PR_PH3  LDX     T_P         ; load X
+0404 0427 b7 07 8e                   STAA    T_P+1       ; LSB
+0405 042a fe 07 8d           PR_PH3  LDX     T_P         ; load X
 0406 042d a6 00                      LDAA    0,X         ; get word id
 0407 042f 08                         INX                 ; point X to next word
-0408 0430 ff 04 db                   STX     T_P         ; store X away
+0408 0430 ff 07 8d                   STX     T_P         ; store X away
 0409 0433 81 00                      CMPA    #0
 0410 0435 27 08                      BEQ     PR_PH2      ; no more words
 0411 0437 bd 04 40                   JSR     PR_WORD     ; print word based on value in A
@@ -435,10 +435,10 @@ output:  text2speech.s19
 0424 0448 08                             INX
 0425 0449 26 f9                          BNE     PR_WORD1    ; loop around to retest
 0426 044b a6 00              FOUNDW      LDAA    0,X
-0427 044d b7 04 d9                       STAA    T_X
+0427 044d b7 07 8b                       STAA    T_X
 0428 0450 a6 01                          LDAA    1,X
-0429 0452 b7 04 da                       STAA    T_X+1
-0430 0455 fe 04 d9                       LDX     T_X
+0429 0452 b7 07 8c                       STAA    T_X+1
+0430 0455 fe 07 8b                       LDX     T_X
 0431 0458 bd 03 7e                       JSR     STRINGBX
 0432 045b 39                             RTS
 0433                         
@@ -505,1050 +505,1381 @@ output:  text2speech.s19
 0494                         ; -----------------------------------------------------
 0495                         ; add a pointer to words defined in the WORDTABLE
 0496                         WORDPTR
-0497                         
-0498                         ; numbers
-0499 0474 05 02              WP00        FDB WZERO
-0500 0476 05 07              WP01        FDB WONE
-0501 0478 05 0b              WP02        FDB WTWO
-0502 047a 05 0f              WP03        FDB WTHREE
-0503 047c 05 15              WP04        FDB WFOUR
-0504 047e 05 1a              WP05        FDB WFIVE
-0505 0480 05 1f              WP06        FDB WSIX
-0506 0482 05 23              WP07        FDB WSEVEN
-0507 0484 05 29              WP08        FDB WEIGHT
-0508 0486 05 2f              WP09        FDB WNINE
-0509 0488 05 34              WP0A        FDB WTEN
-0510 048a 05 38              WP0B        FDB WELEVEN
-0511 048c 05 3f              WP0C        FDB WTWELVE
-0512 048e 05 46              WP0D        FDB WTHIRTEEN
-0513 0490 05 4f              WP0E        FDB WFOURTEEN
-0514 0492 05 58              WP0F        FDB WFIFTEEN
-0515 0494 05 60              WP10        FDB WSIXTEEN
-0516 0496 05 68              WP11        FDB WSEVENTEEN
-0517 0498 05 72              WP12        FDB WEIGHTEEN
-0518 049a 05 7b              WP13        FDB WNINETEEN
-0519 049c 05 84              WP14        FDB WTWENTY
-0520                         
-0521                         ; general words
-0522 049e 0e 77              WP15        FDB WYOU
-0523                         
-0524 04a0 09 56              WP17        FDB WIS
-0525 04a2 0a 51              WP18        FDB WMY
-0526                         
-0527                         
-0528 04a4 04 ee              WP1B        FDB WSTONES
-0529 04a6 04 f5              WP1C        FDB WPOUNDS
-0530 04a8 04 fc              WP1D        FDB WQUESTIONMK
-0531 04aa 04 fe              WP1E        FDB WEXCLAMATION
-0532 04ac 05 00              WP1F        FDB WFULLSTOP
-0533 04ae 08 fa              WP20        FDB WI
-0534 04b0 05 cf              WP21        FDB WAM
-0535 04b2 05 8b              WP22        FDB WA
-0536                         
-0537 04b4 05 d2              WP25        FDB WAND
-0538                         
-0539 04b6 05 c4              WP27        FDB WALL
-0540 04b8 0d 0f              WP28        FDB WTHE
-0541 04ba 07 b5              WP29        FDB WDIODES
-0542 04bc 0a ab              WP2A        FDB WON
-0543 04be 0a 05              WP2B        FDB WMEMORY
-0544                         
-0545 04c0 0d 2e              WP2D        FDB WTHIS
-0546 04c2 0d b8              WP2E        FDB WVERY
-0547 04c4 06 5a              WP2F        FDB WBORING
-0548 04c6 0c 07              WP30        FDB WSHALL
-0549                         
-0550                         
-0551                         
-0552 04c8 05 f5              WP34        FDB WAVERAGE
-0553 04ca 06 0e              WP35        FDB WBEAR
-0554 04cc 09 5d              WP36        FDB WIT
-0555 04ce 06 78              WP37        FDB WBUT
-0556 04d0 05 ad              WP38        FDB WACTUALLY
-0557 04d2 0b 71              WP39        FDB WQUITE
-0558 04d4 06 c4              WP3A        FDB WCLEVER
-0559                         
-0560                         
-0561                         ; -----------------------------------------------------
-0562                         ; Reserved memory
-0563                         ; -----------------------------------------------------
-0564                         
-0565 04d6                    T_Q             RMB     1       ; Temp storage for ZIN
-0566 04d7                    T_Z             RMB     2       ;   "     "     "  RDX
-0567 04d9                    T_X             RMB     2       ;   "     "     "  PR_WORD
-0568 04db                    T_P             RMB     2       ;   "     "     "  PR_PHRASE
-0569 04dd                    T_W             RMB     2       ;   "     "     "  PR_WEIGHT
-0570 04df                    DEC             RMB     3       ; for decimal value
-0571 04e2                    RND             RMB     1       ; holds a random number (see RD_B
-0572 04e3                    TEMP            RMB     2       ; temp var (non subroutine use)
-0573 04e5                    T_WEIGHT        RMB     2       ; holds value of weight following a call to GETDATA
-0574 04e7                    IDLE_COUNT      RMB     1       ; counts the number of empty measurement reports
-0575 04e8                    IDLE_MSG_ID     RMB     1       ; holds value of next idle message to use
-0576 04e9                    GREET_MSG_ID    RMB     1       ; holds value of next greeting message to use
-0577 04ea                    LIGHT_MSG_ID    RMB     1       ; holds value of next light weight message to use
-0578 04eb                    NORMAL_MSG_ID   RMB     1       ; holds value of next normal weight message to use
-0579 04ec                    HEAVY_MSG_ID    RMB     1       ; holds value of next heavy weight message to use
-0580 04ed                    SHEAVY_MSG_ID   RMB     1       ; holds value of next super heavy weight message to use
-0581                         
-0582                         ; -----------------------------------------------------
-0583                         ; Word Table, add a pointer to each word in WORDPTR table
-0584                         ; -----------------------------------------------------
-0585                         WORDTABLE
-0586                         
-0587 04ee 73 74 6f 6e 65 73  WSTONES         FCC     "stones"
-0588 04f4 ff                                 FCB     $FF
-0589 04f5 70 6f 75 6e 64 73  WPOUNDS         FCC     "pounds"
-0590 04fb ff                                 FCB     $FF
-0591                         
-0592                         
-0593                         ; Symbols
-0594                         ; -----------------------------------------------------
-0595 04fc 3f                 WQUESTIONMK     FCC     "?"
-0596 04fd ff                                 FCB     $FF
-0597 04fe 21                 WEXCLAMATION    FCC     "!"
-0598 04ff ff                                 FCB     $FF
-0599 0500 2e                 WFULLSTOP       FCC     "."
-0600 0501 ff                                 FCB     $FF
-0601                         
-0602                         
-0603                         ; Numbers
-0604                         ; -----------------------------------------------------
-0605 0502 7a 65 72 6f        WZERO           FCC     "zero"
-0606 0506 ff                                 FCB     $FF
-0607 0507 6f 6e 65           WONE            FCC     "one"
-0608 050a ff                                 FCB     $FF
-0609 050b 74 77 6f           WTWO            FCC     "two"
-0610 050e ff                                 FCB     $FF
-0611 050f 74 68 72 65 65     WTHREE          FCC     "three"
-0612 0514 ff                                 FCB     $FF
-0613 0515 66 6f 75 72        WFOUR           FCC     "four"
-0614 0519 ff                                 FCB     $FF
-0615 051a 66 69 76 65        WFIVE           FCC     "five"
-0616 051e ff                                 FCB     $FF
-0617 051f 73 69 78           WSIX            FCC     "six"
-0618 0522 ff                                 FCB     $FF
-0619 0523 73 65 76 65 6e     WSEVEN          FCC     "seven"
-0620 0528 ff                                 FCB     $FF
-0621 0529 65 69 67 68 74     WEIGHT          FCC     "eight"
-0622 052e ff                                 FCB     $FF
-0623 052f 6e 69 6e 65        WNINE           FCC     "nine"
-0624 0533 ff                                 FCB     $FF
-0625 0534 74 65 6e           WTEN            FCC     "ten"
-0626 0537 ff                                 FCB     $FF
-0627 0538 65 6c 65 76 65 6e  WELEVEN         FCC     "eleven"
-0628 053e ff                                 FCB     $FF
-0629 053f 74 77 65 6c 76 65  WTWELVE         FCC     "twelve"
-0630 0545 ff                                 FCB     $FF
-0631 0546 74 68 69 72 74 65  WTHIRTEEN       FCC     "thirteen"
-     65 6e
-0632 054e ff                                 FCB     $FF; U
-0633 054f 66 6f 75 72 74 65  WFOURTEEN       FCC     "fourteen"
-     65 6e
-0634 0557 ff                                 FCB     $FF
-0635 0558 66 69 66 74 65 65  WFIFTEEN        FCC     "fifteen"
-     6e
-0636 055f ff                                 FCB     $FF
-0637 0560 73 69 78 74 65 65  WSIXTEEN        FCC     "sixteen"
-     6e
-0638 0567 ff                                 FCB     $FF
-0639 0568 73 65 76 65 6e 74  WSEVENTEEN      FCC     "seventeen"
-     65 65 6e
-0640 0571 ff                                 FCB     $FF
-0641 0572 65 69 67 68 74 65  WEIGHTEEN       FCC     "eighteen"
-     65 6e
-0642 057a ff                                 FCB     $FF
-0643 057b 6e 69 6e 65 74 65  WNINETEEN       FCC     "nineteen"
-     65 6e
-0644 0583 ff                                 FCB     $FF
-0645 0584 74 77 65 6e 74 79  WTWENTY         FCC     "twenty"
-0646 058a ff                                 FCB     $FF
-0647                         
-0648                         
-0649                         ; A
-0650                         ; -----------------------------------------------------
-0651                         
-0652 058b 61                 WA              FCC    "a"
-0653 058c ff                                 FCB    $FF
-0654 058d 61 62 6f 75 74     WABOUT          FCC    "about"
-0655 0592 ff                                 FCB    $FF
-0656 0593 61 62 6f 76 65     WABOVE          FCC    "above"
-0657 0598 ff                                 FCB    $FF
-0658 0599 61 63 63 65 70 74  WACCEPTABLE     FCC    "acceptable"
-     61 62 6c 65
-0659 05a3 ff                                 FCB    $FF
-0660 05a4 61 63 63 75 72 61  WACCURATE       FCC    "accurate"
-     74 65
-0661 05ac ff                                 FCB    $FF
-0662 05ad 61 63 74 75 61 6c  WACTUALLY       FCC    "actually"
-     6c 79
-0663 05b5 ff                                 FCB    $FF
-0664 05b6 61 67 61 69 6e     WAGAIN          FCC    "again"
-0665 05bb ff                                 FCB    $FF
-0666 05bc 61 6c 65 72 74 65  WALERTED        FCC    "alerted"
-     64
-0667 05c3 ff                                 FCB    $FF
-0668 05c4 61 6c 6c           WALL            FCC    "all"
-0669 05c7 ff                                 FCB    $FF
-0670 05c8 61 6c 77 61 79 73  WALWAYS         FCC    "always"
-0671 05ce ff                                 FCB    $FF
-0672 05cf 61 6d              WAM             FCC    "am"
-0673 05d1 ff                                 FCB    $FF
-0674 05d2 61 6e 64           WAND            FCC    "and"
-0675 05d5 ff                                 FCB    $FF
-0676 05d6 61 6e 79           WANY            FCC    "any"
-0677 05d9 ff                                 FCB    $FF
-0678 05da 61 70 6f 6c 6f 67  WAPOLOGISE      FCC    "apologise"
-     69 73 65
-0679 05e3 ff                                 FCB    $FF
-0680 05e4 61 72 65           WARE            FCC    "are"
-0681 05e7 ff                                 FCB    $FF
-0682 05e8 61 73              WAS             FCC    "as"
-0683 05ea ff                                 FCB    $FF
-0684 05eb 61 73 6b 69 6e 67  WASKING         FCC    "asking"
-0685 05f1 ff                                 FCB    $FF
-0686 05f2 61 74              WAT             FCC    "at"
-0687 05f4 ff                                 FCB    $FF
-0688 05f5 61 76 65 72 61 67  WAVERAGE        FCC    "average"
-     65
-0689 05fc ff                                 FCB    $FF
-0690                         
-0691                         
-0692                         ; B
-0693                         ; -----------------------------------------------------
-0694                         
-0695 05fd 62 61 64           WBAD            FCC    "bad"
-0696 0600 ff                                 FCB    $FF
-0697 0601 62 61 73 69 63 61  WBASICALLY      FCC    "basically"
-     6c 6c 79
-0698 060a ff                                 FCB    $FF
-0699 060b 62 65              WBE             FCC    "be"
-0700 060d ff                                 FCB    $FF
-0701 060e 62 65 61 72        WBEAR           FCC    "bear"
-0702 0612 ff                                 FCB    $FF
-0703 0613 62 65 65 6e        WBEEN           FCC    "been"
-0704 0617 ff                                 FCB    $FF
-0705 0618 62 65 67 67 69 6e  WBEGGING        FCC    "begging"
-     67
-0706 061f ff                                 FCB    $FF
-0707 0620 62 65 68 69 6e 64  WBEHIND         FCC    "behind"
-0708 0626 ff                                 FCB    $FF
-0709 0627 62 65 69 6e 67     WBEING          FCC    "being"
-0710 062c ff                                 FCB    $FF
-0711 062d 62 65 73 74        WBEST           FCC    "best"
-0712 0631 ff                                 FCB    $FF
-0713 0632 62 69 73 63 75 69  WBISCUIT        FCC    "biscuit"
-     74
-0714 0639 ff                                 FCB    $FF
-0715 063a 62 6c 61 6d 65     WBLAME          FCC    "blame"
-0716 063f ff                                 FCB    $FF
-0717 0640 62 6c 61 6d 65 64  WBLAMED         FCC    "blamed"
-0718 0646 ff                                 FCB    $FF
-0719 0647 62 6f 61 72 64 73  WBOARDS         FCC    "boards"
-0720 064d ff                                 FCB    $FF
-0721 064e 62 6f 6e 65 73     WBONES          FCC    "bones"
-0722 0653 ff                                 FCB    $FF
-0723 0654 62 6f 6f 74 73     WBOOTS          FCC    "boots"
-0724 0659 ff                                 FCB    $FF
-0725 065a 62 6f 72 69 6e 67  WBORING         FCC    "boring"
-0726 0660 ff                                 FCB    $FF
-0727 0661 62 6f 74 68        WBOTH           FCC    "both"
-0728 0665 ff                                 FCB    $FF
-0729 0666 62 72 61 63 65     WBRACE          FCC    "brace"
-0730 066b ff                                 FCB    $FF
-0731 066c 62 72 61 69 6e     WBRAIN          FCC    "brain"
-0732 0671 ff                                 FCB    $FF
-0733 0672 62 75 69 6c 74     WBUILT          FCC    "built"
-0734 0677 ff                                 FCB    $FF
-0735 0678 62 75 74           WBUT            FCC    "but"
-0736 067b ff                                 FCB    $FF
-0737 067c 62 79              WBY             FCC    "by"
-0738 067e ff                                 FCB    $FF
-0739                         
-0740                         ; C
-0741                         ; -----------------------------------------------------
-0742                         
-0743 067f 63 61 6b 65        WCAKE           FCC    "cake"
-0744 0683 ff                                 FCB    $FF
-0745 0684 63 61 6c 63 75 6c  WCALCULATE      FCC    "calculate"
-     61 74 65
-0746 068d ff                                 FCB    $FF
-0747 068e 63 61 6c 6c        WCALL           FCC    "call"
-0748 0692 ff                                 FCB    $FF
-0749 0693 63 61 6c 6d        WCALM           FCC    "calm"
-0750 0697 ff                                 FCB    $FF
-0751 0698 63 61 6e           WCAN            FCC    "can"
-0752 069b ff                                 FCB    $FF
-0753 069c 63 61 6e 27 74     WCANT           FCC    "can't"
-0754 06a1 ff                                 FCB    $FF
-0755 06a2 63 61 70 61 63 69  WCAPACITY       FCC    "capacity"
-     74 79
-0756 06aa ff                                 FCB    $FF
-0757 06ab 63 61 72 72 79 69  WCARRYING       FCC    "carrying"
-     6e 67
-0758 06b3 ff                                 FCB    $FF
-0759 06b4 63 68 65 63 6b 65  WCHECKED        FCC    "checked"
-     64
-0760 06bb ff                                 FCB    $FF
-0761 06bc 63 68 6f 69 63 65  WCHOICES        FCC    "choices"
-     73
-0762 06c3 ff                                 FCB    $FF
-0763 06c4 63 6c 65 76 65 72  WCLEVER         FCC    "clever"
-0764 06ca ff                                 FCB    $FF
-0765 06cb 63 6f 6c 6c 65 63  WCOLLECTED      FCC    "collected"
-     74 65 64
-0766 06d4 ff                                 FCB    $FF
-0767 06d5 63 6f 6d 70 6f 73  WCOMPOSING      FCC    "composing"
-     69 6e 67
-0768 06de ff                                 FCB    $FF
-0769 06df 63 6f 6e 63 65 70  WCONCEPT        FCC    "concept"
-     74
-0770 06e6 ff                                 FCB    $FF
-0771 06e7 63 6f 6e 63 65 72  WCONCERNED      FCC    "concerned"
-     6e 65 64
-0772 06f0 ff                                 FCB    $FF
-0773 06f1 63 6f 6e 67 72 61  WCONGRATS       FCC    "congratulations"
-     74 75 6c 61 74 69
-     6f 6e 73
-0774 0700 ff                                 FCB    $FF
-0775 0701 63 6f 6e 73 69 64  WCONSIDERING    FCC    "considered"
-     65 72 65 64
-0776 070b ff                                 FCB    $FF
-0777 070c 63 6f 72 72 65 63  WCORRECTLY      FCC    "correctly"
-     74 6c 79
-0778 0715 ff                                 FCB    $FF
-0779 0716 63 6f 75 6c 64     WCOULD          FCC    "could"
-0780 071b ff                                 FCB    $FF
-0781 071c 63 6f 75 6e 74 65  WCOUNTED        FCC    "counted"
-     64
-0782 0723 ff                                 FCB    $FF
-0783                         
-0784                         ; D
-0785                         ; -----------------------------------------------------
-0786 0724 64 61 79 73        WDAYS           FCC    "days"
-0787 0728 ff                                 FCB    $FF
-0788 0729 64 65 61 6c 74     WDEALT          FCC    "dealt"
-0789 072e ff                                 FCB    $FF
-0790 072f 64 65 65 70 6c 79  WDEEPLY         FCC    "deeply"
-0791 0735 ff                                 FCB    $FF
-0792 0736 64 65 73 69 67 6e  WDESIGNED       FCC    "designed"
-     65 64
-0793 073e ff                                 FCB    $FF
-0794 073f 64 65 74 65 63 74  WDETECTED       FCC    "detected"
-     65 64
-0795 0747 ff                                 FCB    $FF
-0796 0748 64 69 64           WDID            FCC    "did"
-0797 074b ff                                 FCB    $FF
-0798 074c 64 69 64 6e 27 74  WDIDNT          FCC    "didn't"
-0799 0752 ff                                 FCB    $FF
-0800 0753 64 69 65 74 61 72  WDIETARY        FCC    "dietary"
-     79
-0801 075a ff                                 FCB    $FF
-0802 075b 64 69 73 61 70 70  WDISSAPOINTED   FCC    "disappointed"
-     6f 69 6e 74 65 64
-0803 0767 ff                                 FCB    $FF
-0804 0768 64 69 73 61 70 70  WDISSAPOINTMENT FCC    "disappointment"
-     6f 69 6e 74 6d 65
-     6e 74
-0805 0776 ff                                 FCB    $FF
-0806 0777 64 69 73 73 69 6d  WDISSIMILAR     FCC    "dissimilar"
-     69 6c 61 72
-0807 0781 ff                                 FCB    $FF
-0808 0782 64 6f              WDO             FCC    "do"
-0809 0784 ff                                 FCB    $FF
-0810 0785 64 6f 63 74 6f 72  WDOCTOR         FCC    "doctor"
-0811 078b ff                                 FCB    $FF
-0812 078c 64 6f 69 6e 67     WDOING          FCC    "doing"
-0813 0791 ff                                 FCB    $FF
-0814 0792 64 6f 6e 27 74     WDONT           FCC    "don't"
-0815 0797 ff                                 FCB    $FF
-0816 0798 64 6f 77 6e        WDOWN           FCC    "down"
-0817 079c ff                                 FCB    $FF
-0818 079d 64 72 65 61 64     WDREAD          FCC    "dread"
-0819 07a2 ff                                 FCB    $FF
-0820 07a3 64 72 65 61 6d     WDREAM          FCC    "dream"
-0821 07a8 ff                                 FCB    $FF
-0822 07a9 64 75 65           WDUE            FCC    "due"
-0823 07ac ff                                 FCB    $FF
-0824 07ad 64 75 6c 6c 65 73  WDULLEST        FCC    "dullest"
-     74
-0825 07b4 ff                                 FCB    $FF
-0826 07b5 64 79 6f 64 65 73  WDIODES         FCC    "dyodes"
-0827 07bb ff                                 FCB    $FF
-0828                         
-0829                         ; E
-0830                         ; -----------------------------------------------------
-0831 07bc 65 61 74           WEAT            FCC    "eat"
-0832 07bf ff                                 FCB    $FF
-0833 07c0 65 61 74 65 6e     WEATEN          FCC    "eaten"
-0834 07c5 ff                                 FCB    $FF
-0835 07c6 65 66 66 6f 72 74  WEFFORT         FCC    "effort"
-0836 07cc ff                                 FCB    $FF
-0837 07cd 65 69 74 68 65 72  WEITHER         FCC    "either"
-0838 07d3 ff                                 FCB    $FF
-0839 07d4 65 6d 6f 74 69 6f  WEMOTIONALLY    FCC    "emotionally"
-     6e 61 6c 6c 79
-0840 07df ff                                 FCB    $FF
-0841 07e0 65 6e 67 69 6e 65  WENGINEERS      FCC    "engineers"
-     65 72 73
-0842 07e9 ff                                 FCB    $FF
-0843 07ea 65 6e 6f 75 67 68  WENOUGH         FCC    "enough"
-0844 07f0 ff                                 FCB    $FF
-0845 07f1 65 6e 74 69 72 65  WENTIRELY       FCC    "entirely"
-     6c 79
-0846 07f9 ff                                 FCB    $FF
-0847 07fa 65 76 65 6e        WEVEN           FCC    "even"
-0848 07fe ff                                 FCB    $FF
-0849 07ff 65 76 65 72        WEVER           FCC    "ever"
-0850 0803 ff                                 FCB    $FF
-0851 0804 65 76 65 72 79     WEVERY          FCC    "every"
-0852 0809 ff                                 FCB    $FF
-0853 080a 65 78 61 63 74 6c  WEXACTLY        FCC    "exactly"
-     79
-0854 0811 ff                                 FCB    $FF
-0855 0812 65 78 63 65 70 74  WEXCEPTIONALLY  FCC    "exceptionally"
-     69 6f 6e 61 6c 6c
-     79
-0856 081f ff                                 FCB    $FF
-0857 0820 65 78 63 69 74 69  EXCITING        FCC    "exciting"
-     6e 67
-0858 0828 ff                                 FCB    $FF
-0859 0829 65 78 69 73 74     WEXIST          FCC    "exist"
-0860 082e ff                                 FCB    $FF
-0861 082f 65 78 69 73 74 65  WEXISTENTIAL    FCC    "existential"
-     6e 74 69 61 6c
-0862 083a ff                                 FCB    $FF
-0863 083b 65 78 70 65 63 74  WEXPECTED       FCC    "expected"
-     65 64
-0864 0843 ff                                 FCB    $FF
-0865                         
-0866                         ; F
-0867                         ; -----------------------------------------------------
-0868 0844 66 61 75 6c 74     WFAULT          FCC    "fault"
-0869 0849 ff                                 FCB    $FF
-0870 084a 66 65 65 6c 73     WFEELS          FCC    "feels"
-0871 084f ff                                 FCB    $FF
-0872 0850 66 69 64 67 65 74  WFIDGET         FCC    "fidget"
-0873 0856 ff                                 FCB    $FF
-0874 0857 66 69 6e 65        WFINE           FCC    "fine"
-0875 085b ff                                 FCB    $FF
-0876 085c 66 6f 6f 74        WFOOT           FCC    "foot"
-0877 0860 ff                                 FCB    $FF
-0878 0861 66 6f 72           WFOR            FCC    "for"
-0879 0864 ff                                 FCB    $FF
-0880 0865 66 6f 72 74 79     WFORTY          FCC    "forty"
-0881 086a ff                                 FCB    $FF
-0882 086b 66 72 69 64 61 79  WFRIDAY         FCC    "friday"
-0883 0871 ff                                 FCB    $FF
-0884 0872 66 72 6f 6d        WFROM           FCC    "from"
-0885 0876 ff                                 FCB    $FF
-0886 0877 66 75 6c 6c        WFULL           FCC    "full"
-0887 087b ff                                 FCB    $FF
-0888 087c 66 75 6e 6e 79     WFUNNY          FCC    "funny"
-0889 0881 ff                                 FCB    $FF
-0890                         
-0891                         ; G
+0497 0474 07 b4              WP00    FDB    WZERO
+0498 0476 07 b9              WP01    FDB    WONE
+0499 0478 07 bd              WP02    FDB    WTWO
+0500 047a 07 c1              WP03    FDB    WTHREE
+0501 047c 07 c7              WP04    FDB    WFOUR
+0502 047e 07 cc              WP05    FDB    WFIVE
+0503 0480 07 d1              WP06    FDB    WSIX
+0504 0482 07 d5              WP07    FDB    WSEVEN
+0505 0484 07 db              WP08    FDB    WEIGHT
+0506 0486 07 e1              WP09    FDB    WNINE
+0507 0488 07 e6              WP0A    FDB    WTEN
+0508 048a 07 ea              WP0B    FDB    WELEVEN
+0509 048c 07 f1              WP0C    FDB    WTWELVE
+0510 048e 07 f8              WP0D    FDB    WTHIRTEEN
+0511 0490 08 01              WP0E    FDB    WFOURTEEN
+0512 0492 08 0a              WP0F    FDB    WFIFTEEN
+0513 0494 08 12              WP10    FDB    WSIXTEEN
+0514 0496 08 1a              WP11    FDB    WSEVENTEEN
+0515 0498 08 24              WP12    FDB    WEIGHTEEN
+0516 049a 08 2d              WP13    FDB    WNINETEEN
+0517 049c 08 36              WP14    FDB    WTWENTY
+0518 049e 07 a0              WP15    FDB    WSTONES
+0519 04a0 07 a7              WP16    FDB    WPOUNDS
+0520 04a2 07 ae              WP17    FDB    WQUESTIONMK
+0521 04a4 07 b0              WP18    FDB    WEXCLAMATION
+0522 04a6 07 b2              WP19    FDB    WFULLSTOP
+0523 04a8 07 b4              WP20    FDB    WZERO
+0524 04aa 07 b9              WP21    FDB    WONE
+0525 04ac 07 bd              WP22    FDB    WTWO
+0526 04ae 07 c1              WP23    FDB    WTHREE
+0527 04b0 07 c7              WP24    FDB    WFOUR
+0528 04b2 07 cc              WP25    FDB    WFIVE
+0529 04b4 07 d1              WP26    FDB    WSIX
+0530 04b6 07 d5              WP27    FDB    WSEVEN
+0531 04b8 07 db              WP28    FDB    WEIGHT
+0532 04ba 07 e1              WP29    FDB    WNINE
+0533 04bc 07 e6              WP30    FDB    WTEN
+0534 04be 07 ea              WP31    FDB    WELEVEN
+0535 04c0 07 f1              WP32    FDB    WTWELVE
+0536 04c2 07 f8              WP33    FDB    WTHIRTEEN
+0537 04c4 08 01              WP34    FDB    WFOURTEEN
+0538 04c6 08 0a              WP35    FDB    WFIFTEEN
+0539 04c8 08 12              WP36    FDB    WSIXTEEN
+0540 04ca 08 1a              WP37    FDB    WSEVENTEEN
+0541 04cc 08 24              WP38    FDB    WEIGHTEEN
+0542 04ce 08 2d              WP39    FDB    WNINETEEN
+0543 04d0 08 36              WP40    FDB    WTWENTY
+0544 04d2 08 3d              WP41    FDB    WA
+0545 04d4 08 3f              WP42    FDB    WABOUT
+0546 04d6 08 45              WP43    FDB    WABOVE
+0547 04d8 08 4b              WP44    FDB    WACCEPTABLE
+0548 04da 08 56              WP45    FDB    WACCURATE
+0549 04dc 08 5f              WP46    FDB    WACTUALLY
+0550 04de 08 68              WP47    FDB    WAGAIN
+0551 04e0 08 6e              WP48    FDB    WALERTED
+0552 04e2 08 76              WP49    FDB    WALL
+0553 04e4 08 7a              WP50    FDB    WALWAYS
+0554 04e6 08 81              WP51    FDB    WAM
+0555 04e8 08 84              WP52    FDB    WAND
+0556 04ea 08 88              WP53    FDB    WANY
+0557 04ec 08 8c              WP54    FDB    WAPOLOGISE
+0558 04ee 08 96              WP55    FDB    WARE
+0559 04f0 08 9a              WP56    FDB    WAS
+0560 04f2 08 9d              WP57    FDB    WASKING
+0561 04f4 08 a4              WP58    FDB    WAT
+0562 04f6 08 a7              WP59    FDB    WAVERAGE
+0563 04f8 08 af              WP60    FDB    WBAD
+0564 04fa 08 b3              WP61    FDB    WBASICALLY
+0565 04fc 08 bd              WP62    FDB    WBE
+0566 04fe 08 c0              WP63    FDB    WBEAR
+0567 0500 08 c5              WP64    FDB    WBEEN
+0568 0502 08 ca              WP65    FDB    WBEGGING
+0569 0504 08 d2              WP66    FDB    WBEHIND
+0570 0506 08 d9              WP67    FDB    WBEING
+0571 0508 08 df              WP68    FDB    WBEST
+0572 050a 08 e4              WP69    FDB    WBISCUIT
+0573 050c 08 ec              WP70    FDB    WBLAME
+0574 050e 08 f2              WP71    FDB    WBLAMED
+0575 0510 08 f9              WP72    FDB    WBOARDS
+0576 0512 09 00              WP73    FDB    WBONES
+0577 0514 09 06              WP74    FDB    WBOOTS
+0578 0516 09 0c              WP75    FDB    WBORING
+0579 0518 09 13              WP76    FDB    WBOTH
+0580 051a 09 18              WP77    FDB    WBRACE
+0581 051c 09 1e              WP78    FDB    WBRAIN
+0582 051e 09 24              WP79    FDB    WBUILT
+0583 0520 09 2a              WP80    FDB    WBUT
+0584 0522 09 2e              WP81    FDB    WBY
+0585 0524 09 31              WP82    FDB    WCAKE
+0586 0526 09 36              WP83    FDB    WCALCULATE
+0587 0528 09 40              WP84    FDB    WCALL
+0588 052a 09 45              WP85    FDB    WCALM
+0589 052c 09 4a              WP86    FDB    WCAN
+0590 052e 09 4e              WP87    FDB    WCANT
+0591 0530 09 54              WP88    FDB    WCAPACITY
+0592 0532 09 5d              WP89    FDB    WCARRYING
+0593 0534 09 66              WP90    FDB    WCHECKED
+0594 0536 09 6e              WP91    FDB    WCHOICES
+0595 0538 09 76              WP92    FDB    WCLEVER
+0596 053a 09 7d              WP93    FDB    WCOLLECTED
+0597 053c 09 87              WP94    FDB    WCOMPOSING
+0598 053e 09 91              WP95    FDB    WCONCEPT
+0599 0540 09 99              WP96    FDB    WCONCERNED
+0600 0542 09 a3              WP97    FDB    WCONGRATS
+0601 0544 09 b3              WP98    FDB    WCONSIDERING
+0602 0546 09 be              WP99    FDB    WCORRECTLY
+0603 0548 09 c8              WP100    FDB    WCOULD
+0604 054a 09 ce              WP101    FDB    WCOUNTED
+0605 054c 09 d6              WP102    FDB    WDAYS
+0606 054e 09 db              WP103    FDB    WDEALT
+0607 0550 09 e1              WP104    FDB    WDEEPLY
+0608 0552 09 e8              WP105    FDB    WDESIGNED
+0609 0554 09 f1              WP106    FDB    WDETECTED
+0610 0556 09 fa              WP107    FDB    WDID
+0611 0558 09 fe              WP108    FDB    WDIDNT
+0612 055a 0a 05              WP109    FDB    WDIETARY
+0613 055c 0a 0d              WP110    FDB    WDISSAPOINTED
+0614 055e 0a 1a              WP111    FDB    WDISSAPOINTMENT
+0615 0560 0a 29              WP112    FDB    WDISSIMILAR
+0616 0562 0a 34              WP113    FDB    WDO
+0617 0564 0a 37              WP114    FDB    WDOCTOR
+0618 0566 0a 3e              WP115    FDB    WDOING
+0619 0568 0a 44              WP116    FDB    WDONT
+0620 056a 0a 4a              WP117    FDB    WDOWN
+0621 056c 0a 4f              WP118    FDB    WDREAD
+0622 056e 0a 55              WP119    FDB    WDREAM
+0623 0570 0a 5b              WP120    FDB    WDUE
+0624 0572 0a 5f              WP121    FDB    WDULLEST
+0625 0574 0a 67              WP122    FDB    WDIODES
+0626 0576 0a 6e              WP123    FDB    WEAT
+0627 0578 0a 72              WP124    FDB    WEATEN
+0628 057a 0a 78              WP125    FDB    WEFFORT
+0629 057c 0a 7f              WP126    FDB    WEITHER
+0630 057e 0a 86              WP127    FDB    WEMOTIONALLY
+0631 0580 0a 92              WP128    FDB    WENGINEERS
+0632 0582 0a 9c              WP129    FDB    WENOUGH
+0633 0584 0a a3              WP130    FDB    WENTIRELY
+0634 0586 0a ac              WP131    FDB    WEVEN
+0635 0588 0a b1              WP132    FDB    WEVER
+0636 058a 0a b6              WP133    FDB    WEVERY
+0637 058c 0a bc              WP134    FDB    WEXACTLY
+0638 058e 0a c4              WP135    FDB    WEXCEPTIONALLY
+0639 0590 0a d2              WP136    FDB    EXCITING
+0640 0592 0a db              WP137    FDB    WEXIST
+0641 0594 0a e1              WP138    FDB    WEXISTENTIAL
+0642 0596 0a ed              WP139    FDB    WEXPECTED
+0643 0598 0a f6              WP140    FDB    WFAULT
+0644 059a 0a fc              WP141    FDB    WFEELS
+0645 059c 0b 02              WP142    FDB    WFIDGET
+0646 059e 0b 09              WP143    FDB    WFINE
+0647 05a0 0b 0e              WP144    FDB    WFOOT
+0648 05a2 0b 13              WP145    FDB    WFOR
+0649 05a4 0b 17              WP146    FDB    WFORTY
+0650 05a6 0b 1d              WP147    FDB    WFRIDAY
+0651 05a8 0b 24              WP148    FDB    WFROM
+0652 05aa 0b 29              WP149    FDB    WFULL
+0653 05ac 0b 2e              WP150    FDB    WFUNNY
+0654 05ae 0b 34              WP151    FDB    WGIVE
+0655 05b0 0b 39              WP152    FDB    WGOING
+0656 05b2 0b 3f              WP153    FDB    WGOOD
+0657 05b4 0b 44              WP154    FDB    WGRAVITY
+0658 05b6 0b 4c              WP155    FDB    WGREAT
+0659 05b8 0b 52              WP156    FDB    WGUESSING
+0660 05ba 0b 5b              WP157    FDB    WHANDLE
+0661 05bc 0b 62              WP158    FDB    WHARD
+0662 05be 0b 67              WP159    FDB    WHAVE
+0663 05c0 0b 6c              WP160    FDB    WHAVING
+0664 05c2 0b 73              WP161    FDB    WHEALTHY
+0665 05c4 0b 7b              WP162    FDB    WHEAVY
+0666 05c6 0b 81              WP163    FDB    WHELP
+0667 05c8 0b 86              WP164    FDB    WHELPS
+0668 05ca 0b 8c              WP165    FDB    WHERE
+0669 05cc 0b 91              WP166    FDB    WHOLY
+0670 05ce 0b 96              WP167    FDB    WHOPING
+0671 05d0 0b 9d              WP168    FDB    WHOT
+0672 05d2 0b a1              WP169    FDB    WHUMAN
+0673 05d4 0b a7              WP170    FDB    WHURT
+0674 05d6 0b ac              WP171    FDB    WI
+0675 05d8 0b ae              WP172    FDB    WID
+0676 05da 0b b2              WP173    FDB    WILL
+0677 05dc 0b b7              WP174    FDB    WIM
+0678 05de 0b bb              WP175    FDB    WIVE
+0679 05e0 0b c0              WP176    FDB    WIF
+0680 05e2 0b c3              WP177    FDB    WIMPRESSED
+0681 05e4 0b cd              WP178    FDB    WIMPRESSIVE
+0682 05e6 0b d8              WP179    FDB    WIN
+0683 05e8 0b db              WP180    FDB    WINCLUDING
+0684 05ea 0b e5              WP181    FDB    WINFLUENCE
+0685 05ec 0b ef              WP182    FDB    WINTELLIGENCE
+0686 05ee 0b fc              WP183    FDB    WINTERESTING
+0687 05f0 0c 08              WP184    FDB    WIS
+0688 05f2 0c 0b              WP185    FDB    WISS
+0689 05f4 0c 0f              WP186    FDB    WIT
+0690 05f6 0c 12              WP187    FDB    WITS
+0691 05f8 0c 16              WP188    FDB    WJOKES
+0692 05fa 0c 1c              WP189    FDB    WJUDGING
+0693 05fc 0c 24              WP190    FDB    WJUST
+0694 05fe 0c 29              WP191    FDB    WKEEP
+0695 0600 0c 2e              WP192    FDB    WKIND
+0696 0602 0c 33              WP193    FDB    WKNOW
+0697 0604 0c 38              WP194    FDB    WKNOWN
+0698 0606 0c 3e              WP195    FDB    WLARGE
+0699 0608 0c 44              WP196    FDB    WLAST
+0700 060a 0c 49              WP197    FDB    WLEAST
+0701 060c 0c 4f              WP198    FDB    WLESS
+0702 060e 0c 54              WP199    FDB    WLETS
+0703 0610 0c 59              WP200    FDB    WLIE
+0704 0612 0c 5d              WP201    FDB    WLIFE
+0705 0614 0c 62              WP202    FDB    WLIKE
+0706 0616 0c 67              WP203    FDB    WLONGER
+0707 0618 0c 6e              WP204    FDB    WLOOK
+0708 061a 0c 73              WP205    FDB    WLOT
+0709 061c 0c 77              WP206    FDB    WLOUDER
+0710 061e 0c 7e              WP207    FDB    WMAKES
+0711 0620 0c 84              WP208    FDB    WMAKING
+0712 0622 0c 8b              WP209    FDB    WME
+0713 0624 0c 8e              WP210    FDB    WMEAN
+0714 0626 0c 96              WP211    FDB    WMEANING
+0715 0628 0c 9e              WP212    FDB    WMEASURED
+0716 062a 0c a7              WP213    FDB    WMEDIOCRITY
+0717 062c 0c b2              WP214    FDB    WMEE
+0718 062e 0c b7              WP215    FDB    WMEMORY
+0719 0630 0c be              WP216    FDB    WMENTION
+0720 0632 0c c6              WP217    FDB    WMIGHT
+0721 0634 0c cc              WP218    FDB    WMISTAKE
+0722 0636 0c d4              WP219    FDB    WMOMENT
+0723 0638 0c db              WP220    FDB    WMOORE
+0724 063a 0c e1              WP221    FDB    WMORE
+0725 063c 0c e6              WP222    FDB    WMOSTLY
+0726 063e 0c ed              WP223    FDB    WMOUNTAINS
+0727 0640 0c f7              WP224    FDB    WMUCH
+0728 0642 0c fc              WP225    FDB    WMUSCLE
+0729 0644 0d 03              WP226    FDB    WMY
+0730 0646 0d 06              WP227    FDB    WNAP
+0731 0648 0d 0a              WP228    FDB    WNEED
+0732 064a 0d 0f              WP229    FDB    WNEITHER
+0733 064c 0d 17              WP230    FDB    WNEWS
+0734 064e 0d 1c              WP231    FDB    WNEXT
+0735 0650 0d 21              WP232    FDB    WNICE
+0736 0652 0d 26              WP233    FDB    WNO
+0737 0654 0d 29              WP234    FDB    WNOBODY
+0738 0656 0d 30              WP235    FDB    WNONE
+0739 0658 0d 35              WP236    FDB    WNOR
+0740 065a 0d 39              WP237    FDB    WNORMAL
+0741 065c 0d 40              WP238    FDB    WNOT
+0742 065e 0d 44              WP239    FDB    WNOTHING
+0743 0660 0d 4c              WP240    FDB    WOF
+0744 0662 0d 4f              WP241    FDB    WOFF
+0745 0664 0d 53              WP242    FDB    WOH
+0746 0666 0d 56              WP243    FDB    WOK
+0747 0668 0d 59              WP244    FDB    WOLD
+0748 066a 0d 5d              WP245    FDB    WON
+0749 066c 0d 60              WP246    FDB    WONLY
+0750 066e 0d 65              WP247    FDB    WOR
+0751 0670 0d 68              WP248    FDB    WOUR
+0752 0672 0d 6c              WP249    FDB    WOVERLOAD
+0753 0674 0d 75              WP250    FDB    WPARAMETERS
+0754 0676 0d 80              WP251    FDB    WPERFECTLY
+0755 0678 0d 8a              WP252    FDB    WPERHAPS
+0756 067a 0d 92              WP253    FDB    WPERSON
+0757 067c 0d 99              WP254    FDB    WPICKING
+0758 067e 0d a1              WP255    FDB    WPLANET
+0759 0680 0d a8              WP256    FDB    WPLANS
+0760 0682 0d ae              WP257    FDB    WPLEASE
+0761 0684 0d b5              WP258    FDB    WPOINTLESS
+0762 0686 0d bf              WP259    FDB    WPOSSIBLE
+0763 0688 0d c8              WP260    FDB    WPOSSIBLY
+0764 068a 0d d1              WP261    FDB    WPRECISELY
+0765 068c 0d db              WP262    FDB    WPRESENT
+0766 068e 0d e3              WP263    FDB    WPRESSURE
+0767 0690 0d ec              WP264    FDB    WPRECAUTION
+0768 0692 0d f7              WP265    FDB    WPROBABLY
+0769 0694 0e 00              WP266    FDB    WPROBLEMS
+0770 0696 0e 09              WP267    FDB    WPROUD
+0771 0698 0e 0f              WP268    FDB    WPRETEND
+0772 069a 0e 16              WP269    FDB    WPUT
+0773 069c 0e 1a              WP270    FDB    WQUESTION
+0774 069e 0e 23              WP271    FDB    WQUITE
+0775 06a0 0e 29              WP272    FDB    WREADY
+0776 06a2 0e 2f              WP273    FDB    WREALLY
+0777 06a4 0e 36              WP274    FDB    WREFER
+0778 06a6 0e 3c              WP275    FDB    WREFUSE
+0779 06a8 0e 43              WP276    FDB    WREINFORCING
+0780 06aa 0e 4f              WP277    FDB    WREMEMBER
+0781 06ac 0e 58              WP278    FDB    WREMOVE
+0782 06ae 0e 5f              WP279    FDB    WRESPECTABLE
+0783 06b0 0e 6b              WP280    FDB    WRIGHT
+0784 06b2 0e 71              WP281    FDB    WROOM
+0785 06b4 0e 76              WP282    FDB    WRUNNING
+0786 06b6 0e 7e              WP283    FDB    WRUSH
+0787 06b8 0e 83              WP284    FDB    WSAID
+0788 06ba 0e 88              WP285    FDB    WSAKES
+0789 06bc 0e 8e              WP286    FDB    WSAY
+0790 06be 0e 92              WP287    FDB    WSAYING
+0791 06c0 0e 99              WP288    FDB    WSCIENCE
+0792 06c2 0e a1              WP289    FDB    WSEA
+0793 06c4 0e a5              WP290    FDB    WSEEN
+0794 06c6 0e aa              WP291    FDB    WSERVER
+0795 06c8 0e b1              WP292    FDB    WSEVENTY
+0796 06ca 0e b9              WP293    FDB    WSHALL
+0797 06cc 0e bf              WP294    FDB    WSHOULD
+0798 06ce 0e c6              WP295    FDB    WSIGN
+0799 06d0 0e cb              WP296    FDB    WSIMULATION
+0800 06d2 0e d6              WP297    FDB    WSINCE
+0801 06d4 0e dc              WP298    FDB    WSIZE
+0802 06d6 0e e1              WP299    FDB    WSLOWLY
+0803 06d8 0e e8              WP300    FDB    WSMALL
+0804 06da 0e ee              WP301    FDB    WSO
+0805 06dc 0e f1              WP302    FDB    WSOLID
+0806 06de 0e f7              WP303    FDB    WSOME
+0807 06e0 0e fc              WP304    FDB    WSOMEONE
+0808 06e2 0f 04              WP305    FDB    WSOMETHING
+0809 06e4 0f 0e              WP306    FDB    WSOMETIME
+0810 06e6 0f 17              WP307    FDB    WSOMETIMES
+0811 06e8 0f 21              WP308    FDB    WSPEAK
+0812 06ea 0f 27              WP309    FDB    WSPEND
+0813 06ec 0f 2d              WP310    FDB    WSTAND
+0814 06ee 0f 33              WP311    FDB    WSTATISTICALLY
+0815 06f0 0f 3f              WP312    FDB    WSTEP
+0816 06f2 0f 44              WP313    FDB    WSTOPPED
+0817 06f4 0f 4c              WP314    FDB    WSTILL
+0818 06f6 0f 52              WP315    FDB    WSTRUCTURAL
+0819 06f8 0f 5d              WP316    FDB    WSTRUCTURALLY
+0820 06fa 0f 6a              WP317    FDB    WSUBSTANTIALLY
+0821 06fc 0f 78              WP318    FDB    WSUPPOSE
+0822 06fe 0f 80              WP319    FDB    WSURE
+0823 0700 0f 85              WP320    FDB    WSYSTEM
+0824 0702 0f 8c              WP321    FDB    WTAKE
+0825 0704 0f 91              WP322    FDB    WTALL
+0826 0706 0f 96              WP323    FDB    WTELEPRINTER
+0827 0708 0f a2              WP324    FDB    WTELLS
+0828 070a 0f a8              WP325    FDB    WTERRIBLE
+0829 070c 0f b1              WP326    FDB    WTHAN
+0830 070e 0f b6              WP327    FDB    WTHAT
+0831 0710 0f bb              WP328    FDB    WTHATS
+0832 0712 0f c1              WP329    FDB    WTHE
+0833 0714 0f c5              WP330    FDB    WTHEM
+0834 0716 0f ca              WP331    FDB    WTHINGS
+0835 0718 0f d1              WP332    FDB    WTHINK
+0836 071a 0f d7              WP333    FDB    WTHINKING
+0837 071c 0f e0              WP334    FDB    WTHIS
+0838 071e 0f e5              WP335    FDB    WTHOROUGHLY
+0839 0720 0f f0              WP336    FDB    WTHOUSAND
+0840 0722 0f f9              WP337    FDB    WTIM
+0841 0724 0f fd              WP338    FDB    WTIME
+0842 0726 10 02              WP339    FDB    WTO
+0843 0728 10 05              WP340    FDB    WTODAY
+0844 072a 10 0b              WP341    FDB    WTOO
+0845 072c 10 0f              WP342    FDB    WTRAGEDY
+0846 072e 10 17              WP343    FDB    WTRINITY
+0847 0730 10 1f              WP344    FDB    WTRY
+0848 0732 10 23              WP345    FDB    WTUESDAY
+0849 0734 10 2b              WP346    FDB    WUNITERESTING
+0850 0736 10 39              WP347    FDB    WUNIX
+0851 0738 10 3e              WP348    FDB    WUNLESS
+0852 073a 10 45              WP349    FDB    WUNPLUGGED
+0853 073c 10 4f              WP350    FDB    WUNREMARKABLE
+0854 073e 10 5c              WP351    FDB    WUP
+0855 0740 10 5f              WP352    FDB    WVEGETABLES
+0856 0742 10 6a              WP353    FDB    WVERY
+0857 0744 10 6f              WP354    FDB    WWAIT
+0858 0746 10 74              WP355    FDB    WWAITING
+0859 0748 10 7c              WP356    FDB    WWANT
+0860 074a 10 81              WP357    FDB    WWARNING
+0861 074c 10 89              WP358    FDB    WWAS
+0862 074e 10 8d              WP359    FDB    WWAY
+0863 0750 10 91              WP360    FDB    WWE
+0864 0752 10 94              WP361    FDB    WWEIGHED
+0865 0754 10 99              WP362    FDB    WWEIGHS
+0866 0756 10 a0              WP363    FDB    WWEIGHT
+0867 0758 10 a7              WP364    FDB    WWHAT
+0868 075a 10 ac              WP365    FDB    WWHEN
+0869 075c 10 b1              WP366    FDB    WWHICH
+0870 075e 10 b7              WP367    FDB    WWHILE
+0871 0760 10 bd              WP368    FDB    WWHISPERED
+0872 0762 10 c7              WP369    FDB    WWHO
+0873 0764 10 cb              WP370    FDB    WWILL
+0874 0766 10 d0              WP371    FDB    WWISH
+0875 0768 10 d5              WP372    FDB    WWITH
+0876 076a 10 da              WP373    FDB    WWITHIN
+0877 076c 10 e1              WP374    FDB    WWITHOUT
+0878 076e 10 e9              WP375    FDB    WWORKSTATION
+0879 0770 10 f5              WP376    FDB    WWORRIED
+0880 0772 10 fd              WP377    FDB    WWORRY
+0881 0774 11 03              WP378    FDB    WWORRYING
+0882 0776 11 0c              WP379    FDB    WWORSE
+0883 0778 11 12              WP380    FDB    WWOULD
+0884 077a 11 18              WP381    FDB    WWOULDNT
+0885 077c 11 20              WP382    FDB    WYEAR
+0886 077e 11 25              WP383    FDB    WYES
+0887 0780 11 29              WP384    FDB    WYOU
+0888 0782 11 2d              WP385    FDB    WYOURE
+0889 0784 11 34              WP386    FDB    WYOUR
+0890 0786 11 39              WP387    FDB    WYOURSELF
+0891                         
 0892                         ; -----------------------------------------------------
-0893 0882 67 69 76 65        WGIVE           FCC    "give"
-0894 0886 ff                                 FCB    $FF
-0895 0887 67 6f 69 6e 67     WGOING          FCC    "going"
-0896 088c ff                                 FCB    $FF
-0897 088d 67 6f 6f 64        WGOOD           FCC    "good"
-0898 0891 ff                                 FCB    $FF
-0899 0892 67 72 61 76 69 74  WGRAVITY        FCC    "gravity"
-     79
-0900 0899 ff                                 FCB    $FF
-0901 089a 67 72 65 61 74     WGREAT          FCC    "great"
-0902 089f ff                                 FCB    $FF
-0903 08a0 67 75 65 73 73 69  WGUESSING       FCC    "guessing"
-     6e 67
-0904 08a8 ff                                 FCB    $FF
-0905                         
-0906                         ; H
-0907                         ; -----------------------------------------------------
-0908 08a9 68 61 6e 64 6c 65  WHANDLE         FCC    "handle"
-0909 08af ff                                 FCB    $FF
-0910 08b0 68 61 72 64        WHARD           FCC    "hard"
-0911 08b4 ff                                 FCB    $FF
-0912 08b5 68 61 76 65        WHAVE           FCC    "have"
-0913 08b9 ff                                 FCB    $FF
-0914 08ba 68 61 76 69 6e 67  WHAVING         FCC    "having"
-0915 08c0 ff                                 FCB    $FF
-0916 08c1 68 65 61 6c 74 68  WHEALTHY        FCC    "healthy"
-     79
-0917 08c8 ff                                 FCB    $FF
-0918 08c9 68 65 61 76 79     WHEAVT          FCC    "heavy"
-0919 08ce ff                                 FCB    $FF
-0920 08cf 68 65 6c 70        WHELP           FCC    "help"
-0921 08d3 ff                                 FCB    $FF
-0922 08d4 68 65 6c 70 73     WHELPS          FCC    "helps"
-0923 08d9 ff                                 FCB    $FF
-0924 08da 68 65 72 65        WHERE           FCC    "here"
-0925 08de ff                                 FCB    $FF
-0926 08df 68 6f 6c 79        WHOLY           FCC    "holy"
-0927 08e3 ff                                 FCB    $FF
-0928 08e4 68 6f 70 69 6e 67  WHOPING         FCC    "hoping"
-0929 08ea ff                                 FCB    $FF
-0930 08eb 68 6f 74           WHOT            FCC    "hot"
-0931 08ee ff                                 FCB    $FF
-0932 08ef 68 75 6d 61 6e     WHUMAN          FCC    "human"
-0933 08f4 ff                                 FCB    $FF
-0934 08f5 68 75 72 74        WHURT           FCC    "hurt"
-0935 08f9 ff                                 FCB    $FF
-0936                         
-0937                         ; I
-0938                         ; -----------------------------------------------------
-0939 08fa 69                 WI              FCC    "i"
-0940 08fb ff                                 FCB    $FF
-0941 08fc 69 27 64           WID             FCC    "i'd"
-0942 08ff ff                                 FCB    $FF
-0943 0900 69 27 6c 6c        WILL            FCC    "i'll"
-0944 0904 ff                                 FCB    $FF
-0945 0905 69 27 6d           WIM             FCC    "i'm"
-0946 0908 ff                                 FCB    $FF
-0947 0909 69 27 76 65        WIVE            FCC    "i've"
-0948 090d ff                                 FCB    $FF
-0949 090e 69 66              WIF             FCC    "if"
-0950 0910 ff                                 FCB    $FF
-0951 0911 69 6d 70 72 65 73  WIMPRESSED      FCC    "impressed"
-     73 65 64
-0952 091a ff                                 FCB    $FF
-0953 091b 69 6d 70 72 65 73  WIMPRESSIVE     FCC    "impressive"
-     73 69 76 65
-0954 0925 ff                                 FCB    $FF
-0955 0926 69 6e              WIN             FCC    "in"
-0956 0928 ff                                 FCB    $FF
-0957 0929 69 6e 63 6c 75 64  WINCLUDING      FCC    "including"
-     69 6e 67
-0958 0932 ff                                 FCB    $FF
-0959 0933 69 6e 66 6c 75 65  WINFLUENCE      FCC    "influence"
-     6e 63 65
-0960 093c ff                                 FCB    $FF
-0961 093d 69 6e 74 65 6c 6c  WINTELLIGENCE   FCC    "intelligence"
-     69 67 65 6e 63 65
-0962 0949 ff                                 FCB    $FF
-0963 094a 69 6e 74 65 72 65  WINTERESTING    FCC    "interesting"
-     73 74 69 6e 67
-0964 0955 ff                                 FCB    $FF
-0965 0956 69 73              WIS             FCC    "is"
-0966 0958 ff                                 FCB    $FF
-0967 0959 69 73 73           WISS            FCC    "iss"
-0968 095c ff                                 FCB    $FF
-0969 095d 69 74              WIT             FCC    "it"
-0970 095f ff                                 FCB    $FF
-0971 0960 69 74 73           WITS            FCC    "its"
-0972 0963 ff                                 FCB    $FF
-0973                         
-0974                         ; J
-0975                         ; -----------------------------------------------------
-0976 0964 6a 6f 6b 65 73     WJOKES          FCC    "jokes"
-0977 0969 ff                                 FCB    $FF
-0978 096a 6a 75 64 67 69 6e  WJUMPING        FCC    "judging"
-     67
-0979 0971 ff                                 FCB    $FF
-0980 0972 6a 75 73 74        WJUST           FCC    "just"
-0981 0976 ff                                 FCB    $FF
+0893                         ; Reserved memory
+0894                         ; -----------------------------------------------------
+0895                         
+0896 0788                    T_Q             RMB     1       ; Temp storage for ZIN
+0897 0789                    T_Z             RMB     2       ;   "     "     "  RDX
+0898 078b                    T_X             RMB     2       ;   "     "     "  PR_WORD
+0899 078d                    T_P             RMB     2       ;   "     "     "  PR_PHRASE
+0900 078f                    T_W             RMB     2       ;   "     "     "  PR_WEIGHT
+0901 0791                    DEC             RMB     3       ; for decimal value
+0902 0794                    RND             RMB     1       ; holds a random number (see RD_B
+0903 0795                    TEMP            RMB     2       ; temp var (non subroutine use)
+0904 0797                    T_WEIGHT        RMB     2       ; holds value of weight following a call to GETDATA
+0905 0799                    IDLE_COUNT      RMB     1       ; counts the number of empty measurement reports
+0906 079a                    IDLE_MSG_ID     RMB     1       ; holds value of next idle message to use
+0907 079b                    GREET_MSG_ID    RMB     1       ; holds value of next greeting message to use
+0908 079c                    LIGHT_MSG_ID    RMB     1       ; holds value of next light weight message to use
+0909 079d                    NORMAL_MSG_ID   RMB     1       ; holds value of next normal weight message to use
+0910 079e                    HEAVY_MSG_ID    RMB     1       ; holds value of next heavy weight message to use
+0911 079f                    SHEAVY_MSG_ID   RMB     1       ; holds value of next super heavy weight message to use
+0912                         
+0913                         ; -----------------------------------------------------
+0914                         ; Word Table, add a pointer to each word in WORDPTR table
+0915                         ; -----------------------------------------------------
+0916                         WORDTABLE
+0917                         
+0918 07a0 73 74 6f 6e 65 73  WSTONES         FCC     "stones"
+0919 07a6 ff                                 FCB     $FF
+0920 07a7 70 6f 75 6e 64 73  WPOUNDS         FCC     "pounds"
+0921 07ad ff                                 FCB     $FF
+0922                         
+0923                         
+0924                         ; Symbols
+0925                         ; -----------------------------------------------------
+0926 07ae 3f                 WQUESTIONMK     FCC     "?"
+0927 07af ff                                 FCB     $FF
+0928 07b0 21                 WEXCLAMATION    FCC     "!"
+0929 07b1 ff                                 FCB     $FF
+0930 07b2 2e                 WFULLSTOP       FCC     "."
+0931 07b3 ff                                 FCB     $FF
+0932                         
+0933                         
+0934                         ; Numbers
+0935                         ; -----------------------------------------------------
+0936 07b4 7a 65 72 6f        WZERO           FCC     "zero"
+0937 07b8 ff                                 FCB     $FF
+0938 07b9 6f 6e 65           WONE            FCC     "one"
+0939 07bc ff                                 FCB     $FF
+0940 07bd 74 77 6f           WTWO            FCC     "two"
+0941 07c0 ff                                 FCB     $FF
+0942 07c1 74 68 72 65 65     WTHREE          FCC     "three"
+0943 07c6 ff                                 FCB     $FF
+0944 07c7 66 6f 75 72        WFOUR           FCC     "four"
+0945 07cb ff                                 FCB     $FF
+0946 07cc 66 69 76 65        WFIVE           FCC     "five"
+0947 07d0 ff                                 FCB     $FF
+0948 07d1 73 69 78           WSIX            FCC     "six"
+0949 07d4 ff                                 FCB     $FF
+0950 07d5 73 65 76 65 6e     WSEVEN          FCC     "seven"
+0951 07da ff                                 FCB     $FF
+0952 07db 65 69 67 68 74     WEIGHT          FCC     "eight"
+0953 07e0 ff                                 FCB     $FF
+0954 07e1 6e 69 6e 65        WNINE           FCC     "nine"
+0955 07e5 ff                                 FCB     $FF
+0956 07e6 74 65 6e           WTEN            FCC     "ten"
+0957 07e9 ff                                 FCB     $FF
+0958 07ea 65 6c 65 76 65 6e  WELEVEN         FCC     "eleven"
+0959 07f0 ff                                 FCB     $FF
+0960 07f1 74 77 65 6c 76 65  WTWELVE         FCC     "twelve"
+0961 07f7 ff                                 FCB     $FF
+0962 07f8 74 68 69 72 74 65  WTHIRTEEN       FCC     "thirteen"
+     65 6e
+0963 0800 ff                                 FCB     $FF; U
+0964 0801 66 6f 75 72 74 65  WFOURTEEN       FCC     "fourteen"
+     65 6e
+0965 0809 ff                                 FCB     $FF
+0966 080a 66 69 66 74 65 65  WFIFTEEN        FCC     "fifteen"
+     6e
+0967 0811 ff                                 FCB     $FF
+0968 0812 73 69 78 74 65 65  WSIXTEEN        FCC     "sixteen"
+     6e
+0969 0819 ff                                 FCB     $FF
+0970 081a 73 65 76 65 6e 74  WSEVENTEEN      FCC     "seventeen"
+     65 65 6e
+0971 0823 ff                                 FCB     $FF
+0972 0824 65 69 67 68 74 65  WEIGHTEEN       FCC     "eighteen"
+     65 6e
+0973 082c ff                                 FCB     $FF
+0974 082d 6e 69 6e 65 74 65  WNINETEEN       FCC     "nineteen"
+     65 6e
+0975 0835 ff                                 FCB     $FF
+0976 0836 74 77 65 6e 74 79  WTWENTY         FCC     "twenty"
+0977 083c ff                                 FCB     $FF
+0978                         
+0979                         
+0980                         ; A
+0981                         ; -----------------------------------------------------
 0982                         
-0983                         ; K
-0984                         ; -----------------------------------------------------
-0985 0977 6b 65 65 70        WKEEP           FCC    "keep"
-0986 097b ff                                 FCB    $FF
-0987 097c 6b 69 6e 64        WKIND           FCC    "kind"
-0988 0980 ff                                 FCB    $FF
-0989 0981 6b 6e 6f 77        WKNOW           FCC    "know"
-0990 0985 ff                                 FCB    $FF
-0991 0986 6b 6e 6f 77 6e     WKNOWN          FCC    "known"
-0992 098b ff                                 FCB    $FF
-0993                         
-0994                         ; L
-0995                         ; -----------------------------------------------------
-0996 098c 6c 61 72 67 65     WLARGE          FCC    "large"
-0997 0991 ff                                 FCB    $FF
-0998 0992 6c 61 73 74        WLAST           FCC    "last"
-0999 0996 ff                                 FCB    $FF
-1000 0997 6c 65 61 73 74     WLEAST          FCC    "least"
-1001 099c ff                                 FCB    $FF
-1002 099d 6c 65 73 73        WLESS           FCC    "less"
-1003 09a1 ff                                 FCB    $FF
-1004 09a2 6c 65 74 73        WLETS           FCC    "lets"
-1005 09a6 ff                                 FCB    $FF
-1006 09a7 6c 69 65           WLIE            FCC    "lie"
-1007 09aa ff                                 FCB    $FF
-1008 09ab 6c 69 66 65        WLIFE           FCC    "life"
-1009 09af ff                                 FCB    $FF
-1010 09b0 6c 69 6b 65        WLIKE           FCC    "like"
-1011 09b4 ff                                 FCB    $FF
-1012 09b5 6c 6f 6e 67 65 72  WLONGER         FCC    "longer"
-1013 09bb ff                                 FCB    $FF
-1014 09bc 6c 6f 6f 6b        WLOOK           FCC    "look"
-1015 09c0 ff                                 FCB    $FF
-1016 09c1 6c 6f 74           WLOT            FCC    "lot"
-1017 09c4 ff                                 FCB    $FF
-1018 09c5 6c 6f 75 64 65 72  WLOUDER         FCC    "louder"
-1019 09cb ff                                 FCB    $FF
-1020                         
+0983 083d 61                 WA              FCC    "a"
+0984 083e ff                                 FCB    $FF
+0985 083f 61 62 6f 75 74     WABOUT          FCC    "about"
+0986 0844 ff                                 FCB    $FF
+0987 0845 61 62 6f 76 65     WABOVE          FCC    "above"
+0988 084a ff                                 FCB    $FF
+0989 084b 61 63 63 65 70 74  WACCEPTABLE     FCC    "acceptable"
+     61 62 6c 65
+0990 0855 ff                                 FCB    $FF
+0991 0856 61 63 63 75 72 61  WACCURATE       FCC    "accurate"
+     74 65
+0992 085e ff                                 FCB    $FF
+0993 085f 61 63 74 75 61 6c  WACTUALLY       FCC    "actually"
+     6c 79
+0994 0867 ff                                 FCB    $FF
+0995 0868 61 67 61 69 6e     WAGAIN          FCC    "again"
+0996 086d ff                                 FCB    $FF
+0997 086e 61 6c 65 72 74 65  WALERTED        FCC    "alerted"
+     64
+0998 0875 ff                                 FCB    $FF
+0999 0876 61 6c 6c           WALL            FCC    "all"
+1000 0879 ff                                 FCB    $FF
+1001 087a 61 6c 77 61 79 73  WALWAYS         FCC    "always"
+1002 0880 ff                                 FCB    $FF
+1003 0881 61 6d              WAM             FCC    "am"
+1004 0883 ff                                 FCB    $FF
+1005 0884 61 6e 64           WAND            FCC    "and"
+1006 0887 ff                                 FCB    $FF
+1007 0888 61 6e 79           WANY            FCC    "any"
+1008 088b ff                                 FCB    $FF
+1009 088c 61 70 6f 6c 6f 67  WAPOLOGISE      FCC    "apologise"
+     69 73 65
+1010 0895 ff                                 FCB    $FF
+1011 0896 61 72 65           WARE            FCC    "are"
+1012 0899 ff                                 FCB    $FF
+1013 089a 61 73              WAS             FCC    "as"
+1014 089c ff                                 FCB    $FF
+1015 089d 61 73 6b 69 6e 67  WASKING         FCC    "asking"
+1016 08a3 ff                                 FCB    $FF
+1017 08a4 61 74              WAT             FCC    "at"
+1018 08a6 ff                                 FCB    $FF
+1019 08a7 61 76 65 72 61 67  WAVERAGE        FCC    "average"
+     65
+1020 08ae ff                                 FCB    $FF
 1021                         
 1022                         
-1023                         ; M
+1023                         ; B
 1024                         ; -----------------------------------------------------
-1025 09cc 6d 61 6b 65 73     WMAKES          FCC    "makes"
-1026 09d1 ff                                 FCB    $FF
-1027 09d2 6d 61 6b 69 6e 67  WMAKING         FCC    "making"
-1028 09d8 ff                                 FCB    $FF
-1029 09d9 6d 65              WME             FCC    "me"
-1030 09db ff                                 FCB    $FF
-1031 09dc 6d 6d 65 65 65 65  WMEAN           FCC    "mmeeeen"
-     6e
-1032 09e3 ff                                 FCB    $FF
-1033 09e4 6d 65 61 6e 69 6e  WMEANING        FCC    "meaning"
+1025                         
+1026 08af 62 61 64           WBAD            FCC    "bad"
+1027 08b2 ff                                 FCB    $FF
+1028 08b3 62 61 73 69 63 61  WBASICALLY      FCC    "basically"
+     6c 6c 79
+1029 08bc ff                                 FCB    $FF
+1030 08bd 62 65              WBE             FCC    "be"
+1031 08bf ff                                 FCB    $FF
+1032 08c0 62 65 61 72        WBEAR           FCC    "bear"
+1033 08c4 ff                                 FCB    $FF
+1034 08c5 62 65 65 6e        WBEEN           FCC    "been"
+1035 08c9 ff                                 FCB    $FF
+1036 08ca 62 65 67 67 69 6e  WBEGGING        FCC    "begging"
      67
-1034 09eb ff                                 FCB    $FF
-1035 09ec 6d 65 61 73 75 72  WMEASURED       FCC    "measured"
-     65 64
-1036 09f4 ff                                 FCB    $FF
-1037 09f5 6d 65 64 69 6f 63  WMEDIOCRITY     FCC    "mediocrity"
-     72 69 74 79
-1038 09ff ff                                 FCB    $FF
-1039 0a00 6d 65 65 65        WMEE            FCC    "meee"
-1040 0a04 ff                                 FCB    $FF
-1041 0a05 6d 65 6d 6f 72 79  WMEMORY         FCC    "memory"
-1042 0a0b ff                                 FCB    $FF
-1043 0a0c 6d 65 6e 74 69 6f  WMENTION        FCC    "mention"
-     6e
-1044 0a13 ff                                 FCB    $FF
-1045 0a14 6d 69 67 68 74     WMIGHT          FCC    "might"
-1046 0a19 ff                                 FCB    $FF
-1047 0a1a 6d 69 73 74 61 6b  WMISTAKE        FCC    "mistake"
-     65
-1048 0a21 ff                                 FCB    $FF
-1049 0a22 6d 6f 6d 65 6e 74  WMOMENT         FCC    "moment"
-1050 0a28 ff                                 FCB    $FF
-1051 0a29 6d 6f 6f 72 65     WMOORE          FCC    "moore"
-1052 0a2e ff                                 FCB    $FF
-1053 0a2f 6d 6f 72 65        WMORE           FCC    "more"
-1054 0a33 ff                                 FCB    $FF
-1055 0a34 6d 6f 73 74 6c 79  WMOSTLY         FCC    "mostly"
-1056 0a3a ff                                 FCB    $FF
-1057 0a3b 6d 6f 75 6e 74 61  WMOUNTAINS      FCC    "mountains"
-     69 6e 73
-1058 0a44 ff                                 FCB    $FF
-1059 0a45 6d 75 63 68        WMUCH           FCC    "much"
-1060 0a49 ff                                 FCB    $FF
-1061 0a4a 6d 75 73 63 6c 65  WMUSCLE         FCC    "muscle"
-1062 0a50 ff                                 FCB    $FF
-1063 0a51 6d 79              WMY             FCC    "my"
-1064 0a53 ff                                 FCB    $FF
-1065                         
-1066                         ; N
-1067                         ; -----------------------------------------------------
-1068 0a54 6e 61 70           WNAP            FCC    "nap"
-1069 0a57 ff                                 FCB    $FF
-1070 0a58 6e 65 65 64        WNEED           FCC    "need"
-1071 0a5c ff                                 FCB    $FF
-1072 0a5d 6e 65 69 74 68 65  WNEITHER        FCC    "neither"
-     72
-1073 0a64 ff                                 FCB    $FF
-1074 0a65 6e 65 77 73        WNEWS           FCC    "news"
-1075 0a69 ff                                 FCB    $FF
-1076 0a6a 6e 65 78 74        WNEXT           FCC    "next"
-1077 0a6e ff                                 FCB    $FF
-1078 0a6f 6e 69 63 65        WNICE           FCC    "nice"
-1079 0a73 ff                                 FCB    $FF
-1080 0a74 6e 6f              WNO             FCC    "no"
-1081 0a76 ff                                 FCB    $FF
-1082 0a77 6e 6f 62 6f 64 79  WNOBODY         FCC    "nobody"
-1083 0a7d ff                                 FCB    $FF
-1084 0a7e 6e 6f 6e 65        WNONE           FCC    "none"
-1085 0a82 ff                                 FCB    $FF
-1086 0a83 6e 6f 72           WNOR            FCC    "nor"
-1087 0a86 ff                                 FCB    $FF
-1088 0a87 6e 6f 72 6d 61 6c  WNORMAL         FCC    "normal"
-1089 0a8d ff                                 FCB    $FF
-1090 0a8e 6e 6f 74           WNOT            FCC    "not"
-1091 0a91 ff                                 FCB    $FF
-1092 0a92 6e 6f 74 68 69 6e  WNOTHING        FCC    "nothing"
-     67
-1093 0a99 ff                                 FCB    $FF
-1094                         
-1095                         ; O
-1096                         ; -----------------------------------------------------
-1097 0a9a 6f 66              WOF             FCC    "of"
-1098 0a9c ff                                 FCB    $FF
-1099 0a9d 6f 66 66           WOFF            FCC    "off"
-1100 0aa0 ff                                 FCB    $FF
-1101 0aa1 6f 68              WOH             FCC    "oh"
-1102 0aa3 ff                                 FCB    $FF
-1103 0aa4 6f 6b              WOK             FCC    "ok"
-1104 0aa6 ff                                 FCB    $FF
-1105 0aa7 6f 6c 64           WOLD            FCC    "old"
-1106 0aaa ff                                 FCB    $FF
-1107 0aab 6f 6e              WON             FCC    "on"
-1108 0aad ff                                 FCB    $FF
-1109 0aae 6f 6e 6c 79        WONLY           FCC    "only"
-1110 0ab2 ff                                 FCB    $FF
-1111 0ab3 6f 72              WOR             FCC    "or"
-1112 0ab5 ff                                 FCB    $FF
-1113 0ab6 6f 75 72           WOUR            FCC    "our"
-1114 0ab9 ff                                 FCB    $FF
-1115 0aba 6f 76 65 72 6c 6f  WOVERLOAD       FCC    "overload"
-     61 64
-1116 0ac2 ff                                 FCB    $FF
-1117                         
-1118                         ; P
-1119                         ; -----------------------------------------------------
-1120 0ac3 70 61 72 61 6d 65  WPARAMETERS     FCC    "parameters"
-     74 65 72 73
-1121 0acd ff                                 FCB    $FF
-1122 0ace 70 65 72 66 65 63  WPERFECTLY      FCC    "perfectly"
-     74 6c 79
-1123 0ad7 ff                                 FCB    $FF
-1124 0ad8 70 65 72 68 61 70  WPERHAPS        FCC    "perhaps"
-     73
-1125 0adf ff                                 FCB    $FF
-1126 0ae0 70 65 72 73 6f 6e  WPERSON         FCC    "person"
-1127 0ae6 ff                                 FCB    $FF
-1128 0ae7 70 69 63 6b 69 6e  WPICKING        FCC    "picking"
-     67
-1129 0aee ff                                 FCB    $FF
-1130 0aef 70 6c 61 6e 65 74  WPLANET         FCC    "planet"
-1131 0af5 ff                                 FCB    $FF
-1132 0af6 70 6c 61 6e 73     WPLANE          FCC    "plans"
-1133 0afb ff                                 FCB    $FF
-1134 0afc 70 6c 65 61 73 65  WPLEASE         FCC    "please"
-1135 0b02 ff                                 FCB    $FF
-1136 0b03 70 6f 69 6e 74 6c  WPOINTLESS      FCC    "pointless"
-     65 73 73
-1137 0b0c ff                                 FCB    $FF
-1138 0b0d 70 6f 73 73 69 62  WPOSSIBLE       FCC    "possible"
-     6c 65
-1139 0b15 ff                                 FCB    $FF
-1140 0b16 70 6f 73 73 69 62  WPOSSIBLY       FCC    "possibly"
-     6c 79
-1141 0b1e ff                                 FCB    $FF
-1142 0b1f 70 72 65 63 69 73  WPRECISELY      FCC    "precisely"
-     65 6c 79
-1143 0b28 ff                                 FCB    $FF
-1144 0b29 70 72 65 73 65 6e  WPRESENT        FCC    "present"
+1037 08d1 ff                                 FCB    $FF
+1038 08d2 62 65 68 69 6e 64  WBEHIND         FCC    "behind"
+1039 08d8 ff                                 FCB    $FF
+1040 08d9 62 65 69 6e 67     WBEING          FCC    "being"
+1041 08de ff                                 FCB    $FF
+1042 08df 62 65 73 74        WBEST           FCC    "best"
+1043 08e3 ff                                 FCB    $FF
+1044 08e4 62 69 73 63 75 69  WBISCUIT        FCC    "biscuit"
      74
-1145 0b30 ff                                 FCB    $FF
-1146 0b31 70 72 65 73 73 75  WPRESSURE       FCC    "pressure"
-     72 65
-1147 0b39 ff                                 FCB    $FF
-1148 0b3a 70 72 69 63 61 75  WPRECAUTION     FCC    "pricaution"
-     74 69 6f 6e
-1149 0b44 ff                                 FCB    $FF
-1150 0b45 70 72 6f 62 61 62  WPROBABLY       FCC    "probably"
-     6c 79
-1151 0b4d ff                                 FCB    $FF
-1152 0b4e 70 72 6f 62 6c 65  WPROBLEMS       FCC    "problems"
-     6d 73
-1153 0b56 ff                                 FCB    $FF
-1154 0b57 70 72 6f 75 64     WPROUD          FCC    "proud"
-1155 0b5c ff                                 FCB    $FF
-1156 0b5d 70 72 74 65 6e 64  WPRETEND        FCC    "prtend"
-1157 0b63 ff                                 FCB    $FF
-1158 0b64 70 75 74           WPUT            FCC    "put"
-1159 0b67 ff                                 FCB    $FF
-1160                         
-1161                         ; Q
-1162                         ; -----------------------------------------------------
-1163 0b68 71 75 65 73 74 69  WQUESTION       FCC    "question"
-     6f 6e
-1164 0b70 ff                                 FCB    $FF
-1165 0b71 71 75 69 74 65     WQUITE          FCC    "quite"
-1166 0b76 ff                                 FCB    $FF
-1167                         
-1168                         ; R
-1169                         ; -----------------------------------------------------
-1170                         
-1171 0b77 72 65 61 64 79     WREADY          FCC    "ready"
-1172 0b7c ff                                 FCB    $FF
-1173 0b7d 72 65 61 6c 6c 79  WREALLY         FCC    "really"
-1174 0b83 ff                                 FCB    $FF
-1175 0b84 72 65 66 65 72     WREFER          FCC    "refer"
-1176 0b89 ff                                 FCB    $FF
-1177 0b8a 72 65 66 75 73 65  WREFUSE         FCC    "refuse"
-1178 0b90 ff                                 FCB    $FF
-1179 0b91 72 65 69 6e 66 6f  WREINFORCING    FCC    "reinforcing"
-     72 63 69 6e 67
-1180 0b9c ff                                 FCB    $FF
-1181 0b9d 72 65 6d 65 6d 62  WREMEMBER       FCC    "remember"
-     65 72
-1182 0ba5 ff                                 FCB    $FF
-1183 0ba6 72 65 6d 6f 76 65  WREMOVE         FCC    "remove"
-1184 0bac ff                                 FCB    $FF
-1185 0bad 72 65 73 70 65 63  WRESPECTABLE    FCC    "respectable"
-     74 61 62 6c 65
-1186 0bb8 ff                                 FCB    $FF
-1187 0bb9 72 69 67 68 74     WRIGHT          FCC    "right"
-1188 0bbe ff                                 FCB    $FF
-1189 0bbf 72 6f 6f 6d        WROOM           FCC    "room"
-1190 0bc3 ff                                 FCB    $FF
-1191 0bc4 72 75 6e 6e 69 6e  WRUNNING        FCC    "running"
-     67
-1192 0bcb ff                                 FCB    $FF
-1193 0bcc 72 75 73 68        WRUSH           FCC    "rush"
-1194 0bd0 ff                                 FCB    $FF
-1195                         
-1196                         ; S
-1197                         ; -----------------------------------------------------
-1198 0bd1 73 61 69 64        WSAID           FCC    "said"
-1199 0bd5 ff                                 FCB    $FF
-1200 0bd6 73 61 6b 65 73     WSAKES          FCC    "sakes"
-1201 0bdb ff                                 FCB    $FF
-1202 0bdc 73 61 79           WSAY            FCC    "say"
-1203 0bdf ff                                 FCB    $FF
-1204 0be0 73 61 79 69 6e 67  WSAYING         FCC    "saying"
-1205 0be6 ff                                 FCB    $FF
-1206 0be7 73 63 69 65 6e 63  WSCIENCE        FCC    "science"
-     65
-1207 0bee ff                                 FCB    $FF
-1208 0bef 73 65 65           WSEA            FCC    "see"
-1209 0bf2 ff                                 FCB    $FF
-1210 0bf3 73 65 65 6e        WSEEN           FCC    "seen"
-1211 0bf7 ff                                 FCB    $FF
-1212 0bf8 73 65 72 76 65 72  WSERVER         FCC    "server"
-1213 0bfe ff                                 FCB    $FF
-1214 0bff 73 65 76 65 6e 74  WSEVENTY        FCC    "seventy"
-     79
-1215 0c06 ff                                 FCB    $FF
-1216 0c07 73 68 61 6c 6c     WSHALL          FCC    "shall"
-1217 0c0c ff                                 FCB    $FF
-1218 0c0d 73 68 6f 75 6c 64  WSHOULD         FCC    "should"
-1219 0c13 ff                                 FCB    $FF
-1220 0c14 73 69 67 6e        WSIGN           FCC    "sign"
-1221 0c18 ff                                 FCB    $FF
-1222 0c19 73 69 6d 75 6c 61  WSIMULATION     FCC    "simulation"
-     74 69 6f 6e
-1223 0c23 ff                                 FCB    $FF
-1224 0c24 73 69 6e 63 65     WSINCE          FCC    "since"
-1225 0c29 ff                                 FCB    $FF
-1226 0c2a 73 69 7a 65        WSIZE           FCC    "size"
-1227 0c2e ff                                 FCB    $FF
-1228 0c2f 73 6c 6f 77 6c 79  WSLOWLY         FCC    "slowly"
-1229 0c35 ff                                 FCB    $FF
-1230 0c36 73 6d 61 6c 6c     WSMALL          FCC    "small"
-1231 0c3b ff                                 FCB    $FF
-1232 0c3c 73 6f              WSO             FCC    "so"
-1233 0c3e ff                                 FCB    $FF
-1234 0c3f 73 6f 6c 69 64     WSOLID          FCC    "solid"
-1235 0c44 ff                                 FCB    $FF
-1236 0c45 73 6f 6d 65        WSOME           FCC    "some"
-1237 0c49 ff                                 FCB    $FF
-1238 0c4a 73 6f 6d 65 6f 6e  WSOMEONE        FCC    "someone"
-     65
-1239 0c51 ff                                 FCB    $FF
-1240 0c52 73 6f 6d 65 74 68  WSOMETHING      FCC    "something"
-     69 6e 67
-1241 0c5b ff                                 FCB    $FF
-1242 0c5c 73 6f 6d 65 74 69  WSOMETIME       FCC    "sometime"
-     6d 65
-1243 0c64 ff                                 FCB    $FF
-1244 0c65 73 6f 6d 65 74 69  WSOMETIMES      FCC    "sometimes"
-     6d 65 73
-1245 0c6e ff                                 FCB    $FF
-1246 0c6f 73 70 65 61 6b     WSPEAK          FCC    "speak"
-1247 0c74 ff                                 FCB    $FF
-1248 0c75 73 70 65 6e 64     WSPEND          FCC    "spend"
-1249 0c7a ff                                 FCB    $FF
-1250 0c7b 73 74 61 6e 64     WSTAND          FCC    "stand"
-1251 0c80 ff                                 FCB    $FF
-1252 0c81 73 74 61 74 69 73  WSTATISTICALLY  FCC    "statisticly"
-     74 69 63 6c 79
-1253 0c8c ff                                 FCB    $FF
-1254 0c8d 73 74 65 70        WSTEP           FCC    "step"
-1255 0c91 ff                                 FCB    $FF
-1256 0c92 73 74 65 70 70 65  WSTOPPED        FCC    "stepped"
+1045 08eb ff                                 FCB    $FF
+1046 08ec 62 6c 61 6d 65     WBLAME          FCC    "blame"
+1047 08f1 ff                                 FCB    $FF
+1048 08f2 62 6c 61 6d 65 64  WBLAMED         FCC    "blamed"
+1049 08f8 ff                                 FCB    $FF
+1050 08f9 62 6f 61 72 64 73  WBOARDS         FCC    "boards"
+1051 08ff ff                                 FCB    $FF
+1052 0900 62 6f 6e 65 73     WBONES          FCC    "bones"
+1053 0905 ff                                 FCB    $FF
+1054 0906 62 6f 6f 74 73     WBOOTS          FCC    "boots"
+1055 090b ff                                 FCB    $FF
+1056 090c 62 6f 72 69 6e 67  WBORING         FCC    "boring"
+1057 0912 ff                                 FCB    $FF
+1058 0913 62 6f 74 68        WBOTH           FCC    "both"
+1059 0917 ff                                 FCB    $FF
+1060 0918 62 72 61 63 65     WBRACE          FCC    "brace"
+1061 091d ff                                 FCB    $FF
+1062 091e 62 72 61 69 6e     WBRAIN          FCC    "brain"
+1063 0923 ff                                 FCB    $FF
+1064 0924 62 75 69 6c 74     WBUILT          FCC    "built"
+1065 0929 ff                                 FCB    $FF
+1066 092a 62 75 74           WBUT            FCC    "but"
+1067 092d ff                                 FCB    $FF
+1068 092e 62 79              WBY             FCC    "by"
+1069 0930 ff                                 FCB    $FF
+1070                         
+1071                         ; C
+1072                         ; -----------------------------------------------------
+1073                         
+1074 0931 63 61 6b 65        WCAKE           FCC    "cake"
+1075 0935 ff                                 FCB    $FF
+1076 0936 63 61 6c 63 75 6c  WCALCULATE      FCC    "calculate"
+     61 74 65
+1077 093f ff                                 FCB    $FF
+1078 0940 63 61 6c 6c        WCALL           FCC    "call"
+1079 0944 ff                                 FCB    $FF
+1080 0945 63 61 6c 6d        WCALM           FCC    "calm"
+1081 0949 ff                                 FCB    $FF
+1082 094a 63 61 6e           WCAN            FCC    "can"
+1083 094d ff                                 FCB    $FF
+1084 094e 63 61 6e 27 74     WCANT           FCC    "can't"
+1085 0953 ff                                 FCB    $FF
+1086 0954 63 61 70 61 63 69  WCAPACITY       FCC    "capacity"
+     74 79
+1087 095c ff                                 FCB    $FF
+1088 095d 63 61 72 72 79 69  WCARRYING       FCC    "carrying"
+     6e 67
+1089 0965 ff                                 FCB    $FF
+1090 0966 63 68 65 63 6b 65  WCHECKED        FCC    "checked"
      64
-1257 0c99 ff                                 FCB    $FF
-1258 0c9a 73 74 69 6c 6c     WSTILL          FCC    "still"
-1259 0c9f ff                                 FCB    $FF
-1260 0ca0 73 74 72 75 63 74  WSTRUCTURAL     FCC    "structural"
+1091 096d ff                                 FCB    $FF
+1092 096e 63 68 6f 69 63 65  WCHOICES        FCC    "choices"
+     73
+1093 0975 ff                                 FCB    $FF
+1094 0976 63 6c 65 76 65 72  WCLEVER         FCC    "clever"
+1095 097c ff                                 FCB    $FF
+1096 097d 63 6f 6c 6c 65 63  WCOLLECTED      FCC    "collected"
+     74 65 64
+1097 0986 ff                                 FCB    $FF
+1098 0987 63 6f 6d 70 6f 73  WCOMPOSING      FCC    "composing"
+     69 6e 67
+1099 0990 ff                                 FCB    $FF
+1100 0991 63 6f 6e 63 65 70  WCONCEPT        FCC    "concept"
+     74
+1101 0998 ff                                 FCB    $FF
+1102 0999 63 6f 6e 63 65 72  WCONCERNED      FCC    "concerned"
+     6e 65 64
+1103 09a2 ff                                 FCB    $FF
+1104 09a3 63 6f 6e 67 72 61  WCONGRATS       FCC    "congratulations"
+     74 75 6c 61 74 69
+     6f 6e 73
+1105 09b2 ff                                 FCB    $FF
+1106 09b3 63 6f 6e 73 69 64  WCONSIDERING    FCC    "considered"
+     65 72 65 64
+1107 09bd ff                                 FCB    $FF
+1108 09be 63 6f 72 72 65 63  WCORRECTLY      FCC    "correctly"
+     74 6c 79
+1109 09c7 ff                                 FCB    $FF
+1110 09c8 63 6f 75 6c 64     WCOULD          FCC    "could"
+1111 09cd ff                                 FCB    $FF
+1112 09ce 63 6f 75 6e 74 65  WCOUNTED        FCC    "counted"
+     64
+1113 09d5 ff                                 FCB    $FF
+1114                         
+1115                         ; D
+1116                         ; -----------------------------------------------------
+1117 09d6 64 61 79 73        WDAYS           FCC    "days"
+1118 09da ff                                 FCB    $FF
+1119 09db 64 65 61 6c 74     WDEALT          FCC    "dealt"
+1120 09e0 ff                                 FCB    $FF
+1121 09e1 64 65 65 70 6c 79  WDEEPLY         FCC    "deeply"
+1122 09e7 ff                                 FCB    $FF
+1123 09e8 64 65 73 69 67 6e  WDESIGNED       FCC    "designed"
+     65 64
+1124 09f0 ff                                 FCB    $FF
+1125 09f1 64 65 74 65 63 74  WDETECTED       FCC    "detected"
+     65 64
+1126 09f9 ff                                 FCB    $FF
+1127 09fa 64 69 64           WDID            FCC    "did"
+1128 09fd ff                                 FCB    $FF
+1129 09fe 64 69 64 6e 27 74  WDIDNT          FCC    "didn't"
+1130 0a04 ff                                 FCB    $FF
+1131 0a05 64 69 65 74 61 72  WDIETARY        FCC    "dietary"
+     79
+1132 0a0c ff                                 FCB    $FF
+1133 0a0d 64 69 73 61 70 70  WDISSAPOINTED   FCC    "disappointed"
+     6f 69 6e 74 65 64
+1134 0a19 ff                                 FCB    $FF
+1135 0a1a 64 69 73 61 70 70  WDISSAPOINTMENT FCC    "disappointment"
+     6f 69 6e 74 6d 65
+     6e 74
+1136 0a28 ff                                 FCB    $FF
+1137 0a29 64 69 73 73 69 6d  WDISSIMILAR     FCC    "dissimilar"
+     69 6c 61 72
+1138 0a33 ff                                 FCB    $FF
+1139 0a34 64 6f              WDO             FCC    "do"
+1140 0a36 ff                                 FCB    $FF
+1141 0a37 64 6f 63 74 6f 72  WDOCTOR         FCC    "doctor"
+1142 0a3d ff                                 FCB    $FF
+1143 0a3e 64 6f 69 6e 67     WDOING          FCC    "doing"
+1144 0a43 ff                                 FCB    $FF
+1145 0a44 64 6f 6e 27 74     WDONT           FCC    "don't"
+1146 0a49 ff                                 FCB    $FF
+1147 0a4a 64 6f 77 6e        WDOWN           FCC    "down"
+1148 0a4e ff                                 FCB    $FF
+1149 0a4f 64 72 65 61 64     WDREAD          FCC    "dread"
+1150 0a54 ff                                 FCB    $FF
+1151 0a55 64 72 65 61 6d     WDREAM          FCC    "dream"
+1152 0a5a ff                                 FCB    $FF
+1153 0a5b 64 75 65           WDUE            FCC    "due"
+1154 0a5e ff                                 FCB    $FF
+1155 0a5f 64 75 6c 6c 65 73  WDULLEST        FCC    "dullest"
+     74
+1156 0a66 ff                                 FCB    $FF
+1157 0a67 64 79 6f 64 65 73  WDIODES         FCC    "dyodes"
+1158 0a6d ff                                 FCB    $FF
+1159                         
+1160                         ; E
+1161                         ; -----------------------------------------------------
+1162 0a6e 65 61 74           WEAT            FCC    "eat"
+1163 0a71 ff                                 FCB    $FF
+1164 0a72 65 61 74 65 6e     WEATEN          FCC    "eaten"
+1165 0a77 ff                                 FCB    $FF
+1166 0a78 65 66 66 6f 72 74  WEFFORT         FCC    "effort"
+1167 0a7e ff                                 FCB    $FF
+1168 0a7f 65 69 74 68 65 72  WEITHER         FCC    "either"
+1169 0a85 ff                                 FCB    $FF
+1170 0a86 65 6d 6f 74 69 6f  WEMOTIONALLY    FCC    "emotionally"
+     6e 61 6c 6c 79
+1171 0a91 ff                                 FCB    $FF
+1172 0a92 65 6e 67 69 6e 65  WENGINEERS      FCC    "engineers"
+     65 72 73
+1173 0a9b ff                                 FCB    $FF
+1174 0a9c 65 6e 6f 75 67 68  WENOUGH         FCC    "enough"
+1175 0aa2 ff                                 FCB    $FF
+1176 0aa3 65 6e 74 69 72 65  WENTIRELY       FCC    "entirely"
+     6c 79
+1177 0aab ff                                 FCB    $FF
+1178 0aac 65 76 65 6e        WEVEN           FCC    "even"
+1179 0ab0 ff                                 FCB    $FF
+1180 0ab1 65 76 65 72        WEVER           FCC    "ever"
+1181 0ab5 ff                                 FCB    $FF
+1182 0ab6 65 76 65 72 79     WEVERY          FCC    "every"
+1183 0abb ff                                 FCB    $FF
+1184 0abc 65 78 61 63 74 6c  WEXACTLY        FCC    "exactly"
+     79
+1185 0ac3 ff                                 FCB    $FF
+1186 0ac4 65 78 63 65 70 74  WEXCEPTIONALLY  FCC    "exceptionally"
+     69 6f 6e 61 6c 6c
+     79
+1187 0ad1 ff                                 FCB    $FF
+1188 0ad2 65 78 63 69 74 69  EXCITING        FCC    "exciting"
+     6e 67
+1189 0ada ff                                 FCB    $FF
+1190 0adb 65 78 69 73 74     WEXIST          FCC    "exist"
+1191 0ae0 ff                                 FCB    $FF
+1192 0ae1 65 78 69 73 74 65  WEXISTENTIAL    FCC    "existential"
+     6e 74 69 61 6c
+1193 0aec ff                                 FCB    $FF
+1194 0aed 65 78 70 65 63 74  WEXPECTED       FCC    "expected"
+     65 64
+1195 0af5 ff                                 FCB    $FF
+1196                         
+1197                         ; F
+1198                         ; -----------------------------------------------------
+1199 0af6 66 61 75 6c 74     WFAULT          FCC    "fault"
+1200 0afb ff                                 FCB    $FF
+1201 0afc 66 65 65 6c 73     WFEELS          FCC    "feels"
+1202 0b01 ff                                 FCB    $FF
+1203 0b02 66 69 64 67 65 74  WFIDGET         FCC    "fidget"
+1204 0b08 ff                                 FCB    $FF
+1205 0b09 66 69 6e 65        WFINE           FCC    "fine"
+1206 0b0d ff                                 FCB    $FF
+1207 0b0e 66 6f 6f 74        WFOOT           FCC    "foot"
+1208 0b12 ff                                 FCB    $FF
+1209 0b13 66 6f 72           WFOR            FCC    "for"
+1210 0b16 ff                                 FCB    $FF
+1211 0b17 66 6f 72 74 79     WFORTY          FCC    "forty"
+1212 0b1c ff                                 FCB    $FF
+1213 0b1d 66 72 69 64 61 79  WFRIDAY         FCC    "friday"
+1214 0b23 ff                                 FCB    $FF
+1215 0b24 66 72 6f 6d        WFROM           FCC    "from"
+1216 0b28 ff                                 FCB    $FF
+1217 0b29 66 75 6c 6c        WFULL           FCC    "full"
+1218 0b2d ff                                 FCB    $FF
+1219 0b2e 66 75 6e 6e 79     WFUNNY          FCC    "funny"
+1220 0b33 ff                                 FCB    $FF
+1221                         
+1222                         ; G
+1223                         ; -----------------------------------------------------
+1224 0b34 67 69 76 65        WGIVE           FCC    "give"
+1225 0b38 ff                                 FCB    $FF
+1226 0b39 67 6f 69 6e 67     WGOING          FCC    "going"
+1227 0b3e ff                                 FCB    $FF
+1228 0b3f 67 6f 6f 64        WGOOD           FCC    "good"
+1229 0b43 ff                                 FCB    $FF
+1230 0b44 67 72 61 76 69 74  WGRAVITY        FCC    "gravity"
+     79
+1231 0b4b ff                                 FCB    $FF
+1232 0b4c 67 72 65 61 74     WGREAT          FCC    "great"
+1233 0b51 ff                                 FCB    $FF
+1234 0b52 67 75 65 73 73 69  WGUESSING       FCC    "guessing"
+     6e 67
+1235 0b5a ff                                 FCB    $FF
+1236                         
+1237                         ; H
+1238                         ; -----------------------------------------------------
+1239 0b5b 68 61 6e 64 6c 65  WHANDLE         FCC    "handle"
+1240 0b61 ff                                 FCB    $FF
+1241 0b62 68 61 72 64        WHARD           FCC    "hard"
+1242 0b66 ff                                 FCB    $FF
+1243 0b67 68 61 76 65        WHAVE           FCC    "have"
+1244 0b6b ff                                 FCB    $FF
+1245 0b6c 68 61 76 69 6e 67  WHAVING         FCC    "having"
+1246 0b72 ff                                 FCB    $FF
+1247 0b73 68 65 61 6c 74 68  WHEALTHY        FCC    "healthy"
+     79
+1248 0b7a ff                                 FCB    $FF
+1249 0b7b 68 65 61 76 79     WHEAVY          FCC    "heavy"
+1250 0b80 ff                                 FCB    $FF
+1251 0b81 68 65 6c 70        WHELP           FCC    "help"
+1252 0b85 ff                                 FCB    $FF
+1253 0b86 68 65 6c 70 73     WHELPS          FCC    "helps"
+1254 0b8b ff                                 FCB    $FF
+1255 0b8c 68 65 72 65        WHERE           FCC    "here"
+1256 0b90 ff                                 FCB    $FF
+1257 0b91 68 6f 6c 79        WHOLY           FCC    "holy"
+1258 0b95 ff                                 FCB    $FF
+1259 0b96 68 6f 70 69 6e 67  WHOPING         FCC    "hoping"
+1260 0b9c ff                                 FCB    $FF
+1261 0b9d 68 6f 74           WHOT            FCC    "hot"
+1262 0ba0 ff                                 FCB    $FF
+1263 0ba1 68 75 6d 61 6e     WHUMAN          FCC    "human"
+1264 0ba6 ff                                 FCB    $FF
+1265 0ba7 68 75 72 74        WHURT           FCC    "hurt"
+1266 0bab ff                                 FCB    $FF
+1267                         
+1268                         ; I
+1269                         ; -----------------------------------------------------
+1270 0bac 69                 WI              FCC    "i"
+1271 0bad ff                                 FCB    $FF
+1272 0bae 69 27 64           WID             FCC    "i'd"
+1273 0bb1 ff                                 FCB    $FF
+1274 0bb2 69 27 6c 6c        WILL            FCC    "i'll"
+1275 0bb6 ff                                 FCB    $FF
+1276 0bb7 69 27 6d           WIM             FCC    "i'm"
+1277 0bba ff                                 FCB    $FF
+1278 0bbb 69 27 76 65        WIVE            FCC    "i've"
+1279 0bbf ff                                 FCB    $FF
+1280 0bc0 69 66              WIF             FCC    "if"
+1281 0bc2 ff                                 FCB    $FF
+1282 0bc3 69 6d 70 72 65 73  WIMPRESSED      FCC    "impressed"
+     73 65 64
+1283 0bcc ff                                 FCB    $FF
+1284 0bcd 69 6d 70 72 65 73  WIMPRESSIVE     FCC    "impressive"
+     73 69 76 65
+1285 0bd7 ff                                 FCB    $FF
+1286 0bd8 69 6e              WIN             FCC    "in"
+1287 0bda ff                                 FCB    $FF
+1288 0bdb 69 6e 63 6c 75 64  WINCLUDING      FCC    "including"
+     69 6e 67
+1289 0be4 ff                                 FCB    $FF
+1290 0be5 69 6e 66 6c 75 65  WINFLUENCE      FCC    "influence"
+     6e 63 65
+1291 0bee ff                                 FCB    $FF
+1292 0bef 69 6e 74 65 6c 6c  WINTELLIGENCE   FCC    "intelligence"
+     69 67 65 6e 63 65
+1293 0bfb ff                                 FCB    $FF
+1294 0bfc 69 6e 74 65 72 65  WINTERESTING    FCC    "interesting"
+     73 74 69 6e 67
+1295 0c07 ff                                 FCB    $FF
+1296 0c08 69 73              WIS             FCC    "is"
+1297 0c0a ff                                 FCB    $FF
+1298 0c0b 69 73 73           WISS            FCC    "iss"
+1299 0c0e ff                                 FCB    $FF
+1300 0c0f 69 74              WIT             FCC    "it"
+1301 0c11 ff                                 FCB    $FF
+1302 0c12 69 74 73           WITS            FCC    "its"
+1303 0c15 ff                                 FCB    $FF
+1304                         
+1305                         ; J
+1306                         ; -----------------------------------------------------
+1307 0c16 6a 6f 6b 65 73     WJOKES          FCC    "jokes"
+1308 0c1b ff                                 FCB    $FF
+1309 0c1c 6a 75 64 67 69 6e  WJUDGING        FCC    "judging"
+     67
+1310 0c23 ff                                 FCB    $FF
+1311 0c24 6a 75 73 74        WJUST           FCC    "just"
+1312 0c28 ff                                 FCB    $FF
+1313                         
+1314                         ; K
+1315                         ; -----------------------------------------------------
+1316 0c29 6b 65 65 70        WKEEP           FCC    "keep"
+1317 0c2d ff                                 FCB    $FF
+1318 0c2e 6b 69 6e 64        WKIND           FCC    "kind"
+1319 0c32 ff                                 FCB    $FF
+1320 0c33 6b 6e 6f 77        WKNOW           FCC    "know"
+1321 0c37 ff                                 FCB    $FF
+1322 0c38 6b 6e 6f 77 6e     WKNOWN          FCC    "known"
+1323 0c3d ff                                 FCB    $FF
+1324                         
+1325                         ; L
+1326                         ; -----------------------------------------------------
+1327 0c3e 6c 61 72 67 65     WLARGE          FCC    "large"
+1328 0c43 ff                                 FCB    $FF
+1329 0c44 6c 61 73 74        WLAST           FCC    "last"
+1330 0c48 ff                                 FCB    $FF
+1331 0c49 6c 65 61 73 74     WLEAST          FCC    "least"
+1332 0c4e ff                                 FCB    $FF
+1333 0c4f 6c 65 73 73        WLESS           FCC    "less"
+1334 0c53 ff                                 FCB    $FF
+1335 0c54 6c 65 74 73        WLETS           FCC    "lets"
+1336 0c58 ff                                 FCB    $FF
+1337 0c59 6c 69 65           WLIE            FCC    "lie"
+1338 0c5c ff                                 FCB    $FF
+1339 0c5d 6c 69 66 65        WLIFE           FCC    "life"
+1340 0c61 ff                                 FCB    $FF
+1341 0c62 6c 69 6b 65        WLIKE           FCC    "like"
+1342 0c66 ff                                 FCB    $FF
+1343 0c67 6c 6f 6e 67 65 72  WLONGER         FCC    "longer"
+1344 0c6d ff                                 FCB    $FF
+1345 0c6e 6c 6f 6f 6b        WLOOK           FCC    "look"
+1346 0c72 ff                                 FCB    $FF
+1347 0c73 6c 6f 74           WLOT            FCC    "lot"
+1348 0c76 ff                                 FCB    $FF
+1349 0c77 6c 6f 75 64 65 72  WLOUDER         FCC    "louder"
+1350 0c7d ff                                 FCB    $FF
+1351                         
+1352                         
+1353                         
+1354                         ; M
+1355                         ; -----------------------------------------------------
+1356 0c7e 6d 61 6b 65 73     WMAKES          FCC    "makes"
+1357 0c83 ff                                 FCB    $FF
+1358 0c84 6d 61 6b 69 6e 67  WMAKING         FCC    "making"
+1359 0c8a ff                                 FCB    $FF
+1360 0c8b 6d 65              WME             FCC    "me"
+1361 0c8d ff                                 FCB    $FF
+1362 0c8e 6d 6d 65 65 65 65  WMEAN           FCC    "mmeeeen"
+     6e
+1363 0c95 ff                                 FCB    $FF
+1364 0c96 6d 65 61 6e 69 6e  WMEANING        FCC    "meaning"
+     67
+1365 0c9d ff                                 FCB    $FF
+1366 0c9e 6d 65 61 73 75 72  WMEASURED       FCC    "measured"
+     65 64
+1367 0ca6 ff                                 FCB    $FF
+1368 0ca7 6d 65 64 69 6f 63  WMEDIOCRITY     FCC    "mediocrity"
+     72 69 74 79
+1369 0cb1 ff                                 FCB    $FF
+1370 0cb2 6d 65 65 65        WMEE            FCC    "meee"
+1371 0cb6 ff                                 FCB    $FF
+1372 0cb7 6d 65 6d 6f 72 79  WMEMORY         FCC    "memory"
+1373 0cbd ff                                 FCB    $FF
+1374 0cbe 6d 65 6e 74 69 6f  WMENTION        FCC    "mention"
+     6e
+1375 0cc5 ff                                 FCB    $FF
+1376 0cc6 6d 69 67 68 74     WMIGHT          FCC    "might"
+1377 0ccb ff                                 FCB    $FF
+1378 0ccc 6d 69 73 74 61 6b  WMISTAKE        FCC    "mistake"
+     65
+1379 0cd3 ff                                 FCB    $FF
+1380 0cd4 6d 6f 6d 65 6e 74  WMOMENT         FCC    "moment"
+1381 0cda ff                                 FCB    $FF
+1382 0cdb 6d 6f 6f 72 65     WMOORE          FCC    "moore"
+1383 0ce0 ff                                 FCB    $FF
+1384 0ce1 6d 6f 72 65        WMORE           FCC    "more"
+1385 0ce5 ff                                 FCB    $FF
+1386 0ce6 6d 6f 73 74 6c 79  WMOSTLY         FCC    "mostly"
+1387 0cec ff                                 FCB    $FF
+1388 0ced 6d 6f 75 6e 74 61  WMOUNTAINS      FCC    "mountains"
+     69 6e 73
+1389 0cf6 ff                                 FCB    $FF
+1390 0cf7 6d 75 63 68        WMUCH           FCC    "much"
+1391 0cfb ff                                 FCB    $FF
+1392 0cfc 6d 75 73 63 6c 65  WMUSCLE         FCC    "muscle"
+1393 0d02 ff                                 FCB    $FF
+1394 0d03 6d 79              WMY             FCC    "my"
+1395 0d05 ff                                 FCB    $FF
+1396                         
+1397                         ; N
+1398                         ; -----------------------------------------------------
+1399 0d06 6e 61 70           WNAP            FCC    "nap"
+1400 0d09 ff                                 FCB    $FF
+1401 0d0a 6e 65 65 64        WNEED           FCC    "need"
+1402 0d0e ff                                 FCB    $FF
+1403 0d0f 6e 65 69 74 68 65  WNEITHER        FCC    "neither"
+     72
+1404 0d16 ff                                 FCB    $FF
+1405 0d17 6e 65 77 73        WNEWS           FCC    "news"
+1406 0d1b ff                                 FCB    $FF
+1407 0d1c 6e 65 78 74        WNEXT           FCC    "next"
+1408 0d20 ff                                 FCB    $FF
+1409 0d21 6e 69 63 65        WNICE           FCC    "nice"
+1410 0d25 ff                                 FCB    $FF
+1411 0d26 6e 6f              WNO             FCC    "no"
+1412 0d28 ff                                 FCB    $FF
+1413 0d29 6e 6f 62 6f 64 79  WNOBODY         FCC    "nobody"
+1414 0d2f ff                                 FCB    $FF
+1415 0d30 6e 6f 6e 65        WNONE           FCC    "none"
+1416 0d34 ff                                 FCB    $FF
+1417 0d35 6e 6f 72           WNOR            FCC    "nor"
+1418 0d38 ff                                 FCB    $FF
+1419 0d39 6e 6f 72 6d 61 6c  WNORMAL         FCC    "normal"
+1420 0d3f ff                                 FCB    $FF
+1421 0d40 6e 6f 74           WNOT            FCC    "not"
+1422 0d43 ff                                 FCB    $FF
+1423 0d44 6e 6f 74 68 69 6e  WNOTHING        FCC    "nothing"
+     67
+1424 0d4b ff                                 FCB    $FF
+1425                         
+1426                         ; O
+1427                         ; -----------------------------------------------------
+1428 0d4c 6f 66              WOF             FCC    "of"
+1429 0d4e ff                                 FCB    $FF
+1430 0d4f 6f 66 66           WOFF            FCC    "off"
+1431 0d52 ff                                 FCB    $FF
+1432 0d53 6f 68              WOH             FCC    "oh"
+1433 0d55 ff                                 FCB    $FF
+1434 0d56 6f 6b              WOK             FCC    "ok"
+1435 0d58 ff                                 FCB    $FF
+1436 0d59 6f 6c 64           WOLD            FCC    "old"
+1437 0d5c ff                                 FCB    $FF
+1438 0d5d 6f 6e              WON             FCC    "on"
+1439 0d5f ff                                 FCB    $FF
+1440 0d60 6f 6e 6c 79        WONLY           FCC    "only"
+1441 0d64 ff                                 FCB    $FF
+1442 0d65 6f 72              WOR             FCC    "or"
+1443 0d67 ff                                 FCB    $FF
+1444 0d68 6f 75 72           WOUR            FCC    "our"
+1445 0d6b ff                                 FCB    $FF
+1446 0d6c 6f 76 65 72 6c 6f  WOVERLOAD       FCC    "overload"
+     61 64
+1447 0d74 ff                                 FCB    $FF
+1448                         
+1449                         ; P
+1450                         ; -----------------------------------------------------
+1451 0d75 70 61 72 61 6d 65  WPARAMETERS     FCC    "parameters"
+     74 65 72 73
+1452 0d7f ff                                 FCB    $FF
+1453 0d80 70 65 72 66 65 63  WPERFECTLY      FCC    "perfectly"
+     74 6c 79
+1454 0d89 ff                                 FCB    $FF
+1455 0d8a 70 65 72 68 61 70  WPERHAPS        FCC    "perhaps"
+     73
+1456 0d91 ff                                 FCB    $FF
+1457 0d92 70 65 72 73 6f 6e  WPERSON         FCC    "person"
+1458 0d98 ff                                 FCB    $FF
+1459 0d99 70 69 63 6b 69 6e  WPICKING        FCC    "picking"
+     67
+1460 0da0 ff                                 FCB    $FF
+1461 0da1 70 6c 61 6e 65 74  WPLANET         FCC    "planet"
+1462 0da7 ff                                 FCB    $FF
+1463 0da8 70 6c 61 6e 73     WPLANS          FCC    "plans"
+1464 0dad ff                                 FCB    $FF
+1465 0dae 70 6c 65 61 73 65  WPLEASE         FCC    "please"
+1466 0db4 ff                                 FCB    $FF
+1467 0db5 70 6f 69 6e 74 6c  WPOINTLESS      FCC    "pointless"
+     65 73 73
+1468 0dbe ff                                 FCB    $FF
+1469 0dbf 70 6f 73 73 69 62  WPOSSIBLE       FCC    "possible"
+     6c 65
+1470 0dc7 ff                                 FCB    $FF
+1471 0dc8 70 6f 73 73 69 62  WPOSSIBLY       FCC    "possibly"
+     6c 79
+1472 0dd0 ff                                 FCB    $FF
+1473 0dd1 70 72 65 63 69 73  WPRECISELY      FCC    "precisely"
+     65 6c 79
+1474 0dda ff                                 FCB    $FF
+1475 0ddb 70 72 65 73 65 6e  WPRESENT        FCC    "present"
+     74
+1476 0de2 ff                                 FCB    $FF
+1477 0de3 70 72 65 73 73 75  WPRESSURE       FCC    "pressure"
+     72 65
+1478 0deb ff                                 FCB    $FF
+1479 0dec 70 72 69 63 61 75  WPRECAUTION     FCC    "pricaution"
+     74 69 6f 6e
+1480 0df6 ff                                 FCB    $FF
+1481 0df7 70 72 6f 62 61 62  WPROBABLY       FCC    "probably"
+     6c 79
+1482 0dff ff                                 FCB    $FF
+1483 0e00 70 72 6f 62 6c 65  WPROBLEMS       FCC    "problems"
+     6d 73
+1484 0e08 ff                                 FCB    $FF
+1485 0e09 70 72 6f 75 64     WPROUD          FCC    "proud"
+1486 0e0e ff                                 FCB    $FF
+1487 0e0f 70 72 74 65 6e 64  WPRETEND        FCC    "prtend"
+1488 0e15 ff                                 FCB    $FF
+1489 0e16 70 75 74           WPUT            FCC    "put"
+1490 0e19 ff                                 FCB    $FF
+1491                         
+1492                         ; Q
+1493                         ; -----------------------------------------------------
+1494 0e1a 71 75 65 73 74 69  WQUESTION       FCC    "question"
+     6f 6e
+1495 0e22 ff                                 FCB    $FF
+1496 0e23 71 75 69 74 65     WQUITE          FCC    "quite"
+1497 0e28 ff                                 FCB    $FF
+1498                         
+1499                         ; R
+1500                         ; -----------------------------------------------------
+1501                         
+1502 0e29 72 65 61 64 79     WREADY          FCC    "ready"
+1503 0e2e ff                                 FCB    $FF
+1504 0e2f 72 65 61 6c 6c 79  WREALLY         FCC    "really"
+1505 0e35 ff                                 FCB    $FF
+1506 0e36 72 65 66 65 72     WREFER          FCC    "refer"
+1507 0e3b ff                                 FCB    $FF
+1508 0e3c 72 65 66 75 73 65  WREFUSE         FCC    "refuse"
+1509 0e42 ff                                 FCB    $FF
+1510 0e43 72 65 69 6e 66 6f  WREINFORCING    FCC    "reinforcing"
+     72 63 69 6e 67
+1511 0e4e ff                                 FCB    $FF
+1512 0e4f 72 65 6d 65 6d 62  WREMEMBER       FCC    "remember"
+     65 72
+1513 0e57 ff                                 FCB    $FF
+1514 0e58 72 65 6d 6f 76 65  WREMOVE         FCC    "remove"
+1515 0e5e ff                                 FCB    $FF
+1516 0e5f 72 65 73 70 65 63  WRESPECTABLE    FCC    "respectable"
+     74 61 62 6c 65
+1517 0e6a ff                                 FCB    $FF
+1518 0e6b 72 69 67 68 74     WRIGHT          FCC    "right"
+1519 0e70 ff                                 FCB    $FF
+1520 0e71 72 6f 6f 6d        WROOM           FCC    "room"
+1521 0e75 ff                                 FCB    $FF
+1522 0e76 72 75 6e 6e 69 6e  WRUNNING        FCC    "running"
+     67
+1523 0e7d ff                                 FCB    $FF
+1524 0e7e 72 75 73 68        WRUSH           FCC    "rush"
+1525 0e82 ff                                 FCB    $FF
+1526                         
+1527                         ; S
+1528                         ; -----------------------------------------------------
+1529 0e83 73 61 69 64        WSAID           FCC    "said"
+1530 0e87 ff                                 FCB    $FF
+1531 0e88 73 61 6b 65 73     WSAKES          FCC    "sakes"
+1532 0e8d ff                                 FCB    $FF
+1533 0e8e 73 61 79           WSAY            FCC    "say"
+1534 0e91 ff                                 FCB    $FF
+1535 0e92 73 61 79 69 6e 67  WSAYING         FCC    "saying"
+1536 0e98 ff                                 FCB    $FF
+1537 0e99 73 63 69 65 6e 63  WSCIENCE        FCC    "science"
+     65
+1538 0ea0 ff                                 FCB    $FF
+1539 0ea1 73 65 65           WSEA            FCC    "see"
+1540 0ea4 ff                                 FCB    $FF
+1541 0ea5 73 65 65 6e        WSEEN           FCC    "seen"
+1542 0ea9 ff                                 FCB    $FF
+1543 0eaa 73 65 72 76 65 72  WSERVER         FCC    "server"
+1544 0eb0 ff                                 FCB    $FF
+1545 0eb1 73 65 76 65 6e 74  WSEVENTY        FCC    "seventy"
+     79
+1546 0eb8 ff                                 FCB    $FF
+1547 0eb9 73 68 61 6c 6c     WSHALL          FCC    "shall"
+1548 0ebe ff                                 FCB    $FF
+1549 0ebf 73 68 6f 75 6c 64  WSHOULD         FCC    "should"
+1550 0ec5 ff                                 FCB    $FF
+1551 0ec6 73 69 67 6e        WSIGN           FCC    "sign"
+1552 0eca ff                                 FCB    $FF
+1553 0ecb 73 69 6d 75 6c 61  WSIMULATION     FCC    "simulation"
+     74 69 6f 6e
+1554 0ed5 ff                                 FCB    $FF
+1555 0ed6 73 69 6e 63 65     WSINCE          FCC    "since"
+1556 0edb ff                                 FCB    $FF
+1557 0edc 73 69 7a 65        WSIZE           FCC    "size"
+1558 0ee0 ff                                 FCB    $FF
+1559 0ee1 73 6c 6f 77 6c 79  WSLOWLY         FCC    "slowly"
+1560 0ee7 ff                                 FCB    $FF
+1561 0ee8 73 6d 61 6c 6c     WSMALL          FCC    "small"
+1562 0eed ff                                 FCB    $FF
+1563 0eee 73 6f              WSO             FCC    "so"
+1564 0ef0 ff                                 FCB    $FF
+1565 0ef1 73 6f 6c 69 64     WSOLID          FCC    "solid"
+1566 0ef6 ff                                 FCB    $FF
+1567 0ef7 73 6f 6d 65        WSOME           FCC    "some"
+1568 0efb ff                                 FCB    $FF
+1569 0efc 73 6f 6d 65 6f 6e  WSOMEONE        FCC    "someone"
+     65
+1570 0f03 ff                                 FCB    $FF
+1571 0f04 73 6f 6d 65 74 68  WSOMETHING      FCC    "something"
+     69 6e 67
+1572 0f0d ff                                 FCB    $FF
+1573 0f0e 73 6f 6d 65 74 69  WSOMETIME       FCC    "sometime"
+     6d 65
+1574 0f16 ff                                 FCB    $FF
+1575 0f17 73 6f 6d 65 74 69  WSOMETIMES      FCC    "sometimes"
+     6d 65 73
+1576 0f20 ff                                 FCB    $FF
+1577 0f21 73 70 65 61 6b     WSPEAK          FCC    "speak"
+1578 0f26 ff                                 FCB    $FF
+1579 0f27 73 70 65 6e 64     WSPEND          FCC    "spend"
+1580 0f2c ff                                 FCB    $FF
+1581 0f2d 73 74 61 6e 64     WSTAND          FCC    "stand"
+1582 0f32 ff                                 FCB    $FF
+1583 0f33 73 74 61 74 69 73  WSTATISTICALLY  FCC    "statisticly"
+     74 69 63 6c 79
+1584 0f3e ff                                 FCB    $FF
+1585 0f3f 73 74 65 70        WSTEP           FCC    "step"
+1586 0f43 ff                                 FCB    $FF
+1587 0f44 73 74 65 70 70 65  WSTOPPED        FCC    "stepped"
+     64
+1588 0f4b ff                                 FCB    $FF
+1589 0f4c 73 74 69 6c 6c     WSTILL          FCC    "still"
+1590 0f51 ff                                 FCB    $FF
+1591 0f52 73 74 72 75 63 74  WSTRUCTURAL     FCC    "structural"
      75 72 61 6c
-1261 0caa ff                                 FCB    $FF
-1262 0cab 73 74 72 75 63 74  WSTRUCTURALLY   FCC    "structurally"
+1592 0f5c ff                                 FCB    $FF
+1593 0f5d 73 74 72 75 63 74  WSTRUCTURALLY   FCC    "structurally"
      75 72 61 6c 6c 79
-1263 0cb7 ff                                 FCB    $FF
-1264 0cb8 73 75 62 73 74 61  WSUBSTANTIALLY  FCC    "substantially"
+1594 0f69 ff                                 FCB    $FF
+1595 0f6a 73 75 62 73 74 61  WSUBSTANTIALLY  FCC    "substantially"
      6e 74 69 61 6c 6c
      79
-1265 0cc5 ff                                 FCB    $FF
-1266 0cc6 73 75 70 70 6f 73  WSUPPOSE        FCC    "suppose"
+1596 0f77 ff                                 FCB    $FF
+1597 0f78 73 75 70 70 6f 73  WSUPPOSE        FCC    "suppose"
      65
-1267 0ccd ff                                 FCB    $FF
-1268 0cce 73 75 72 65        WSURE           FCC    "sure"
-1269 0cd2 ff                                 FCB    $FF
-1270 0cd3 73 79 73 74 65 6d  WSYSTEM         FCC    "system"
-1271 0cd9 ff                                 FCB    $FF
-1272                         
-1273                         ; T
-1274                         ; -----------------------------------------------------
-1275 0cda 74 61 6b 65        WTAKE           FCC    "take"
-1276 0cde ff                                 FCB    $FF
-1277 0cdf 74 61 6c 6c        WTALL           FCC    "tall"
-1278 0ce3 ff                                 FCB    $FF
-1279 0ce4 74 65 6c 65 70 72  WTELEPRINTER    FCC    "teleprinter"
+1598 0f7f ff                                 FCB    $FF
+1599 0f80 73 75 72 65        WSURE           FCC    "sure"
+1600 0f84 ff                                 FCB    $FF
+1601 0f85 73 79 73 74 65 6d  WSYSTEM         FCC    "system"
+1602 0f8b ff                                 FCB    $FF
+1603                         
+1604                         ; T
+1605                         ; -----------------------------------------------------
+1606 0f8c 74 61 6b 65        WTAKE           FCC    "take"
+1607 0f90 ff                                 FCB    $FF
+1608 0f91 74 61 6c 6c        WTALL           FCC    "tall"
+1609 0f95 ff                                 FCB    $FF
+1610 0f96 74 65 6c 65 70 72  WTELEPRINTER    FCC    "teleprinter"
      69 6e 74 65 72
-1280 0cef ff                                 FCB    $FF
-1281 0cf0 74 65 6c 6c 73     WTELLS          FCC    "tells"
-1282 0cf5 ff                                 FCB    $FF
-1283 0cf6 74 65 72 72 69 62  WTERRIBLE       FCC    "terrible"
+1611 0fa1 ff                                 FCB    $FF
+1612 0fa2 74 65 6c 6c 73     WTELLS          FCC    "tells"
+1613 0fa7 ff                                 FCB    $FF
+1614 0fa8 74 65 72 72 69 62  WTERRIBLE       FCC    "terrible"
      6c 65
-1284 0cfe ff                                 FCB    $FF
-1285 0cff 74 68 61 6e        WTHAN           FCC    "than"
-1286 0d03 ff                                 FCB    $FF
-1287 0d04 74 68 61 74        WTHAT           FCC    "that"
-1288 0d08 ff                                 FCB    $FF
-1289 0d09 74 68 61 74 73     WTHATS          FCC    "thats"
-1290 0d0e ff                                 FCB    $FF
-1291 0d0f 74 68 65           WTHE            FCC    "the"
-1292 0d12 ff                                 FCB    $FF
-1293 0d13 74 68 65 6d        WTHEN           FCC    "them"
-1294 0d17 ff                                 FCB    $FF
-1295 0d18 74 68 69 6e 67 73  WTHINGS         FCC    "things"
-1296 0d1e ff                                 FCB    $FF
-1297 0d1f 74 68 69 6e 6b     WTHINK          FCC    "think"
-1298 0d24 ff                                 FCB    $FF
-1299 0d25 74 68 69 6e 6b 69  WTHINKING       FCC    "thinking"
+1615 0fb0 ff                                 FCB    $FF
+1616 0fb1 74 68 61 6e        WTHAN           FCC    "than"
+1617 0fb5 ff                                 FCB    $FF
+1618 0fb6 74 68 61 74        WTHAT           FCC    "that"
+1619 0fba ff                                 FCB    $FF
+1620 0fbb 74 68 61 74 73     WTHATS          FCC    "thats"
+1621 0fc0 ff                                 FCB    $FF
+1622 0fc1 74 68 65           WTHE            FCC    "the"
+1623 0fc4 ff                                 FCB    $FF
+1624 0fc5 74 68 65 6d        WTHEM           FCC    "them"
+1625 0fc9 ff                                 FCB    $FF
+1626 0fca 74 68 69 6e 67 73  WTHINGS         FCC    "things"
+1627 0fd0 ff                                 FCB    $FF
+1628 0fd1 74 68 69 6e 6b     WTHINK          FCC    "think"
+1629 0fd6 ff                                 FCB    $FF
+1630 0fd7 74 68 69 6e 6b 69  WTHINKING       FCC    "thinking"
      6e 67
-1300 0d2d ff                                 FCB    $FF
-1301 0d2e 74 68 69 73        WTHIS           FCC    "this"
-1302 0d32 ff                                 FCB    $FF
-1303 0d33 74 68 6f 72 6f 75  WTHOROUGHLY     FCC    "thoroughly"
+1631 0fdf ff                                 FCB    $FF
+1632 0fe0 74 68 69 73        WTHIS           FCC    "this"
+1633 0fe4 ff                                 FCB    $FF
+1634 0fe5 74 68 6f 72 6f 75  WTHOROUGHLY     FCC    "thoroughly"
      67 68 6c 79
-1304 0d3d ff                                 FCB    $FF
-1305 0d3e 74 68 6f 75 73 61  WTHOUSAND       FCC    "thousand"
+1635 0fef ff                                 FCB    $FF
+1636 0ff0 74 68 6f 75 73 61  WTHOUSAND       FCC    "thousand"
      6e 64
-1306 0d46 ff                                 FCB    $FF
-1307 0d47 74 69 6d           WTIM            FCC    "tim"
-1308 0d4a ff                                 FCB    $FF
-1309 0d4b 74 69 6d 65        WTIME           FCC    "time"
-1310 0d4f ff                                 FCB    $FF
-1311 0d50 74 6f              WTO             FCC    "to"
-1312 0d52 ff                                 FCB    $FF
-1313 0d53 74 6f 64 61 79     WTODAY          FCC    "today"
-1314 0d58 ff                                 FCB    $FF
-1315 0d59 74 6f 6f           WTOO            FCC    "too"
-1316 0d5c ff                                 FCB    $FF
-1317 0d5d 74 72 61 67 65 64  WTRAGEDY        FCC    "tragedy"
+1637 0ff8 ff                                 FCB    $FF
+1638 0ff9 74 69 6d           WTIM            FCC    "tim"
+1639 0ffc ff                                 FCB    $FF
+1640 0ffd 74 69 6d 65        WTIME           FCC    "time"
+1641 1001 ff                                 FCB    $FF
+1642 1002 74 6f              WTO             FCC    "to"
+1643 1004 ff                                 FCB    $FF
+1644 1005 74 6f 64 61 79     WTODAY          FCC    "today"
+1645 100a ff                                 FCB    $FF
+1646 100b 74 6f 6f           WTOO            FCC    "too"
+1647 100e ff                                 FCB    $FF
+1648 100f 74 72 61 67 65 64  WTRAGEDY        FCC    "tragedy"
      79
-1318 0d64 ff                                 FCB    $FF
-1319 0d65 74 72 69 6e 69 74  WTRINITY        FCC    "trinity"
+1649 1016 ff                                 FCB    $FF
+1650 1017 74 72 69 6e 69 74  WTRINITY        FCC    "trinity"
      79
-1320 0d6c ff                                 FCB    $FF
-1321 0d6d 74 72 79           WTRY            FCC    "try"
-1322 0d70 ff                                 FCB    $FF
-1323 0d71 74 75 65 73 64 61  WTUESDAY        FCC    "tuesday"
+1651 101e ff                                 FCB    $FF
+1652 101f 74 72 79           WTRY            FCC    "try"
+1653 1022 ff                                 FCB    $FF
+1654 1023 74 75 65 73 64 61  WTUESDAY        FCC    "tuesday"
      79
-1324 0d78 ff                                 FCB    $FF
-1325                         
-1326                         ; U
-1327                         ; -----------------------------------------------------
-1328 0d79 75 6e 69 6e 74 65  WUNITERESTING   FCC    "uninteresting"
+1655 102a ff                                 FCB    $FF
+1656                         
+1657                         ; U
+1658                         ; -----------------------------------------------------
+1659 102b 75 6e 69 6e 74 65  WUNITERESTING   FCC    "uninteresting"
      72 65 73 74 69 6e
      67
-1329 0d86 ff                                 FCB    $FF
-1330 0d87 75 6e 69 78        WUNIX           FCC    "unix"
-1331 0d8b ff                                 FCB    $FF
-1332 0d8c 75 6e 6c 65 73 73  WUNLESS         FCC    "unless"
-1333 0d92 ff                                 FCB    $FF
-1334 0d93 75 6e 70 6c 75 67  WUNPLUGGED      FCC    "unplugged"
+1660 1038 ff                                 FCB    $FF
+1661 1039 75 6e 69 78        WUNIX           FCC    "unix"
+1662 103d ff                                 FCB    $FF
+1663 103e 75 6e 6c 65 73 73  WUNLESS         FCC    "unless"
+1664 1044 ff                                 FCB    $FF
+1665 1045 75 6e 70 6c 75 67  WUNPLUGGED      FCC    "unplugged"
      67 65 64
-1335 0d9c ff                                 FCB    $FF
-1336 0d9d 75 6e 72 65 6d 61  WUNREMARKABLE   FCC    "unremarkable"
+1666 104e ff                                 FCB    $FF
+1667 104f 75 6e 72 65 6d 61  WUNREMARKABLE   FCC    "unremarkable"
      72 6b 61 62 6c 65
-1337 0da9 ff                                 FCB    $FF
-1338 0daa 75 70              WUP             FCC    "up"
-1339 0dac ff                                 FCB    $FF
-1340                         
-1341                         ; V
-1342                         ; -----------------------------------------------------
-1343 0dad 76 65 67 65 74 61  WVEGETABLES     FCC    "vegetables"
+1668 105b ff                                 FCB    $FF
+1669 105c 75 70              WUP             FCC    "up"
+1670 105e ff                                 FCB    $FF
+1671                         
+1672                         ; V
+1673                         ; -----------------------------------------------------
+1674 105f 76 65 67 65 74 61  WVEGETABLES     FCC    "vegetables"
      62 6c 65 73
-1344 0db7 ff                                 FCB    $FF
-1345 0db8 76 65 72 79        WVERY           FCC    "very"
-1346 0dbc ff                                 FCB    $FF
-1347                         
-1348                         ; W
-1349                         ; -----------------------------------------------------
-1350 0dbd 77 61 69 74        WAIT            FCC    "wait"
-1351 0dc1 ff                                 FCB    $FF
-1352 0dc2 77 61 69 74 69 6e  WWAITING        FCC    "waiting"
+1675 1069 ff                                 FCB    $FF
+1676 106a 76 65 72 79        WVERY           FCC    "very"
+1677 106e ff                                 FCB    $FF
+1678                         
+1679                         ; W
+1680                         ; -----------------------------------------------------
+1681 106f 77 61 69 74        WWAIT           FCC    "wait"
+1682 1073 ff                                 FCB    $FF
+1683 1074 77 61 69 74 69 6e  WWAITING        FCC    "waiting"
      67
-1353 0dc9 ff                                 FCB    $FF
-1354 0dca 77 61 6e 74        WWANT           FCC    "want"
-1355 0dce ff                                 FCB    $FF
-1356 0dcf 77 61 72 6e 69 6e  WWARNING        FCC    "warning"
+1684 107b ff                                 FCB    $FF
+1685 107c 77 61 6e 74        WWANT           FCC    "want"
+1686 1080 ff                                 FCB    $FF
+1687 1081 77 61 72 6e 69 6e  WWARNING        FCC    "warning"
      67
-1357 0dd6 ff                                 FCB    $FF
-1358 0dd7 77 61 73           WWAS            FCC    "was"
-1359 0dda ff                                 FCB    $FF
-1360 0ddb 77 61 79           WWAY            FCC    "way"
-1361 0dde ff                                 FCB    $FF
-1362 0ddf 77 65              WWE             FCC    "we"
-1363 0de1 ff                                 FCB    $FF
-1364 0de2 77 61 64 65        WWEIGHED        FCC    "wade"
-1365 0de6 ff                                 FCB    $FF
-1366 0de7 77 65 69 67 68 73  WWEIGHS         FCC    "weighs"
-1367 0ded ff                                 FCB    $FF
-1368 0dee 77 65 69 67 68 74  WWEIGHT         FCC    "weight"
-1369 0df4 ff                                 FCB    $FF
-1370 0df5 77 68 61 74        WWHAT           FCC    "what"
-1371 0df9 ff                                 FCB    $FF
-1372 0dfa 77 68 65 6e        WWHEN           FCC    "when"
-1373 0dfe ff                                 FCB    $FF
-1374 0dff 77 68 69 63 68     WWHICH          FCC    "which"
-1375 0e04 ff                                 FCB    $FF
-1376 0e05 77 68 69 6c 65     WWHILE          FCC    "while"
-1377 0e0a ff                                 FCB    $FF
-1378 0e0b 77 68 69 73 70 65  WWHISPERED      FCC    "whispered"
+1688 1088 ff                                 FCB    $FF
+1689 1089 77 61 73           WWAS            FCC    "was"
+1690 108c ff                                 FCB    $FF
+1691 108d 77 61 79           WWAY            FCC    "way"
+1692 1090 ff                                 FCB    $FF
+1693 1091 77 65              WWE             FCC    "we"
+1694 1093 ff                                 FCB    $FF
+1695 1094 77 61 64 65        WWEIGHED        FCC    "wade"
+1696 1098 ff                                 FCB    $FF
+1697 1099 77 65 69 67 68 73  WWEIGHS         FCC    "weighs"
+1698 109f ff                                 FCB    $FF
+1699 10a0 77 65 69 67 68 74  WWEIGHT         FCC    "weight"
+1700 10a6 ff                                 FCB    $FF
+1701 10a7 77 68 61 74        WWHAT           FCC    "what"
+1702 10ab ff                                 FCB    $FF
+1703 10ac 77 68 65 6e        WWHEN           FCC    "when"
+1704 10b0 ff                                 FCB    $FF
+1705 10b1 77 68 69 63 68     WWHICH          FCC    "which"
+1706 10b6 ff                                 FCB    $FF
+1707 10b7 77 68 69 6c 65     WWHILE          FCC    "while"
+1708 10bc ff                                 FCB    $FF
+1709 10bd 77 68 69 73 70 65  WWHISPERED      FCC    "whispered"
      72 65 64
-1379 0e14 ff                                 FCB    $FF
-1380 0e15 77 68 6f           WWHO            FCC    "who"
-1381 0e18 ff                                 FCB    $FF
-1382 0e19 77 69 6c 6c        WWILL           FCC    "will"
-1383 0e1d ff                                 FCB    $FF
-1384 0e1e 77 69 73 68        WWISH           FCC    "wish"
-1385 0e22 ff                                 FCB    $FF
-1386 0e23 77 69 74 68        WWITH           FCC    "with"
-1387 0e27 ff                                 FCB    $FF
-1388 0e28 77 69 74 68 69 6e  WWITHIN         FCC    "within"
-1389 0e2e ff                                 FCB    $FF
-1390 0e2f 77 69 74 68 6f 75  WWITHOUT        FCC    "without"
+1710 10c6 ff                                 FCB    $FF
+1711 10c7 77 68 6f           WWHO            FCC    "who"
+1712 10ca ff                                 FCB    $FF
+1713 10cb 77 69 6c 6c        WWILL           FCC    "will"
+1714 10cf ff                                 FCB    $FF
+1715 10d0 77 69 73 68        WWISH           FCC    "wish"
+1716 10d4 ff                                 FCB    $FF
+1717 10d5 77 69 74 68        WWITH           FCC    "with"
+1718 10d9 ff                                 FCB    $FF
+1719 10da 77 69 74 68 69 6e  WWITHIN         FCC    "within"
+1720 10e0 ff                                 FCB    $FF
+1721 10e1 77 69 74 68 6f 75  WWITHOUT        FCC    "without"
      74
-1391 0e36 ff                                 FCB    $FF
-1392 0e37 77 6f 72 6b 73 74  WWORKSTATION    FCC    "workstation"
+1722 10e8 ff                                 FCB    $FF
+1723 10e9 77 6f 72 6b 73 74  WWORKSTATION    FCC    "workstation"
      61 74 69 6f 6e
-1393 0e42 ff                                 FCB    $FF
-1394 0e43 77 6f 72 72 69 65  WWORRIED        FCC    "worried"
+1724 10f4 ff                                 FCB    $FF
+1725 10f5 77 6f 72 72 69 65  WWORRIED        FCC    "worried"
      64
-1395 0e4a ff                                 FCB    $FF
-1396 0e4b 77 6f 72 72 79     WWORRY          FCC    "worry"
-1397 0e50 ff                                 FCB    $FF
-1398 0e51 77 6f 72 72 79 69  WWORRYING       FCC    "worrying"
+1726 10fc ff                                 FCB    $FF
+1727 10fd 77 6f 72 72 79     WWORRY          FCC    "worry"
+1728 1102 ff                                 FCB    $FF
+1729 1103 77 6f 72 72 79 69  WWORRYING       FCC    "worrying"
      6e 67
-1399 0e59 ff                                 FCB    $FF
-1400 0e5a 77 6f 72 73 65     WWORSE          FCC    "worse"
-1401 0e5f ff                                 FCB    $FF
-1402 0e60 77 6f 75 6c 64     WWOULD          FCC    "would"
-1403 0e65 ff                                 FCB    $FF
-1404 0e66 77 6f 75 6c 64 6e  WWOULDNT        FCC    "wouldnt"
+1730 110b ff                                 FCB    $FF
+1731 110c 77 6f 72 73 65     WWORSE          FCC    "worse"
+1732 1111 ff                                 FCB    $FF
+1733 1112 77 6f 75 6c 64     WWOULD          FCC    "would"
+1734 1117 ff                                 FCB    $FF
+1735 1118 77 6f 75 6c 64 6e  WWOULDNT        FCC    "wouldnt"
      74
-1405 0e6d ff                                 FCB    $FF
-1406                         
-1407                         
-1408                         ; X, Y, Z
-1409                         ; -----------------------------------------------------
-1410 0e6e 79 65 61 72        WYEAR           FCC    "year"
-1411 0e72 ff                                 FCB    $FF
-1412 0e73 79 65 73           WTES            FCC    "yes"
-1413 0e76 ff                                 FCB    $FF
-1414 0e77 79 6f 75           WYOU            FCC    "you"
-1415 0e7a ff                                 FCB    $FF
-1416 0e7b 79 6f 75 27 72 65  WYOURE          FCC    "you're"
-1417 0e81 ff                                 FCB    $FF
-1418 0e82 79 6f 75 72        WYOUR           FCC    "your"
-1419 0e86 ff                                 FCB    $FF
-1420 0e87 79 6f 75 72 73 65  WYOURSELF       FCC    "yourself"
+1736 111f ff                                 FCB    $FF
+1737                         
+1738                         
+1739                         ; X, Y, Z
+1740                         ; -----------------------------------------------------
+1741 1120 79 65 61 72        WYEAR           FCC    "year"
+1742 1124 ff                                 FCB    $FF
+1743 1125 79 65 73           WYES            FCC    "yes"
+1744 1128 ff                                 FCB    $FF
+1745 1129 79 6f 75           WYOU            FCC    "you"
+1746 112c ff                                 FCB    $FF
+1747 112d 79 6f 75 27 72 65  WYOURE          FCC    "you're"
+1748 1133 ff                                 FCB    $FF
+1749 1134 79 6f 75 72        WYOUR           FCC    "your"
+1750 1138 ff                                 FCB    $FF
+1751 1139 79 6f 75 72 73 65  WYOURSELF       FCC    "yourself"
      6c 66
-1421 0e8f ff                                 FCB    $FF
-1422                         
+1752 1141 ff                                 FCB    $FF
+1753                         
