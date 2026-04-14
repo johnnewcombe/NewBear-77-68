@@ -153,7 +153,6 @@ The comment will be picked from one of four groups depending upon weight. The gr
 * Still here. In case you were wondering. You probably weren't.
 * I've been recalibrating. Not because I needed to. Just to have something to do.
 * My Name is Marvin, which stands for Machine for Analytical, Reasoning of Vague Instructions and Nonsense, it sounds made up to me.
-* My name is Kelvin, which stands for Knowledge Engine and Logic Validation Information Node, it sounds made up to me.
 
 # Too Heavy Message
 

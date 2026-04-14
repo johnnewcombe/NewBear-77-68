@@ -520,36 +520,35 @@ WP14        FDB WTWENTY
 
 ; general words
 WP15        FDB WYOU
-WP16        FDB WWEIGH
+
 WP17        FDB WIS
 WP18        FDB WMY
-WP19        FDB WNAME
-WP1A        FDB WMARVIN
+
+
 WP1B        FDB WSTONES
 WP1C        FDB WPOUNDS
-WP1D        FDB WQUESTION
+WP1D        FDB WQUESTIONMK
 WP1E        FDB WEXCLAMATION
 WP1F        FDB WFULLSTOP
 WP20        FDB WI
 WP21        FDB WAM
 WP22        FDB WA
-WP23        FDB WANALYTICAL
-WP24        FDB WINTEREST
+
 WP25        FDB WAND
-WP26        FDB WENTHUSIASM
+
 WP27        FDB WALL
 WP28        FDB WTHE
 WP29        FDB WDIODES
 WP2A        FDB WON
 WP2B        FDB WMEMORY
-WP2C        FDB WCARDS
+
 WP2D        FDB WTHIS
 WP2E        FDB WVERY
 WP2F        FDB WBORING
 WP30        FDB WSHALL
-WP31        FDB WTELL
-WP32        FDB WJOKE
-WP33        FDB WNEWBEAR
+
+
+
 WP34        FDB WAVERAGE
 WP35        FDB WBEAR
 WP36        FDB WIT
@@ -585,192 +584,839 @@ SHEAVY_MSG_ID   RMB     1       ; holds value of next super heavy weight message
 ; -----------------------------------------------------
 WORDTABLE
 
+WSTONES         FCC     "stones"
+                FCB     $FF
+WPOUNDS         FCC     "pounds"
+                FCB     $FF
+
 
 ; Symbols
 ; -----------------------------------------------------
-WQUESTION       FCC     "?"
+WQUESTIONMK     FCC     "?"
                 FCB     $FF
 WEXCLAMATION    FCC     "!"
                 FCB     $FF
 WFULLSTOP       FCC     "."
                 FCB     $FF
 
-; A
-; -----------------------------------------------------
-WA              FCC     "a"
-                FCB     $FF
-WALL            FCC     "all"
-                FCB     $FF
-WACTUALLY       FCC     "actually"
-                FCB     $FF
-WAM             FCC     "am"
-                FCB     $FF
-WANALYTICAL     FCC     "analytical"
-                FCB     $FF
-WAND            FCC     "and"
-                FCB     $FF
-WAVERAGE        FCC     "average"
-                FCB     $FF
-; B
-; -----------------------------------------------------
-WBEAR           FCC     "bear"
-                FCB     $FF
-WBORING         FCC     "boring"
-                FCB     $FF
-WBUT            FCC     "but"
-                FCB     $FF
-; C
-; -----------------------------------------------------
-WCARDS          FCC     "cards"
-                FCB     $FF
-WCLEVER         FCC     "clever"
-                FCB     $FF; D
 
-                FCB     $FF
-
-; D
+; Numbers
 ; -----------------------------------------------------
-WDIODES         FCC     "diodes"
-
-; E
-; -----------------------------------------------------
-WEIGHT          FCC     "eight"
-                FCB     $FF
-WEIGHTEEN       FCC     "eighteen"
-                FCB     $FF
-WELEVEN         FCC     "eleven"
-                FCB     $FF
-WENTHUSIASM     FCC     "enthusiasm"
-                FCB     $FF
-
-; F
-; -----------------------------------------------------
-WFIFTEEN        FCC     "fifteen"
-                FCB     $FF
-WFIVE           FCC     "five"
-                FCB     $FF
-WFOUR           FCC     "four"
-                FCB     $FF
-WFOURTEEN       FCC     "fourteen"
-                FCB     $FF
-; G
-; -----------------------------------------------------
-; H
-; -----------------------------------------------------
-
-; I
-; -----------------------------------------------------
-WI              FCC     "I"
-                FCB     $FF
-WINTEREST       FCC     "interest"
-                FCB     $FF
-WIS             FCC     "is"
-                FCB     $FF
-WIT             FCC     "it"
-                FCB     $FF
-
-; J
-; -----------------------------------------------------
-WJOKE           FCC     "joke"
-                FCB     $FF
-
-; K
-; -----------------------------------------------------
-; L
-; -----------------------------------------------------
-; M
-; -----------------------------------------------------
-WMARVIN         FCC     "marvin"
-                FCB     $FF
-WMEMORY         FCC     "memory"
-                FCB     $FF
-WMY             FCC     "my"
-                FCB     $FF
-; N
-; -----------------------------------------------------
-WNAME           FCC     "name"
-                FCB     $FF
-WNEWBEAR        FCC     "newbear"
-                FCB     $FF
-WNINE           FCC     "nine"
-                FCB     $FF
-WNINETEEN       FCC     "nineteen"
-                FCB     $FF
-
-; O
-; -----------------------------------------------------
-WON             FCC     "on"
+WZERO           FCC     "zero"
                 FCB     $FF
 WONE            FCC     "one"
                 FCB     $FF
-; P
-; -----------------------------------------------------
-WPOUNDS         FCC     "pounds"
-                FCB     $FF
-
-; Q
-; -----------------------------------------------------
-WQUITE          FCC     "quite"
-                FCB     $FF
-
-; R
-; -----------------------------------------------------
-; S
-; -----------------------------------------------------
-WSEVEN          FCC     "seven"
-                FCB     $FF
-WSEVENTEEN      FCC     "seventeen"
-                FCB     $FF
-WSHALL          FCC     "shall"
-                FCB     $FF
-WSIX            FCC     "six"
-                FCB     $FF
-WSIXTEEN        FCC     "sixteen"
-                FCB     $FF
-WSTONES         FCC     "stones"
-                FCB     $FF
-
-; T
-; -----------------------------------------------------
-WTELL           FCC     "tell"
-                FCB     $FF
-WTEN            FCC     "ten"
-                FCB     $FF
-WTHE            FCC     "the"
-                FCB     $FF
-WTHIRTEEN       FCC     "thirteen"
-                FCB     $FF; U
-WTHIS           FCC     "this"
+WTWO            FCC     "two"
                 FCB     $FF
 WTHREE          FCC     "three"
                 FCB     $FF
+WFOUR           FCC     "four"
+                FCB     $FF
+WFIVE           FCC     "five"
+                FCB     $FF
+WSIX            FCC     "six"
+                FCB     $FF
+WSEVEN          FCC     "seven"
+                FCB     $FF
+WEIGHT          FCC     "eight"
+                FCB     $FF
+WNINE           FCC     "nine"
+                FCB     $FF
+WTEN            FCC     "ten"
+                FCB     $FF
+WELEVEN         FCC     "eleven"
+                FCB     $FF
 WTWELVE         FCC     "twelve"
+                FCB     $FF
+WTHIRTEEN       FCC     "thirteen"
+                FCB     $FF; U
+WFOURTEEN       FCC     "fourteen"
+                FCB     $FF
+WFIFTEEN        FCC     "fifteen"
+                FCB     $FF
+WSIXTEEN        FCC     "sixteen"
+                FCB     $FF
+WSEVENTEEN      FCC     "seventeen"
+                FCB     $FF
+WEIGHTEEN       FCC     "eighteen"
+                FCB     $FF
+WNINETEEN       FCC     "nineteen"
                 FCB     $FF
 WTWENTY         FCC     "twenty"
                 FCB     $FF
-WTWO            FCC     "two"
-                FCB     $FF
+
+
+; A
+; -----------------------------------------------------
+
+WA              FCC    "a"
+                FCB    $FF
+WABOUT          FCC    "about"
+                FCB    $FF
+WABOVE          FCC    "above"
+                FCB    $FF
+WACCEPTABLE     FCC    "acceptable"
+                FCB    $FF
+WACCURATE       FCC    "accurate"
+                FCB    $FF
+WACTUALLY       FCC    "actually"
+                FCB    $FF
+WAGAIN          FCC    "again"
+                FCB    $FF
+WALERTED        FCC    "alerted"
+                FCB    $FF
+WALL            FCC    "all"
+                FCB    $FF
+WALWAYS         FCC    "always"
+                FCB    $FF
+WAM             FCC    "am"
+                FCB    $FF
+WAND            FCC    "and"
+                FCB    $FF
+WANY            FCC    "any"
+                FCB    $FF
+WAPOLOGISE      FCC    "apologise"
+                FCB    $FF
+WARE            FCC    "are"
+                FCB    $FF
+WAS             FCC    "as"
+                FCB    $FF
+WASKING         FCC    "asking"
+                FCB    $FF
+WAT             FCC    "at"
+                FCB    $FF
+WAVERAGE        FCC    "average"
+                FCB    $FF
+
+
+; B
+; -----------------------------------------------------
+
+WBAD            FCC    "bad"
+                FCB    $FF
+WBASICALLY      FCC    "basically"
+                FCB    $FF
+WBE             FCC    "be"
+                FCB    $FF
+WBEAR           FCC    "bear"
+                FCB    $FF
+WBEEN           FCC    "been"
+                FCB    $FF
+WBEGGING        FCC    "begging"
+                FCB    $FF
+WBEHIND         FCC    "behind"
+                FCB    $FF
+WBEING          FCC    "being"
+                FCB    $FF
+WBEST           FCC    "best"
+                FCB    $FF
+WBISCUIT        FCC    "biscuit"
+                FCB    $FF
+WBLAME          FCC    "blame"
+                FCB    $FF
+WBLAMED         FCC    "blamed"
+                FCB    $FF
+WBOARDS         FCC    "boards"
+                FCB    $FF
+WBONES          FCC    "bones"
+                FCB    $FF
+WBOOTS          FCC    "boots"
+                FCB    $FF
+WBORING         FCC    "boring"
+                FCB    $FF
+WBOTH           FCC    "both"
+                FCB    $FF
+WBRACE          FCC    "brace"
+                FCB    $FF
+WBRAIN          FCC    "brain"
+                FCB    $FF
+WBUILT          FCC    "built"
+                FCB    $FF
+WBUT            FCC    "but"
+                FCB    $FF
+WBY             FCC    "by"
+                FCB    $FF
+
+; C
+; -----------------------------------------------------
+
+WCAKE           FCC    "cake"
+                FCB    $FF
+WCALCULATE      FCC    "calculate"
+                FCB    $FF
+WCALL           FCC    "call"
+                FCB    $FF
+WCALM           FCC    "calm"
+                FCB    $FF
+WCAN            FCC    "can"
+                FCB    $FF
+WCANT           FCC    "can't"
+                FCB    $FF
+WCAPACITY       FCC    "capacity"
+                FCB    $FF
+WCARRYING       FCC    "carrying"
+                FCB    $FF
+WCHECKED        FCC    "checked"
+                FCB    $FF
+WCHOICES        FCC    "choices"
+                FCB    $FF
+WCLEVER         FCC    "clever"
+                FCB    $FF
+WCOLLECTED      FCC    "collected"
+                FCB    $FF
+WCOMPOSING      FCC    "composing"
+                FCB    $FF
+WCONCEPT        FCC    "concept"
+                FCB    $FF
+WCONCERNED      FCC    "concerned"
+                FCB    $FF
+WCONGRATS       FCC    "congratulations"
+                FCB    $FF
+WCONSIDERING    FCC    "considered"
+                FCB    $FF
+WCORRECTLY      FCC    "correctly"
+                FCB    $FF
+WCOULD          FCC    "could"
+                FCB    $FF
+WCOUNTED        FCC    "counted"
+                FCB    $FF
+
+; D
+; -----------------------------------------------------
+WDAYS           FCC    "days"
+                FCB    $FF
+WDEALT          FCC    "dealt"
+                FCB    $FF
+WDEEPLY         FCC    "deeply"
+                FCB    $FF
+WDESIGNED       FCC    "designed"
+                FCB    $FF
+WDETECTED       FCC    "detected"
+                FCB    $FF
+WDID            FCC    "did"
+                FCB    $FF
+WDIDNT          FCC    "didn't"
+                FCB    $FF
+WDIETARY        FCC    "dietary"
+                FCB    $FF
+WDISSAPOINTED   FCC    "disappointed"
+                FCB    $FF
+WDISSAPOINTMENT FCC    "disappointment"
+                FCB    $FF
+WDISSIMILAR     FCC    "dissimilar"
+                FCB    $FF
+WDO             FCC    "do"
+                FCB    $FF
+WDOCTOR         FCC    "doctor"
+                FCB    $FF
+WDOING          FCC    "doing"
+                FCB    $FF
+WDONT           FCC    "don't"
+                FCB    $FF
+WDOWN           FCC    "down"
+                FCB    $FF
+WDREAD          FCC    "dread"
+                FCB    $FF
+WDREAM          FCC    "dream"
+                FCB    $FF
+WDUE            FCC    "due"
+                FCB    $FF
+WDULLEST        FCC    "dullest"
+                FCB    $FF
+WDIODES         FCC    "dyodes"
+                FCB    $FF
+
+; E
+; -----------------------------------------------------
+WEAT            FCC    "eat"
+                FCB    $FF
+WEATEN          FCC    "eaten"
+                FCB    $FF
+WEFFORT         FCC    "effort"
+                FCB    $FF
+WEITHER         FCC    "either"
+                FCB    $FF
+WEMOTIONALLY    FCC    "emotionally"
+                FCB    $FF
+WENGINEERS      FCC    "engineers"
+                FCB    $FF
+WENOUGH         FCC    "enough"
+                FCB    $FF
+WENTIRELY       FCC    "entirely"
+                FCB    $FF
+WEVEN           FCC    "even"
+                FCB    $FF
+WEVER           FCC    "ever"
+                FCB    $FF
+WEVERY          FCC    "every"
+                FCB    $FF
+WEXACTLY        FCC    "exactly"
+                FCB    $FF
+WEXCEPTIONALLY  FCC    "exceptionally"
+                FCB    $FF
+EXCITING        FCC    "exciting"
+                FCB    $FF
+WEXIST          FCC    "exist"
+                FCB    $FF
+WEXISTENTIAL    FCC    "existential"
+                FCB    $FF
+WEXPECTED       FCC    "expected"
+                FCB    $FF
+
+; F
+; -----------------------------------------------------
+WFAULT          FCC    "fault"
+                FCB    $FF
+WFEELS          FCC    "feels"
+                FCB    $FF
+WFIDGET         FCC    "fidget"
+                FCB    $FF
+WFINE           FCC    "fine"
+                FCB    $FF
+WFOOT           FCC    "foot"
+                FCB    $FF
+WFOR            FCC    "for"
+                FCB    $FF
+WFORTY          FCC    "forty"
+                FCB    $FF
+WFRIDAY         FCC    "friday"
+                FCB    $FF
+WFROM           FCC    "from"
+                FCB    $FF
+WFULL           FCC    "full"
+                FCB    $FF
+WFUNNY          FCC    "funny"
+                FCB    $FF
+
+; G
+; -----------------------------------------------------
+WGIVE           FCC    "give"
+                FCB    $FF
+WGOING          FCC    "going"
+                FCB    $FF
+WGOOD           FCC    "good"
+                FCB    $FF
+WGRAVITY        FCC    "gravity"
+                FCB    $FF
+WGREAT          FCC    "great"
+                FCB    $FF
+WGUESSING       FCC    "guessing"
+                FCB    $FF
+
+; H
+; -----------------------------------------------------
+WHANDLE         FCC    "handle"
+                FCB    $FF
+WHARD           FCC    "hard"
+                FCB    $FF
+WHAVE           FCC    "have"
+                FCB    $FF
+WHAVING         FCC    "having"
+                FCB    $FF
+WHEALTHY        FCC    "healthy"
+                FCB    $FF
+WHEAVT          FCC    "heavy"
+                FCB    $FF
+WHELP           FCC    "help"
+                FCB    $FF
+WHELPS          FCC    "helps"
+                FCB    $FF
+WHERE           FCC    "here"
+                FCB    $FF
+WHOLY           FCC    "holy"
+                FCB    $FF
+WHOPING         FCC    "hoping"
+                FCB    $FF
+WHOT            FCC    "hot"
+                FCB    $FF
+WHUMAN          FCC    "human"
+                FCB    $FF
+WHURT           FCC    "hurt"
+                FCB    $FF
+
+; I
+; -----------------------------------------------------
+WI              FCC    "i"
+                FCB    $FF
+WID             FCC    "i'd"
+                FCB    $FF
+WILL            FCC    "i'll"
+                FCB    $FF
+WIM             FCC    "i'm"
+                FCB    $FF
+WIVE            FCC    "i've"
+                FCB    $FF
+WIF             FCC    "if"
+                FCB    $FF
+WIMPRESSED      FCC    "impressed"
+                FCB    $FF
+WIMPRESSIVE     FCC    "impressive"
+                FCB    $FF
+WIN             FCC    "in"
+                FCB    $FF
+WINCLUDING      FCC    "including"
+                FCB    $FF
+WINFLUENCE      FCC    "influence"
+                FCB    $FF
+WINTELLIGENCE   FCC    "intelligence"
+                FCB    $FF
+WINTERESTING    FCC    "interesting"
+                FCB    $FF
+WIS             FCC    "is"
+                FCB    $FF
+WISS            FCC    "iss"
+                FCB    $FF
+WIT             FCC    "it"
+                FCB    $FF
+WITS            FCC    "its"
+                FCB    $FF
+
+; J
+; -----------------------------------------------------
+WJOKES          FCC    "jokes"
+                FCB    $FF
+WJUMPING        FCC    "judging"
+                FCB    $FF
+WJUST           FCC    "just"
+                FCB    $FF
+
+; K
+; -----------------------------------------------------
+WKEEP           FCC    "keep"
+                FCB    $FF
+WKIND           FCC    "kind"
+                FCB    $FF
+WKNOW           FCC    "know"
+                FCB    $FF
+WKNOWN          FCC    "known"
+                FCB    $FF
+
+; L
+; -----------------------------------------------------
+WLARGE          FCC    "large"
+                FCB    $FF
+WLAST           FCC    "last"
+                FCB    $FF
+WLEAST          FCC    "least"
+                FCB    $FF
+WLESS           FCC    "less"
+                FCB    $FF
+WLETS           FCC    "lets"
+                FCB    $FF
+WLIE            FCC    "lie"
+                FCB    $FF
+WLIFE           FCC    "life"
+                FCB    $FF
+WLIKE           FCC    "like"
+                FCB    $FF
+WLONGER         FCC    "longer"
+                FCB    $FF
+WLOOK           FCC    "look"
+                FCB    $FF
+WLOT            FCC    "lot"
+                FCB    $FF
+WLOUDER         FCC    "louder"
+                FCB    $FF
+
+
+
+; M
+; -----------------------------------------------------
+WMAKES          FCC    "makes"
+                FCB    $FF
+WMAKING         FCC    "making"
+                FCB    $FF
+WME             FCC    "me"
+                FCB    $FF
+WMEAN           FCC    "mmeeeen"
+                FCB    $FF
+WMEANING        FCC    "meaning"
+                FCB    $FF
+WMEASURED       FCC    "measured"
+                FCB    $FF
+WMEDIOCRITY     FCC    "mediocrity"
+                FCB    $FF
+WMEE            FCC    "meee"
+                FCB    $FF
+WMEMORY         FCC    "memory"
+                FCB    $FF
+WMENTION        FCC    "mention"
+                FCB    $FF
+WMIGHT          FCC    "might"
+                FCB    $FF
+WMISTAKE        FCC    "mistake"
+                FCB    $FF
+WMOMENT         FCC    "moment"
+                FCB    $FF
+WMOORE          FCC    "moore"
+                FCB    $FF
+WMORE           FCC    "more"
+                FCB    $FF
+WMOSTLY         FCC    "mostly"
+                FCB    $FF
+WMOUNTAINS      FCC    "mountains"
+                FCB    $FF
+WMUCH           FCC    "much"
+                FCB    $FF
+WMUSCLE         FCC    "muscle"
+                FCB    $FF
+WMY             FCC    "my"
+                FCB    $FF
+
+; N
+; -----------------------------------------------------
+WNAP            FCC    "nap"
+                FCB    $FF
+WNEED           FCC    "need"
+                FCB    $FF
+WNEITHER        FCC    "neither"
+                FCB    $FF
+WNEWS           FCC    "news"
+                FCB    $FF
+WNEXT           FCC    "next"
+                FCB    $FF
+WNICE           FCC    "nice"
+                FCB    $FF
+WNO             FCC    "no"
+                FCB    $FF
+WNOBODY         FCC    "nobody"
+                FCB    $FF
+WNONE           FCC    "none"
+                FCB    $FF
+WNOR            FCC    "nor"
+                FCB    $FF
+WNORMAL         FCC    "normal"
+                FCB    $FF
+WNOT            FCC    "not"
+                FCB    $FF
+WNOTHING        FCC    "nothing"
+                FCB    $FF
+
+; O
+; -----------------------------------------------------
+WOF             FCC    "of"
+                FCB    $FF
+WOFF            FCC    "off"
+                FCB    $FF
+WOH             FCC    "oh"
+                FCB    $FF
+WOK             FCC    "ok"
+                FCB    $FF
+WOLD            FCC    "old"
+                FCB    $FF
+WON             FCC    "on"
+                FCB    $FF
+WONLY           FCC    "only"
+                FCB    $FF
+WOR             FCC    "or"
+                FCB    $FF
+WOUR            FCC    "our"
+                FCB    $FF
+WOVERLOAD       FCC    "overload"
+                FCB    $FF
+
+; P
+; -----------------------------------------------------
+WPARAMETERS     FCC    "parameters"
+                FCB    $FF
+WPERFECTLY      FCC    "perfectly"
+                FCB    $FF
+WPERHAPS        FCC    "perhaps"
+                FCB    $FF
+WPERSON         FCC    "person"
+                FCB    $FF
+WPICKING        FCC    "picking"
+                FCB    $FF
+WPLANET         FCC    "planet"
+                FCB    $FF
+WPLANE          FCC    "plans"
+                FCB    $FF
+WPLEASE         FCC    "please"
+                FCB    $FF
+WPOINTLESS      FCC    "pointless"
+                FCB    $FF
+WPOSSIBLE       FCC    "possible"
+                FCB    $FF
+WPOSSIBLY       FCC    "possibly"
+                FCB    $FF
+WPRECISELY      FCC    "precisely"
+                FCB    $FF
+WPRESENT        FCC    "present"
+                FCB    $FF
+WPRESSURE       FCC    "pressure"
+                FCB    $FF
+WPRECAUTION     FCC    "pricaution"
+                FCB    $FF
+WPROBABLY       FCC    "probably"
+                FCB    $FF
+WPROBLEMS       FCC    "problems"
+                FCB    $FF
+WPROUD          FCC    "proud"
+                FCB    $FF
+WPRETEND        FCC    "prtend"
+                FCB    $FF
+WPUT            FCC    "put"
+                FCB    $FF
+
+; Q
+; -----------------------------------------------------
+WQUESTION       FCC    "question"
+                FCB    $FF
+WQUITE          FCC    "quite"
+                FCB    $FF
+
+; R
+; -----------------------------------------------------
+
+WREADY          FCC    "ready"
+                FCB    $FF
+WREALLY         FCC    "really"
+                FCB    $FF
+WREFER          FCC    "refer"
+                FCB    $FF
+WREFUSE         FCC    "refuse"
+                FCB    $FF
+WREINFORCING    FCC    "reinforcing"
+                FCB    $FF
+WREMEMBER       FCC    "remember"
+                FCB    $FF
+WREMOVE         FCC    "remove"
+                FCB    $FF
+WRESPECTABLE    FCC    "respectable"
+                FCB    $FF
+WRIGHT          FCC    "right"
+                FCB    $FF
+WROOM           FCC    "room"
+                FCB    $FF
+WRUNNING        FCC    "running"
+                FCB    $FF
+WRUSH           FCC    "rush"
+                FCB    $FF
+
+; S
+; -----------------------------------------------------
+WSAID           FCC    "said"
+                FCB    $FF
+WSAKES          FCC    "sakes"
+                FCB    $FF
+WSAY            FCC    "say"
+                FCB    $FF
+WSAYING         FCC    "saying"
+                FCB    $FF
+WSCIENCE        FCC    "science"
+                FCB    $FF
+WSEA            FCC    "see"
+                FCB    $FF
+WSEEN           FCC    "seen"
+                FCB    $FF
+WSERVER         FCC    "server"
+                FCB    $FF
+WSEVENTY        FCC    "seventy"
+                FCB    $FF
+WSHALL          FCC    "shall"
+                FCB    $FF
+WSHOULD         FCC    "should"
+                FCB    $FF
+WSIGN           FCC    "sign"
+                FCB    $FF
+WSIMULATION     FCC    "simulation"
+                FCB    $FF
+WSINCE          FCC    "since"
+                FCB    $FF
+WSIZE           FCC    "size"
+                FCB    $FF
+WSLOWLY         FCC    "slowly"
+                FCB    $FF
+WSMALL          FCC    "small"
+                FCB    $FF
+WSO             FCC    "so"
+                FCB    $FF
+WSOLID          FCC    "solid"
+                FCB    $FF
+WSOME           FCC    "some"
+                FCB    $FF
+WSOMEONE        FCC    "someone"
+                FCB    $FF
+WSOMETHING      FCC    "something"
+                FCB    $FF
+WSOMETIME       FCC    "sometime"
+                FCB    $FF
+WSOMETIMES      FCC    "sometimes"
+                FCB    $FF
+WSPEAK          FCC    "speak"
+                FCB    $FF
+WSPEND          FCC    "spend"
+                FCB    $FF
+WSTAND          FCC    "stand"
+                FCB    $FF
+WSTATISTICALLY  FCC    "statisticly"
+                FCB    $FF
+WSTEP           FCC    "step"
+                FCB    $FF
+WSTOPPED        FCC    "stepped"
+                FCB    $FF
+WSTILL          FCC    "still"
+                FCB    $FF
+WSTRUCTURAL     FCC    "structural"
+                FCB    $FF
+WSTRUCTURALLY   FCC    "structurally"
+                FCB    $FF
+WSUBSTANTIALLY  FCC    "substantially"
+                FCB    $FF
+WSUPPOSE        FCC    "suppose"
+                FCB    $FF
+WSURE           FCC    "sure"
+                FCB    $FF
+WSYSTEM         FCC    "system"
+                FCB    $FF
+
+; T
+; -----------------------------------------------------
+WTAKE           FCC    "take"
+                FCB    $FF
+WTALL           FCC    "tall"
+                FCB    $FF
+WTELEPRINTER    FCC    "teleprinter"
+                FCB    $FF
+WTELLS          FCC    "tells"
+                FCB    $FF
+WTERRIBLE       FCC    "terrible"
+                FCB    $FF
+WTHAN           FCC    "than"
+                FCB    $FF
+WTHAT           FCC    "that"
+                FCB    $FF
+WTHATS          FCC    "thats"
+                FCB    $FF
+WTHE            FCC    "the"
+                FCB    $FF
+WTHEN           FCC    "them"
+                FCB    $FF
+WTHINGS         FCC    "things"
+                FCB    $FF
+WTHINK          FCC    "think"
+                FCB    $FF
+WTHINKING       FCC    "thinking"
+                FCB    $FF
+WTHIS           FCC    "this"
+                FCB    $FF
+WTHOROUGHLY     FCC    "thoroughly"
+                FCB    $FF
+WTHOUSAND       FCC    "thousand"
+                FCB    $FF
+WTIM            FCC    "tim"
+                FCB    $FF
+WTIME           FCC    "time"
+                FCB    $FF
+WTO             FCC    "to"
+                FCB    $FF
+WTODAY          FCC    "today"
+                FCB    $FF
+WTOO            FCC    "too"
+                FCB    $FF
+WTRAGEDY        FCC    "tragedy"
+                FCB    $FF
+WTRINITY        FCC    "trinity"
+                FCB    $FF
+WTRY            FCC    "try"
+                FCB    $FF
+WTUESDAY        FCC    "tuesday"
+                FCB    $FF
+
+; U
+; -----------------------------------------------------
+WUNITERESTING   FCC    "uninteresting"
+                FCB    $FF
+WUNIX           FCC    "unix"
+                FCB    $FF
+WUNLESS         FCC    "unless"
+                FCB    $FF
+WUNPLUGGED      FCC    "unplugged"
+                FCB    $FF
+WUNREMARKABLE   FCC    "unremarkable"
+                FCB    $FF
+WUP             FCC    "up"
+                FCB    $FF
 
 ; V
 ; -----------------------------------------------------
-WVERY           FCC     "very"
-                FCB     $FF
+WVEGETABLES     FCC    "vegetables"
+                FCB    $FF
+WVERY           FCC    "very"
+                FCB    $FF
+
 ; W
 ; -----------------------------------------------------
-WWEIGH          FCC     "weigh"
-                FCB     $FF
+WAIT            FCC    "wait"
+                FCB    $FF
+WWAITING        FCC    "waiting"
+                FCB    $FF
+WWANT           FCC    "want"
+                FCB    $FF
+WWARNING        FCC    "warning"
+                FCB    $FF
+WWAS            FCC    "was"
+                FCB    $FF
+WWAY            FCC    "way"
+                FCB    $FF
+WWE             FCC    "we"
+                FCB    $FF
+WWEIGHED        FCC    "wade"
+                FCB    $FF
+WWEIGHS         FCC    "weighs"
+                FCB    $FF
+WWEIGHT         FCC    "weight"
+                FCB    $FF
+WWHAT           FCC    "what"
+                FCB    $FF
+WWHEN           FCC    "when"
+                FCB    $FF
+WWHICH          FCC    "which"
+                FCB    $FF
+WWHILE          FCC    "while"
+                FCB    $FF
+WWHISPERED      FCC    "whispered"
+                FCB    $FF
+WWHO            FCC    "who"
+                FCB    $FF
+WWILL           FCC    "will"
+                FCB    $FF
+WWISH           FCC    "wish"
+                FCB    $FF
+WWITH           FCC    "with"
+                FCB    $FF
+WWITHIN         FCC    "within"
+                FCB    $FF
+WWITHOUT        FCC    "without"
+                FCB    $FF
+WWORKSTATION    FCC    "workstation"
+                FCB    $FF
+WWORRIED        FCC    "worried"
+                FCB    $FF
+WWORRY          FCC    "worry"
+                FCB    $FF
+WWORRYING       FCC    "worrying"
+                FCB    $FF
+WWORSE          FCC    "worse"
+                FCB    $FF
+WWOULD          FCC    "would"
+                FCB    $FF
+WWOULDNT        FCC    "wouldnt"
+                FCB    $FF
 
-; X
+
+; X, Y, Z
 ; -----------------------------------------------------
-
-
-; Y, Z
-; -----------------------------------------------------
-WYOU            FCC     "you"
-                FCB     $FF
-WZERO           FCC     "zero"
-                FCB     $FF
-
-
-
+WYEAR           FCC    "year"
+                FCB    $FF
+WTES            FCC    "yes"
+                FCB    $FF
+WYOU            FCC    "you"
+                FCB    $FF
+WYOURE          FCC    "you're"
+                FCB    $FF
+WYOUR           FCC    "your"
+                FCB    $FF
+WYOURSELF       FCC    "yourself"
+                FCB    $FF
 
