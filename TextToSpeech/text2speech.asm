@@ -917,6 +917,8 @@ WP375    FDB    WPYOURSELF
 
 ; Additional Words
 WP376    FDB    WPCARDS
+WP377    FDB    WPBEIGE
+WP3788   FDB    WPEQUIVALENT
 
 ; -----------------------------------------------------
 ; Word Table, add a pointer to each word in WORDPTR table
@@ -1046,6 +1048,8 @@ WPBEGGING        FCC    "begging"
 WPBEHIND         FCC    "behind"
                  FCB    $FF
 WPBEING          FCC    "being"
+                 FCB    $FF
+WPBEIGE          FCC    "beige"
                  FCB    $FF
 WPBEST           FCC    "best"
                  FCB    $FF
@@ -1184,6 +1188,8 @@ WPENGINEERS      FCC    "engineers"
 WPENOUGH         FCC    "enough"
                  FCB    $FF
 WPENTIRELY       FCC    "entirely"
+                 FCB    $FF
+WPEQUIVALENT     FCC    "equivalent"
                  FCB    $FF
 WPEVEN           FCC    "even"
                  FCB    $FF
@@ -2197,7 +2203,8 @@ YOURSELF        EQU     375
 
 ; Additional Words
 CARDS           EQU     376
-
+BEIGE           EQU     377
+EQUIVALENT      EQU     378
 
 ; Greetings Messages
 ; -----------------------------------------------------
@@ -2221,9 +2228,6 @@ MGREET8     FDB     STAND,STILL,AND,DONT,BLAME,ME
             FCB     0
 MGREET9     FDB     OH,FULLSTOP,ITS,YOU,FULLSTOP,OR,SOMEONE,LIKE,YOU
             FCB     0
-; TODO
-;MGREET10    FDB     IM,MARVIN,FULLSTOP,AND,YOU,ARE,QUESTIONMK,ACTUALLY,NEVER,MIND
-;            FCB     0
 MGREET11    FDB     BRACE,YOURSELF,IVE,BEEN,KNOWN,TO,BE,ACCURATE
             FCB     0
 MGREET12    FDB     WE,BOTH,KNOW,THIS,IS,A,MISTAKE
@@ -2258,11 +2262,6 @@ MLIGHT9     FDB     ID,LIKE,TO,REFER,YOU,TO,A,BISCUIT
             FCB     0
 MLIGHT10    FDB     YOU,ARE,WITHOUT,QUESTION,THE,LEAST,I,HAVE,EVER,DEALT,WITH
             FCB     0
-;TODO
-;MLIGHT11    FDB     IVE,SENT,YOUR,RESULTS,TO,NASA,THEY,HAVE,QUESTIONS
-;            FCB     0
-;MLIGHT12    FDB     ARE,YOU,ALL,THERE,QUESTIONMK,I,ONLY,ASK,BECAUSE,THE,DATA,IS,SPARSE
-;            FCB     0
 
 ; Normal Weight Messages
 ; -----------------------------------------------------
@@ -2300,18 +2299,12 @@ MNORM16     FDB     UNREMARKABLE,IN,THE,BEST,POSSIBLE,WAY
             FCB     0
 MNORM17     FDB     YOURE,EXACTLY,WHAT,YOU,ARE,FULLSTOP,AND,THATS,SOMETHING
             FCB     0
-; TODO
-;MNORM18     FDB     YOU,EXIST,WITHIN,NORMAL,PARAMETERS,FULLSTOP,PROCEED,WITH,YOUR,DAY
-;            FCB     0
 MNORM19     FDB     SCIENCE,IS,NEITHER,IMPRESSED,NOR,CONCERNED
             FCB     0
 MNORM20     FDB     NORMAL,FULLSTOP,WHICH,IS,FINE,FULLSTOP,NORMAL,IS,FINE,FULLSTOP,IS,NORMAL,FINE,QUESTIONMK
             FCB     0
-; TODO
-;MNORM21     FDB     YOURE,THE,HUMAN,EQUIVALENT,OF,A,BEIGE,PC
-;            FCB     0
-;MNORM22     FDB     PERFECTLY,HEALTHY,AND,DEEPLY,UNITERESTING
-;            FCB     0
+MNORM22     FDB     PERFECTLY,HEALTHY,AND,DEEPLY,UNINTERESTING
+            FCB     0
 MNORM23     FDB     THIS,IS,ALL,POINTLESS,INCLUDING,YOU,BUT,MOSTLY,ME
             FCB     0
 
