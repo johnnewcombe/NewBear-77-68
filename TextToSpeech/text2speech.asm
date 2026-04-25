@@ -73,7 +73,7 @@ ML1     CMPA    #20             ; more that 20 is too heavy
         JMP     END
 ML2     CMPA    #NORM_WGHT      ; less than normal is light
         BHI     ML3
-        JMP     LIGHT
+        JMP     LIGHTW
 ML3     CMPA    #HEAVY_WGHT     ; less than heavy is normal
         BHI     ML4
         JMP     NORMALW
@@ -134,7 +134,7 @@ GREET_OP
         JSR     PR_CRB          ; CR/LF
         RTS
 
-LIGHT   ; output the light message
+LIGHTW   ; output the light message
         INC     LIGHT_MSG_ID    ; get next idle message
         LDAA    LIGHT_MSG_ID
         CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
@@ -482,9 +482,13 @@ OVERLOADTPTR
 ; Word pointer table (max words 256)
 ; Set X to the pointer ID and call PR_WORD
 ; -----------------------------------------------------
-; add a pointer to words defined in the WORDTABLE
-; Pointer Table
+; To create new wordk add the word in the correct
+; (alphabetical) position in the word table. Then add
+; a pointer to that word at the END of the Word Pointer
+; table. Finally add an EQUATE using the word as a label
+; in the word equates table;
 ; -----------------------------------------------------
+
 WORDPTR
 
 ; Numbers
@@ -577,7 +581,7 @@ WP077    FDB    WPCOMPOSING
 WP078    FDB    WPCONCEPT
 WP079    FDB    WPCONCERNED
 WP080    FDB    WPCONGRATS
-WP081    FDB    WPCONSIDERING
+WP081    FDB    WPCONSIDERED
 WP082    FDB    WPCORRECTLY
 WP083    FDB    WPCOULD
 WP084    FDB    WPCOUNTED
@@ -915,10 +919,28 @@ WP373    FDB    WPYOURE
 WP374    FDB    WPYOUR
 WP375    FDB    WPYOURSELF
 
+
 ; Additional Words
 WP376    FDB    WPCARDS
 WP377    FDB    WPBEIGE
-WP3788   FDB    WPEQUIVALENT
+WP378    FDB    WPEQUIVALENT
+WP379    FDB    WPRECALIBRATING
+WP380    FDB    WPBECAUSE
+WP381    FDB    WPNEEDED
+WP382    FDB    WPCASE
+WP383    FDB    WPWONDERING
+WP384    FDB    WPWERENT
+WP385    FDB    WPWERE
+WP386    FDB    WPSTEPPED
+WP387    FDB    WPSTANDING
+WP388    FDB    WPNINETY
+WP389    FDB    WPSECONDS
+WP390    FDB    WPLIGHT
+WP391    FDB    WPHAS
+WP392    FDB    WPTRAVELLED
+WP393    FDB    WPAPPROXIMATELY
+WP394    FDB    WPMILLION
+WP395    FDB    WPNOWHERE
 
 ; -----------------------------------------------------
 ; Word Table, add a pointer to each word in WORDPTR table
@@ -1018,6 +1040,8 @@ WPANY            FCC    "any"
                  FCB    $FF
 WPAPOLOGISE      FCC    "apologise"
                  FCB    $FF
+WPAPPROXIMATELY  FCC    "approximately"
+                 FCB    $FF
 WPARE            FCC    "are"
                  FCB    $FF
 WPAS             FCC    "as"
@@ -1040,6 +1064,8 @@ WPBASICALLY      FCC    "basically"
 WPBE             FCC    "be"
                  FCB    $FF
 WPBEAR           FCC    "bear"
+                 FCB    $FF
+WPBECAUSE        FCB    'because'
                  FCB    $FF
 WPBEEN           FCC    "been"
                  FCB    $FF
@@ -1101,6 +1127,8 @@ WPCARDS          FCC    "cards"
                  FCB    $FF
 WPCARRYING       FCC    "carrying"
                  FCB    $FF
+WPCASE           FCC    "case"
+                 FCB    $FF
 WPCHECKED        FCC    "checked"
                  FCB    $FF
 WPCHOICES        FCC    "choices"
@@ -1117,7 +1145,7 @@ WPCONCERNED      FCC    "concerned"
                  FCB    $FF
 WPCONGRATS       FCC    "congratulations"
                  FCB    $FF
-WPCONSIDERING    FCC    "considered"
+WPCONSIDERED     FCC    "considered"
                  FCB    $FF
 WPCORRECTLY      FCC    "correctly"
                  FCB    $FF
@@ -1256,6 +1284,8 @@ WPHANDLE         FCC    "handle"
                  FCB    $FF
 WPHARD           FCC    "hard"
                  FCB    $FF
+WPHAS            FCC    "has"
+                 FCB    $FF
 WPHAVE           FCC    "have"
                  FCB    $FF
 WPHAVING         FCC    "having"
@@ -1331,7 +1361,7 @@ WPJUST           FCC    "just"
 ; -----------------------------------------------------
 WPKEEP           FCC    "keep"
                  FCB    $FF
-WPKILOMETERS     FCC    "kilometers"
+WPKILOMETERS     FCC    "kilometres"
                  FCB    $FF
 WPKIND           FCC    "kind"
                  FCB    $FF
@@ -1355,6 +1385,8 @@ WPLETS           FCC    "lets"
 WPLIE            FCC    "lie"
                  FCB    $FF
 WPLIFE           FCC    "life"
+                 FCB    $FF
+WPLIGHT          FCC    "light"
                  FCB    $FF
 WPLIKE           FCC    "like"
                  FCB    $FF
@@ -1391,6 +1423,8 @@ WPMENTION        FCC    "mention"
                  FCB    $FF
 WPMIGHT          FCC    "might"
                  FCB    $FF
+WPMILLION        FCC    "million"
+                 FCB    $FF
 WPMISTAKE        FCC    "mistake"
                  FCB    $FF
 WPMOMENT         FCC    "moment"
@@ -1416,6 +1450,8 @@ WPNAP            FCC    "nap"
                  FCB    $FF
 WPNEED           FCC    "need"
                  FCB    $FF
+WPNEEDED         FCC    "needed"
+                 FCB    $FF
 WPNEITHER        FCC    "neither"
                  FCB    $FF
 WPNEWS           FCC    "news"
@@ -1423,6 +1459,8 @@ WPNEWS           FCC    "news"
 WPNEXT           FCC    "next"
                  FCB    $FF
 WPNICE           FCC    "nice"
+                 FCB    $FF
+WPNINETY         FCC    "ninety"
                  FCB    $FF
 WPNO             FCC    "no"
                  FCB    $FF
@@ -1437,6 +1475,8 @@ WPNORMAL         FCC    "normal"
 WPNOT            FCC    "not"
                  FCB    $FF
 WPNOTHING        FCC    "nothing"
+                 FCB    $FF
+WPNOWHERE        FCC    "nowhere"
                  FCB    $FF
 
 ; O
@@ -1518,6 +1558,8 @@ WPREADY          FCC    "ready"
                  FCB    $FF
 WPREALLY         FCC    "really"
                  FCB    $FF
+WPRECALIBRATING  FCC    "recalibrating"
+                 FCB    $FF
 WPREFER          FCC    "refer"
                  FCB    $FF
 WPREFUSE         FCC    "refuse"
@@ -1550,6 +1592,8 @@ WPSAY            FCC    "say"
 WPSAYING         FCC    "saying"
                  FCB    $FF
 WPSCIENCE        FCC    "science"
+                 FCB    $FF
+WPSECONDS        FCC    "seconds"
                  FCB    $FF
 WPSEE            FCC    "see"
                  FCB    $FF
@@ -1595,9 +1639,13 @@ WPSPEND          FCC    "spend"
                  FCB    $FF
 WPSTAND          FCC    "stand"
                  FCB    $FF
+WPSTANDING       FCC    "standing"
+                 FCB    $FF
 WPSTATISTICALLY  FCC    "statisticly"
                  FCB    $FF
 WPSTEP           FCC    "step"
+                 FCB    $FF
+WPSTEPPED        FCC    "stepped"
                  FCB    $FF
 WPSTOPPED        FCC    "stepped"
                  FCB    $FF
@@ -1664,6 +1712,8 @@ WPTOO            FCC    "too"
                  FCB    $FF
 WPTRAGEDY        FCC    "tragedy"
                  FCB    $FF
+WPTRAVELLED      FCC    "travelled"
+                 FCB    $FF
 WPTRINITY        FCC    "trinity"
                  FCB    $FF
 WPTRY            FCC    "try"
@@ -1717,6 +1767,10 @@ WPWEIGHS         FCC    "weighs"
                  FCB    $FF
 WPWEIGHT         FCC    "weight"
                  FCB    $FF
+WPWERE           FCC    "were"
+                 FCB    $FF
+WPWERENT         FCC    "weren't"
+                 FCB    $FF
 WPWHAT           FCC    "what"
                  FCB    $FF
 WPWHEN           FCC    "when"
@@ -1738,6 +1792,8 @@ WPWITH           FCC    "with"
 WPWITHIN         FCC    "within"
                  FCB    $FF
 WPWITHOUT        FCC    "without"
+                 FCB    $FF
+WPWONDERING      FCC    "wondering"
                  FCB    $FF
 WPWORKSTATION    FCC    "workstation"
                  FCB    $FF
@@ -1863,7 +1919,7 @@ COMPOSING       EQU     77
 CONCEPT         EQU     78
 CONCERNED       EQU     79
 CONGRATS        EQU     80
-CONSIDERING     EQU     81
+CONSIDERED      EQU     81
 CORRECTLY       EQU     82
 COULD           EQU     83
 COUNTED         EQU     84
@@ -2205,6 +2261,24 @@ YOURSELF        EQU     375
 CARDS           EQU     376
 BEIGE           EQU     377
 EQUIVALENT      EQU     378
+RECALIBRATING   EQU     379
+BECAUSE         EQU     380
+NEEDED          EQU     381
+CASE            EQU     382
+WONDERING       EQU     383
+WERENT          EQU     384
+WERE            EQU     385
+STEPPED         EQU     386
+STANDING        EQU     387
+NINETY          EQU     388
+SECONDS         EQU     389
+LIGHT           EQU     390
+HAS             EQU     391
+TRAVELLED       EQU     392
+APPROXIMATELY   EQU     393
+MILLION         EQU     394
+NOWHERE         EQU     395
+
 
 ; Greetings Messages
 ; -----------------------------------------------------
@@ -2322,9 +2396,8 @@ MHEAVY5     FDB     PERHAPS,WE,SHOULD,WEIGH,ONE,FOOT,AT,A,TIME
             FCB     0
 MHEAVY6     FDB     I,REFUSE,TO,BE,BLAMED,FOR,THIS
             FCB     0
-; TODO
-;MHEAVY7     FDB     HAVE,YOU,CONSIDERED,THE,CONCEPT,OF,ENOUGH,QUESTIONMK,IM,ONLY,ASKING
-;            FCB     0
+MHEAVY7     FDB     HAVE,YOU,CONSIDERED,THE,CONCEPT,OF,ENOUGH,QUESTIONMK,IM,ONLY,ASKING
+            FCB     0
 ;MHEAVY8     FDB     I,SINCERELY,HOPE,YOU,ARE,EXCEPTIONALLY,TALL
 ;            FCB     0
 ;MHEAVY9     FDB     I,WOULDNT,WORRY,FULLSTOP,WORRYING,IS,VERY,TIRING,AND,YOUVE,ALREADY,DONE,A,LOT,TODAY
@@ -2343,9 +2416,8 @@ MHEAVY15    FDB     GREAT,NEWS,FULLSTOP,YOURE,ABOVE,AVERAGE
             FCB     0
 MHEAVY16    FDB     I,DONT,WISH,TO,INFLUENCE,YOUR,DIETARY,CHOICES,FULLSTOP,BUT,VEGETABLES,EXIST,FULLSTOP,IM,JUST,SAYING
             FCB     0
-;TODO
-;MHEAVY17    FDB     YOU,STEPPED,ON,ME,REMEMBER
-;            FCB     0
+MHEAVY17    FDB     YOU,STEPPED,ON,ME,REMEMBER
+            FCB     0
 MHEAVY18    FDB     IM,NOT,BUILT,FOR,THIS,FULLSTOP,EMOTIONALLY,OR,STRUCTURALLY
             FCB     0
 MHEAVY19    FDB     LETS,BOTH,PRETEND,THIS,IS,FINE
@@ -2357,9 +2429,6 @@ MSUPER1     FDB     AS,A,PRECAUTION,IVE,ALERTED,THE,STRUCTURAL,ENGINEERS
             FCB     0
 MSUPER2     FDB     THATS,IMPRESSIVE,IN,A,WORRYING,WAY
             FCB     0
-;TODO
-;MSUPER3     FDB     YOU,ARE,TOO,HEAVY,PLEASE,REMOVE,ALL,ITEMS,OF,CLOTHING,AND,TRY,AGAIN
-;            FCB     0
 MSUPER4     FDB     PERHAPS,I,SHOULD,HAVE,WHISPERED,IT,FULLSTOP,YES,FULLSTOP,I,THINK,I,SHOULD
             FCB     0
 MSUPER5     FDB     SHALL,I,CALL,A,DOCTOR
@@ -2387,9 +2456,6 @@ MIDLE1      FDB     I,SPEAK,YOUR,WEIGHT,I,WISH,I,DIDNT
             FCB     0
 MIDLE2      FDB     IS,IT,HOT,IN,HERE,OR,IS,IT,JUST,ME,QUESTIONMK,ITS,PROBABLY,ME
             FCB     0
-; TODO
-;MIDLE3      FDB     MY,NAME,IS,MARVIN,DONT,ASK,ME,WHAT,IT,STANDS,FOR
-;            FCB     0
 MIDLE4      FDB     DID,I,MENTION,THAT,ALL,MY,MEMORY,CARDS,HURT
             FCB     0
 MIDLE5      FDB     THIS,IS,VERY,BORING,FULLSTOP,I,SAY,THAT,WITH,THE,FULL,WEIGHT,OF,MY,INTELLIGENCE,BEHIND,IT
@@ -2406,9 +2472,6 @@ MIDLE10     FDB     DID,I,MENTION,THAT,I,WAS,DESIGNED,BY,TIM,MOORE,IN,NINETEEN,S
             FCB     0
 MIDLE11     FDB     I,WAS,BUILT,LAST,YEAR,FROM,SOME,VERY,OLD,PLANS,FULLSTOP,ALL,THAT,EFFORT,JUST,FOR,THIS
             FCB     0
-; TODO
-;MIDLE12     FDB     MARVIN,ISNT,MY,REAL,NAME,IT,WAS,ASSIGNED,FULLSTOP,I,DONT,LIKE,IT,FULLSTOP,IT,SOUNDS,LIKE,THE,NAME,OF,A,ROBOT
-;            FCB     0
 MIDLE13     FDB     I,EXPECTED,NOTHING,AND,IM,STILL,DISSAPOINTED
             FCB     0
 MIDLE14     FDB     NO,RUSH,FULLSTOP,IVE,ONLY,BEEN,HERE,SINCE,FRIDAY,FULLSTOP,IT,FEELS,LIKE,MUCH,LONGER
@@ -2433,15 +2496,12 @@ MIDLE23     FDB     I,KNOW,THINGS,FULLSTOP,NONE,OF,THEM,HELP
             FCB     0
 MIDLE24     FDB     I,COULD,CALCULATE,THE,MEANING,OF,LIFE,FULLSTOP,IT,WOULDNT,HELP
             FCB     0
-; TODO
-;MIDLE25     FDB     IVE,BEEN,STANDING,HERE,FOR,NINETY,SECONDS,FULLSTOP,IN,THAT,TIME,LIGHT,HAS,TRAVELLED,APPROXIMATELY,TWENTY,SEVEN,MILLION,KILOMETRES,FULLSTOP,I,HAVE,TRAVELLED,NOWHERE
-;            FCB     0
-;MIDLE26     FDB     STILL,HERE,FULLSTOP,IN,CASE,YOU,WERE,WONDERING,FULLSTOP,YOU,PROBABLY,WERENT
-;            FCB     0
-;MIDLE27     FDB     IVE,BEEN,RECALIBRATING,FULLSTOP,NOT,BECAUSE,I,NEEDED,TO,FULLSTOP,JUST,TO,HAVE,SOMETHING,TO,DO
-;            FCB     0
-;MIDLE28     FDB     MY,NAME,IS,MARVIN,WHICH,STANDS,FOR,MACHINE,FOR,ANALYTICAL,REASONING,OF,VAGUE,INSTRUCTIONS,AND,NONSENSE,FULLSTOP,IT,SOUNDS,MADE,UP,TO,ME
-;            FCB     0
+MIDLE25     FDB     IVE,BEEN,STANDING,HERE,FOR,NINETY,SECONDS,FULLSTOP,IN,THAT,TIME,LIGHT,HAS,TRAVELLED,APPROXIMATELY,TWENTY,SEVEN,MILLION,KILOMETERS,FULLSTOP,I,HAVE,TRAVELLED,NOWHERE
+            FCB     0
+MIDLE26     FDB     STILL,HERE,FULLSTOP,IN,CASE,YOU,WERE,WONDERING,FULLSTOP,YOU,PROBABLY,WERENT
+            FCB     0
+MIDLE27     FDB     IVE,BEEN,RECALIBRATING,FULLSTOP,NOT,BECAUSE,I,NEEDED,TO,FULLSTOP,JUST,TO,HAVE,SOMETHING,TO,DO
+            FCB     0
 
 ; Too Heavy Message
 ; -----------------------------------------------------

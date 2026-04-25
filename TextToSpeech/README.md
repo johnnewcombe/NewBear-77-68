@@ -157,3 +157,16 @@ The comment will be picked from one of four groups depending upon weight. The gr
 # Too Heavy Message
 
 * System overload… and it’s not me.
+
+# Missing words
+
+STANDING
+NINETY
+SECONDS
+LIGHT
+HAS
+TRAVELLED
+APPROXIMATELY
+MILLION
+NOWHERE
+
