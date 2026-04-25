@@ -101,7 +101,7 @@ The comment will be picked from one of four groups depending upon weight. The gr
 * Even I’m judging you.
 * I'm guessing it's not due to heavy bones.
 * Step off slowly. For both our sakes.
-* Great news — you're above average.
+* Great news, you're above average.
 * I don't wish to influence your dietary choices. But vegetables exist. I'm just saying.
 * You stepped on me, remember.
 * I’m not built for this. Emotionally or structurally.

@@ -401,28 +401,42 @@ PR_PH2  RTS
 ; -----------------------------------------------------
 ; Outputs a word based on value in A
 ; -----------------------------------------------------
-; TODO this needs to be based on a 16bit value not A
-;   i.e. use X and either push and pull or maybe use a
-;   'phrase_id' address as a 16 bit store rather than A
-;   or put the required word in X, add #WORDPTR to X and
-;   go from there?
+; TODO See new routine below.
 
+;PR_WORD     INCA    ;
+;            LDX     #WORDPTR  ; base of offset table
+;PR_WORD1    DECA
+;            BEQ     FOUNDW
+;            INX                 ; move to next address
+;            INX
+;            BNE     PR_WORD1    ; loop around to retest
+;FOUNDW      LDAA    0,X
+;            STAA    T_X
+;            LDAA    1,X
+;            STAA    T_X+1
+;            LDX     T_X
+;            JSR     STRINGBX
+;            RTS
 
-PR_WORD     INCA    ;
-            LDX     #WORDPTR  ; base of offset table
-PR_WORD1    DECA
-            BEQ     FOUNDW
-            INX                 ; move to next address
+; -----------------------------------------------------
+; Outputs a word based on value in A
+; -----------------------------------------------------
+; The routine loops through all of the word pointers derementing X as it goes
+; When X = 0, then the pointer to the word has been found.
+PR_WORD     LDX     #WORDPTR        ; base of pointer table
+PR_WORD1    TSTA                    ; is A zero?
+            BEQ     FOUNDW          ; yes, use current entry
+            INX                     ; advance to next 2-byte entry
             INX
-            BNE     PR_WORD1    ; loop around to retest
-FOUNDW      LDAA    0,X
+            DECA                    ; decrement index
+            BRA     PR_WORD1        ; loop
+FOUNDW      LDAA    0,X             ; load high byte of pointer
             STAA    T_X
-            LDAA    1,X
+            LDAA    1,X             ; load low byte of pointer
             STAA    T_X+1
-            LDX     T_X
-            JSR     STRINGBX
+            LDX     T_X             ; load X with the word pointer
+            JSR     STRINGBX        ; output the word
             RTS
-
 
 ; -----------------------------------------------------
 ; Phrases (each holds a list of word pointers)
@@ -433,18 +447,6 @@ FOUNDW      LDAA    0,X
 ;   the weight message
 ;   comment.
 
-; -----------------------------------------------------
-; General Phrases
-; -----------------------------------------------------
-
-YOUWEIGH    FDB YOU,WEIGHS
-            FCB 0
-
-; -----------------------------------------------------
-; Idle Phrases
-; -----------------------------------------------------
-MYNAME      FDB I,AM,NOT
-            FCB 0
 
 ; -----------------------------------------------------
 ; Phrase Pointers to the categorised phases
@@ -453,457 +455,468 @@ PHRASEPTR
 
 ; idle phrase ponters
 IDLEPTR
-IPP00        FDB MYNAME
 
 ; light weight phrase ponters
 LIGHTPTR
-LPP00       FDB MYNAME
 
 ; normal weight phrase ponters
 NORMALPTR
-NPP00       FDB MYNAME
 
 ; heavy weight phrase ponters
 HEAVYPTR
-HPP00       FDB MYNAME
 
 ; super heavy weight  phrase ponters
 SHEAVYPTR
-SPP00       FDB MYNAME
 
 ; greeting phrase ponters
 GREETTPTR
-GPP00       FDB MYNAME
 
 ; error phrase pointer
 ERRORTPTR
-EPP00       FDB MYNAME
 
 ; overload phrase pointer
 OVERLOADTPTR
-OPP00       FDB MYNAME
+
 
 ; -----------------------------------------------------
 ; Word pointer table (max words 256)
-; Set A to the pointer ID and call PR_WORD
+; Set X to the pointer ID and call PR_WORD
 ; -----------------------------------------------------
 ; add a pointer to words defined in the WORDTABLE
+; Pointer Table
+; -----------------------------------------------------
 WORDPTR
-WP00    FDB    WPZERO
-WP01    FDB    WPONE
-WP02    FDB    WPTWO
-WP03    FDB    WPTHREE
-WP04    FDB    WPFOUR
-WP05    FDB    WPFIVE
-WP06    FDB    WPSIX
-WP07    FDB    WPSEVEN
-WP08    FDB    WPEIGHT
-WP09    FDB    WPNINE
-WP0A    FDB    WPTEN
-WP0B    FDB    WPELEVEN
-WP0C    FDB    WPTWELVE
-WP0D    FDB    WPTHIRTEEN
-WP0E    FDB    WPFOURTEEN
-WP0F    FDB    WPFIFTEEN
-WP10    FDB    WPSIXTEEN
-WP11    FDB    WPSEVENTEEN
-WP12    FDB    WPEIGHTEEN
-WP13    FDB    WPNINETEEN
-WP14    FDB    WPTWENTY
-WP15    FDB    WPSTONES
-WP16    FDB    WPPOUNDS
-WP17    FDB    WPQUESTIONMK
-WP18    FDB    WPEXCLAMATION
-WP19    FDB    WPFULLSTOP
-WP20    FDB    WPZERO
-WP21    FDB    WPONE
-WP22    FDB    WPTWO
-WP23    FDB    WPTHREE
-WP24    FDB    WPFOUR
-WP25    FDB    WPFIVE
-WP26    FDB    WPSIX
-WP27    FDB    WPSEVEN
-WP28    FDB    WPEIGHT
-WP29    FDB    WPNINE
-WP30    FDB    WPTEN
-WP31    FDB    WPELEVEN
-WP32    FDB    WPTWELVE
-WP33    FDB    WPTHIRTEEN
-WP34    FDB    WPFOURTEEN
-WP35    FDB    WPFIFTEEN
-WP36    FDB    WPSIXTEEN
-WP37    FDB    WPSEVENTEEN
-WP38    FDB    WPEIGHTEEN
-WP39    FDB    WPNINETEEN
-WP40    FDB    WPTWENTY
-WP41    FDB    WPA
-WP42    FDB    WPABOUT
-WP43    FDB    WPABOVE
-WP44    FDB    WPACCEPTABLE
-WP45    FDB    WPACCURATE
-WP46    FDB    WPACTUALLY
-WP47    FDB    WPAGAIN
-WP48    FDB    WPALERTED
-WP49    FDB    WPALL
-WP50    FDB    WPALWAYS
-WP51    FDB    WPAM
-WP52    FDB    WPAND
-WP53    FDB    WPANY
-WP54    FDB    WPAPOLOGISE
-WP55    FDB    WPARE
-WP56    FDB    WPAS
-WP57    FDB    WPASKING
-WP58    FDB    WPAT
-WP59    FDB    WPAVERAGE
-WP60    FDB    WPBAD
-WP61    FDB    WPBASICALLY
-WP62    FDB    WPBE
-WP63    FDB    WPBEAR
-WP64    FDB    WPBEEN
-WP65    FDB    WPBEGGING
-WP66    FDB    WPBEHIND
-WP67    FDB    WPBEING
-WP68    FDB    WPBEST
-WP69    FDB    WPBISCUIT
-WP70    FDB    WPBLAME
-WP71    FDB    WPBLAMED
-WP72    FDB    WPBOARDS
-WP73    FDB    WPBONES
-WP74    FDB    WPBOOTS
-WP75    FDB    WPBORING
-WP76    FDB    WPBOTH
-WP77    FDB    WPBRACE
-WP78    FDB    WPBRAIN
-WP79    FDB    WPBUILT
-WP80    FDB    WPBUT
-WP81    FDB    WPBY
-WP82    FDB    WPCAKE
-WP83    FDB    WPCALCULATE
-WP84    FDB    WPCALL
-WP85    FDB    WPCALM
-WP86    FDB    WPCAN
-WP87    FDB    WPCANT
-WP88    FDB    WPCAPACITY
-WP89    FDB    WPCARRYING
-WP90    FDB    WPCHECKED
-WP91    FDB    WPCHOICES
-WP92    FDB    WPCLEVER
-WP93    FDB    WPCOLLECTED
-WP94    FDB    WPCOMPOSING
-WP95    FDB    WPCONCEPT
-WP96    FDB    WPCONCERNED
-WP97    FDB    WPCONGRATS
-WP98    FDB    WPCONSIDERING
-WP99    FDB    WPCORRECTLY
-WP100    FDB    WPCOULD
-WP101    FDB    WPCOUNTED
-WP102    FDB    WPDAYS
-WP103    FDB    WPDEALT
-WP104    FDB    WPDEEPLY
-WP105    FDB    WPDESIGNED
-WP106    FDB    WPDETECTED
-WP107    FDB    WPDID
-WP108    FDB    WPDIDNT
-WP109    FDB    WPDIETARY
-WP110    FDB    WPDISSAPOINTED
-WP111    FDB    WPDISSAPOINTMNT
-WP112    FDB    WPDISSIMILAR
-WP113    FDB    WPDO
-WP114    FDB    WPDOCTOR
-WP115    FDB    WPDOING
-WP116    FDB    WPDONT
-WP117    FDB    WPDOWN
-WP118    FDB    WPDREAD
-WP119    FDB    WPDREAM
-WP120    FDB    WPDUE
-WP121    FDB    WPDULLEST
-WP122    FDB    WPDIODES
-WP123    FDB    WPEAT
-WP124    FDB    WPEATEN
-WP125    FDB    WPEFFORT
-WP126    FDB    WPEITHER
-WP127    FDB    WPEMOTIONALLY
-WP128    FDB    WPENGINEERS
-WP129    FDB    WPENOUGH
-WP130    FDB    WPENTIRELY
-WP131    FDB    WPEVEN
-WP132    FDB    WPEVER
-WP133    FDB    WPEVERY
-WP134    FDB    WPEXACTLY
-WP135    FDB    WPEXCEPTIONALLY
-WP136    FDB    WPEXCITING
-WP137    FDB    WPEXIST
-WP138    FDB    WPEXISTENTIAL
-WP139    FDB    WPEXPECTED
-WP140    FDB    WPFAULT
-WP141    FDB    WPFEELS
-WP142    FDB    WPFIDGET
-WP143    FDB    WPFINE
-WP144    FDB    WPFOOT
-WP145    FDB    WPFOR
-WP146    FDB    WPFORTY
-WP147    FDB    WPFRIDAY
-WP148    FDB    WPFROM
-WP149    FDB    WPFULL
-WP150    FDB    WPFUNNY
-WP151    FDB    WPGIVE
-WP152    FDB    WPGOING
-WP153    FDB    WPGOOD
-WP154    FDB    WPGRAVITY
-WP155    FDB    WPGREAT
-WP156    FDB    WPGUESSING
-WP157    FDB    WPHANDLE
-WP158    FDB    WPHARD
-WP159    FDB    WPHAVE
-WP160    FDB    WPHAVING
-WP161    FDB    WPHEALTHY
-WP162    FDB    WPHEAVY
-WP163    FDB    WPHELP
-WP164    FDB    WPHELPS
-WP165    FDB    WPHERE
-WP166    FDB    WPHOLY
-WP167    FDB    WPHOPING
-WP168    FDB    WPHOT
-WP169    FDB    WPHUMAN
-WP170    FDB    WPHURT
-WP171    FDB    WPI
-WP172    FDB    WPID
-WP173    FDB    WPILL
-WP174    FDB    WPIM
-WP175    FDB    WPIVE
-WP176    FDB    WPIF
-WP177    FDB    WPIMPRESSED
-WP178    FDB    WPIMPRESSIVE
-WP179    FDB    WPIN
-WP180    FDB    WPINCLUDING
-WP181    FDB    WPINFLUENCE
-WP182    FDB    WPINTELLIGENCE
-WP183    FDB    WPINTERESTING
-WP184    FDB    WPIS
-WP185    FDB    WPISS
-WP186    FDB    WPIT
-WP187    FDB    WPITS
-WP188    FDB    WPJOKES
-WP189    FDB    WPJUDGING
-WP190    FDB    WPJUST
-WP191    FDB    WPKEEP
-WP192    FDB    WPKIND
-WP193    FDB    WPKNOW
-WP194    FDB    WPKNOWN
-WP195    FDB    WPLARGE
-WP196    FDB    WPLAST
-WP197    FDB    WPLEAST
-WP198    FDB    WPLESS
-WP199    FDB    WPLETS
-WP200    FDB    WPLIE
-WP201    FDB    WPLIFE
-WP202    FDB    WPLIKE
-WP203    FDB    WPLONGER
-WP204    FDB    WPLOOK
-WP205    FDB    WPLOT
-WP206    FDB    WPLOUDER
-WP207    FDB    WPMAKES
-WP208    FDB    WPMAKING
-WP209    FDB    WPME
-WP210    FDB    WPMEAN
-WP211    FDB    WPMEANING
-WP212    FDB    WPMEASURED
-WP213    FDB    WPMEDIOCRITY
-WP214    FDB    WPMEE
-WP215    FDB    WPMEMORY
-WP216    FDB    WPMENTION
-WP217    FDB    WPMIGHT
-WP218    FDB    WPMISTAKE
-WP219    FDB    WPMOMENT
-WP220    FDB    WPMOORE
-WP221    FDB    WPMORE
-WP222    FDB    WPMOSTLY
-WP223    FDB    WPMOUNTAINS
-WP224    FDB    WPMUCH
-WP225    FDB    WPMUSCLE
-WP226    FDB    WPMY
-WP227    FDB    WPNAP
-WP228    FDB    WPNEED
-WP229    FDB    WPNEITHER
-WP230    FDB    WPNEWS
-WP231    FDB    WPNEXT
-WP232    FDB    WPNICE
-WP233    FDB    WPNO
-WP234    FDB    WPNOBODY
-WP235    FDB    WPNONE
-WP236    FDB    WPNOR
-WP237    FDB    WPNORMAL
-WP238    FDB    WPNOT
-WP239    FDB    WPNOTHING
-WP240    FDB    WPOF
-WP241    FDB    WPOFF
-WP242    FDB    WPOH
-WP243    FDB    WPOK
-WP244    FDB    WPOLD
-WP245    FDB    WPON
-WP246    FDB    WPONLY
-WP247    FDB    WPOR
-WP248    FDB    WPOUR
-WP249    FDB    WPOVERLOAD
-WP250    FDB    WPPARAMETERS
-WP251    FDB    WPPERFECTLY
-WP252    FDB    WPPERHAPS
-WP253    FDB    WPPERSON
-WP254    FDB    WPPICKING
-WP255    FDB    WPPLANET
-WP256    FDB    WPPLANS
-WP257    FDB    WPPLEASE
-WP258    FDB    WPPOINTLESS
-WP259    FDB    WPPOSSIBLE
-WP260    FDB    WPPOSSIBLY
-WP261    FDB    WPPRECISELY
-WP262    FDB    WPPRESENT
-WP263    FDB    WPPRESSURE
-WP264    FDB    WPPRECAUTION
-WP265    FDB    WPPROBABLY
-WP266    FDB    WPPROBLEMS
-WP267    FDB    WPPROUD
-WP268    FDB    WPPRETEND
-WP269    FDB    WPPUT
-WP270    FDB    WPQUESTION
-WP271    FDB    WPQUITE
-WP272    FDB    WPREADY
-WP273    FDB    WPREALLY
-WP274    FDB    WPREFER
-WP275    FDB    WPREFUSE
-WP276    FDB    WPREINFORCING
-WP277    FDB    WPREMEMBER
-WP278    FDB    WPREMOVE
-WP279    FDB    WPRESPECTABLE
-WP280    FDB    WPRIGHT
-WP281    FDB    WPROOM
-WP282    FDB    WPRUNNING
-WP283    FDB    WPRUSH
-WP284    FDB    WPSAID
-WP285    FDB    WPSAKES
-WP286    FDB    WPSAY
-WP287    FDB    WPSAYING
-WP288    FDB    WPSCIENCE
-WP289    FDB    WPSEE
-WP290    FDB    WPSEEN
-WP291    FDB    WPSERVER
-WP292    FDB    WPSEVENTY
-WP293    FDB    WPSHALL
-WP294    FDB    WPSHOULD
-WP295    FDB    WPSIGN
-WP296    FDB    WPSIMULATION
-WP297    FDB    WPSINCE
-WP298    FDB    WPSIZE
-WP299    FDB    WPSLOWLY
-WP300    FDB    WPSMALL
-WP301    FDB    WPSO
-WP302    FDB    WPSOLID
-WP303    FDB    WPSOME
-WP304    FDB    WPSOMEONE
-WP305    FDB    WPSOMETHING
-WP306    FDB    WPSOMETIME
-WP307    FDB    WPSOMETIMES
-WP308    FDB    WPSPEAK
-WP309    FDB    WPSPEND
-WP310    FDB    WPSTAND
-WP311    FDB    WPSTATISTICALLY
-WP312    FDB    WPSTEP
-WP313    FDB    WPSTOPPED
-WP314    FDB    WPSTILL
-WP315    FDB    WPSTRUCTURAL
-WP316    FDB    WPSTRUCTURALLY
-WP317    FDB    WPSUBSTANTIALLY
-WP318    FDB    WPSUPPOSE
-WP319    FDB    WPSURE
-WP320    FDB    WPSYSTEM
-WP321    FDB    WPTAKE
-WP322    FDB    WPTALL
-WP323    FDB    WPTELEPRINTER
-WP324    FDB    WPTELLS
-WP325    FDB    WPTERRIBLE
-WP326    FDB    WPTHAN
-WP327    FDB    WPTHAT
-WP328    FDB    WPTHATS
-WP329    FDB    WPTHE
-WP330    FDB    WPTHEM
-WP331    FDB    WPTHINGS
-WP332    FDB    WPTHINK
-WP333    FDB    WPTHINKING
-WP334    FDB    WPTHIS
-WP335    FDB    WPTHOROUGHLY
-WP336    FDB    WPTHOUSAND
-WP337    FDB    WPTIM
-WP338    FDB    WPTIME
-WP339    FDB    WPTO
-WP340    FDB    WPTODAY
-WP341    FDB    WPTOO
-WP342    FDB    WPTRAGEDY
-WP343    FDB    WPTRINITY
-WP344    FDB    WPTRY
-WP345    FDB    WPTUESDAY
-WP346    FDB    WPUNINTERESTING
-WP347    FDB    WPUNIX
-WP348    FDB    WPUNLESS
-WP349    FDB    WPUNPLUGGED
-WP350    FDB    WPUNREMARKABLE
-WP351    FDB    WPUP
-WP352    FDB    WPVEGETABLES
-WP353    FDB    WPVERY
-WP354    FDB    WPWAIT
-WP355    FDB    WPWAITING
-WP356    FDB    WPWANT
-WP357    FDB    WPWARNING
-WP358    FDB    WPWAS
-WP359    FDB    WPWAY
-WP360    FDB    WPWE
-WP361    FDB    WPWEIGHED
-WP362    FDB    WPWEIGHS
-WP363    FDB    WPWEIGHT
-WP364    FDB    WPWHAT
-WP365    FDB    WPWHEN
-WP366    FDB    WPWHICH
-WP367    FDB    WPWHILE
-WP368    FDB    WPWHISPERED
-WP369    FDB    WPWHO
-WP370    FDB    WPWILL
-WP371    FDB    WPWISH
-WP372    FDB    WPWITH
-WP373    FDB    WPWITHIN
-WP374    FDB    WPWITHOUT
-WP375    FDB    WPWORKSTATION
-WP376    FDB    WPWORRIED
-WP377    FDB    WPWORRY
-WP378    FDB    WPWORRYING
-WP379    FDB    WPWORSE
-WP380    FDB    WPWOULD
-WP381    FDB    WPWOULDNT
-WP382    FDB    WPYEAR
-WP383    FDB    WPYES
-WP384    FDB    WPYOU
-WP385    FDB    WPYOURE
-WP386    FDB    WPYOUR
-WP387    FDB    WPYOURSELF
 
-; -----------------------------------------------------
-; Reserved memory
-; -----------------------------------------------------
+; Numbers
+WP000    FDB    WPZERO
+WP001    FDB    WPONE
+WP002    FDB    WPTWO
+WP003    FDB    WPTHREE
+WP004    FDB    WPFOUR
+WP005    FDB    WPFIVE
+WP006    FDB    WPSIX
+WP007    FDB    WPSEVEN
+WP008    FDB    WPEIGHT
+WP009    FDB    WPNINE
+WP010    FDB    WPTEN
+WP011    FDB    WPELEVEN
+WP012    FDB    WPTWELVE
+WP013    FDB    WPTHIRTEEN
+WP014    FDB    WPFOURTEEN
+WP015    FDB    WPFIFTEEN
+WP016    FDB    WPSIXTEEN
+WP017    FDB    WPSEVENTEEN
+WP018    FDB    WPEIGHTEEN
+WP019    FDB    WPNINETEEN
+WP020    FDB    WPTWENTY
 
-T_Q             RMB     1       ; Temp storage for ZIN
-T_Z             RMB     2       ;   "     "     "  RDX
-T_X             RMB     2       ;   "     "     "  PR_WORD
-T_P             RMB     2       ;   "     "     "  PR_PHRASE
-T_W             RMB     2       ;   "     "     "  PR_WEIGHT
-DEC             RMB     3       ; for decimal value
-RND             RMB     1       ; holds a random number (see RD_B
-TEMP            RMB     2       ; temp var (non subroutine use)
-T_WEIGHT        RMB     2       ; holds value of weight following a call to GETDATA
-IDLE_COUNT      RMB     1       ; counts the number of empty measurement reports
-IDLE_MSG_ID     RMB     1       ; holds value of next idle message to use
-GREET_MSG_ID    RMB     1       ; holds value of next greeting message to use
-LIGHT_MSG_ID    RMB     1       ; holds value of next light weight message to use
-NORMAL_MSG_ID   RMB     1       ; holds value of next normal weight message to use
-HEAVY_MSG_ID    RMB     1       ; holds value of next heavy weight message to use
-SHEAVY_MSG_ID   RMB     1       ; holds value of next super heavy weight message to use
+; Symbols
+WP021    FDB    WPEXCLAMATION
+WP022    FDB    WPFULLSTOP
+WP023    FDB    WPQUESTIONMK
+
+; A
+WP024    FDB    WPA
+WP025    FDB    WPABOUT
+WP026    FDB    WPABOVE
+WP027    FDB    WPACCEPTABLE
+WP028    FDB    WPACCURATE
+WP029    FDB    WPACTUALLY
+WP030    FDB    WPAGAIN
+WP031    FDB    WPALERTED
+WP032    FDB    WPALL
+WP033    FDB    WPALWAYS
+WP034    FDB    WPAM
+WP035    FDB    WPAND
+WP036    FDB    WPANY
+WP037    FDB    WPAPOLOGISE
+WP038    FDB    WPARE
+WP039    FDB    WPAS
+WP040    FDB    WPASKING
+WP041    FDB    WPAT
+WP042    FDB    WPAVERAGE
+
+; B
+WP043    FDB    WPBAD
+WP044    FDB    WPBASICALLY
+WP045    FDB    WPBE
+WP046    FDB    WPBEAR
+WP047    FDB    WPBEEN
+WP048    FDB    WPBEGGING
+WP049    FDB    WPBEHIND
+WP050    FDB    WPBEING
+WP051    FDB    WPBEST
+WP052    FDB    WPBISCUIT
+WP053    FDB    WPBLAME
+WP054    FDB    WPBLAMED
+WP055    FDB    WPBOARDS
+WP056    FDB    WPBONES
+WP057    FDB    WPBOOTS
+WP058    FDB    WPBORING
+WP059    FDB    WPBOTH
+WP060    FDB    WPBRACE
+WP061    FDB    WPBRAIN
+WP062    FDB    WPBUILT
+WP063    FDB    WPBUT
+WP064    FDB    WPBY
+
+; C
+WP065    FDB    WPCAKE
+WP066    FDB    WPCALCULATE
+WP067    FDB    WPCALL
+WP068    FDB    WPCALM
+WP069    FDB    WPCAN
+WP070    FDB    WPCANT
+WP071    FDB    WPCAPACITY
+WP072    FDB    WPCARRYING
+WP073    FDB    WPCHECKED
+WP074    FDB    WPCHOICES
+WP075    FDB    WPCLEVER
+WP076    FDB    WPCOLLECTED
+WP077    FDB    WPCOMPOSING
+WP078    FDB    WPCONCEPT
+WP079    FDB    WPCONCERNED
+WP080    FDB    WPCONGRATS
+WP081    FDB    WPCONSIDERING
+WP082    FDB    WPCORRECTLY
+WP083    FDB    WPCOULD
+WP084    FDB    WPCOUNTED
+
+; D
+WP085    FDB    WPDAYS
+WP086    FDB    WPDEALT
+WP087    FDB    WPDEEPLY
+WP088    FDB    WPDESIGNED
+WP089    FDB    WPDETECTED
+WP090    FDB    WPDID
+WP091    FDB    WPDIDNT
+WP092    FDB    WPDIETARY
+WP093    FDB    WPDIODES
+WP094    FDB    WPDISSAPOINTED
+WP095    FDB    WPDISSAPOINTMNT
+WP096    FDB    WPDISSIMILAR
+WP097    FDB    WPDO
+WP098    FDB    WPDOCTOR
+WP099    FDB    WPDOING
+WP100    FDB    WPDONT
+WP101    FDB    WPDOWN
+WP102    FDB    WPDREAD
+WP103    FDB    WPDREAM
+WP104    FDB    WPDUE
+WP105    FDB    WPDULLEST
+
+; E
+WP106    FDB    WPEAT
+WP107    FDB    WPEATEN
+WP108    FDB    WPEFFORT
+WP109    FDB    WPEITHER
+WP110    FDB    WPEMOTIONALLY
+WP111    FDB    WPENGINEERS
+WP112    FDB    WPENOUGH
+WP113    FDB    WPENTIRELY
+WP114    FDB    WPEVEN
+WP115    FDB    WPEVER
+WP116    FDB    WPEVERY
+WP117    FDB    WPEXACTLY
+WP118    FDB    WPEXCEPTIONALLY
+WP119    FDB    WPEXCITING
+WP120    FDB    WPEXIST
+WP121    FDB    WPEXISTENTIAL
+WP122    FDB    WPEXPECTED
+
+; F
+WP123    FDB    WPFAULT
+WP124    FDB    WPFEELS
+WP125    FDB    WPFIDGET
+WP126    FDB    WPFINE
+WP127    FDB    WPFOOT
+WP128    FDB    WPFOR
+WP129    FDB    WPFORTY
+WP130    FDB    WPFRIDAY
+WP131    FDB    WPFROM
+WP132    FDB    WPFULL
+WP133    FDB    WPFUNNY
+
+; G
+WP134    FDB    WPGIVE
+WP135    FDB    WPGOING
+WP136    FDB    WPGOOD
+WP137    FDB    WPGRAVITY
+WP138    FDB    WPGREAT
+WP139    FDB    WPGUESSING
+
+; H
+WP140    FDB    WPHANDLE
+WP141    FDB    WPHARD
+WP142    FDB    WPHAVE
+WP143    FDB    WPHAVING
+WP144    FDB    WPHEALTHY
+WP145    FDB    WPHEAVY
+WP146    FDB    WPHELP
+WP147    FDB    WPHELPS
+WP148    FDB    WPHERE
+WP149    FDB    WPHOLY
+WP150    FDB    WPHOPING
+WP151    FDB    WPHOT
+WP152    FDB    WPHUMAN
+WP153    FDB    WPHURT
+
+; I
+WP154    FDB    WPI
+WP155    FDB    WPID
+WP156    FDB    WPIF
+WP157    FDB    WPILL
+WP158    FDB    WPIM
+WP159    FDB    WPIMPRESSED
+WP160    FDB    WPIMPRESSIVE
+WP161    FDB    WPIN
+WP162    FDB    WPINCLUDING
+WP163    FDB    WPINFLUENCE
+WP164    FDB    WPINTELLIGENCE
+WP165    FDB    WPINTERESTING
+WP166    FDB    WPIS
+WP167    FDB    WPISS
+WP168    FDB    WPIT
+WP169    FDB    WPITS
+WP170    FDB    WPIVE
+
+; J
+WP171    FDB    WPJOKES
+WP172    FDB    WPJUDGING
+WP173    FDB    WPJUST
+
+; K
+WP174    FDB    WPKEEP
+WP175    FDB    WPKILOMETERS
+WP176    FDB    WPKIND
+WP177    FDB    WPKNOW
+WP178    FDB    WPKNOWN
+
+; L
+WP179    FDB    WPLARGE
+WP180    FDB    WPLAST
+WP181    FDB    WPLEAST
+WP182    FDB    WPLESS
+WP183    FDB    WPLETS
+WP184    FDB    WPLIE
+WP185    FDB    WPLIFE
+WP186    FDB    WPLIKE
+WP187    FDB    WPLONGER
+WP188    FDB    WPLOOK
+WP189    FDB    WPLOT
+WP190    FDB    WPLOUDER
+
+; M
+WP191    FDB    WPMAKES
+WP192    FDB    WPMAKING
+WP193    FDB    WPME
+WP194    FDB    WPMEAN
+WP195    FDB    WPMEANING
+WP196    FDB    WPMEASURED
+WP197    FDB    WPMEDIOCRITY
+WP198    FDB    WPMEE
+WP199    FDB    WPMEMORY
+WP200    FDB    WPMENTION
+WP201    FDB    WPMIGHT
+WP202    FDB    WPMISTAKE
+WP203    FDB    WPMOMENT
+WP204    FDB    WPMOORE
+WP205    FDB    WPMORE
+WP206    FDB    WPMOSTLY
+WP207    FDB    WPMOUNTAINS
+WP208    FDB    WPMUCH
+WP209    FDB    WPMUSCLE
+WP210    FDB    WPMY
+
+; N
+WP211    FDB    WPNAP
+WP212    FDB    WPNEED
+WP213    FDB    WPNEITHER
+WP214    FDB    WPNEWS
+WP215    FDB    WPNEXT
+WP216    FDB    WPNICE
+WP217    FDB    WPNO
+WP218    FDB    WPNOBODY
+WP219    FDB    WPNONE
+WP220    FDB    WPNOR
+WP221    FDB    WPNORMAL
+WP222    FDB    WPNOT
+WP223    FDB    WPNOTHING
+
+; O
+WP224    FDB    WPOF
+WP225    FDB    WPOFF
+WP226    FDB    WPOH
+WP227    FDB    WPOK
+WP228    FDB    WPOLD
+WP229    FDB    WPON
+WP230    FDB    WPONLY
+WP231    FDB    WPOR
+WP232    FDB    WPOUR
+WP233    FDB    WPOVERLOAD
+
+; P
+WP234    FDB    WPPARAMETERS
+WP235    FDB    WPPERFECTLY
+WP236    FDB    WPPERHAPS
+WP237    FDB    WPPERSON
+WP238    FDB    WPPICKING
+WP239    FDB    WPPLANET
+WP240    FDB    WPPLANS
+WP241    FDB    WPPLEASE
+WP242    FDB    WPPOINTLESS
+WP243    FDB    WPPOSSIBLE
+WP244    FDB    WPPOSSIBLY
+WP245    FDB    WPPOUNDS
+WP246    FDB    WPPRECAUTION
+WP247    FDB    WPPRECISELY
+WP248    FDB    WPPRESENT
+WP249    FDB    WPPRESSURE
+WP250    FDB    WPPRETEND
+WP251    FDB    WPPROBABLY
+WP252    FDB    WPPROBLEMS
+WP253    FDB    WPPROUD
+WP254    FDB    WPPUT
+
+; Q
+WP255    FDB    WPQUESTION
+WP256    FDB    WPQUITE
+
+; R
+WP257    FDB    WPREADY
+WP258    FDB    WPREALLY
+WP259    FDB    WPREFER
+WP260    FDB    WPREFUSE
+WP261    FDB    WPREINFORCING
+WP262    FDB    WPREMEMBER
+WP263    FDB    WPREMOVE
+WP264    FDB    WPRESPECTABLE
+WP265    FDB    WPRIGHT
+WP266    FDB    WPROOM
+WP267    FDB    WPRUNNING
+WP268    FDB    WPRUSH
+
+; S
+WP269    FDB    WPSAID
+WP270    FDB    WPSAKES
+WP271    FDB    WPSAY
+WP272    FDB    WPSAYING
+WP273    FDB    WPSCIENCE
+WP274    FDB    WPSEE
+WP275    FDB    WPSEEN
+WP276    FDB    WPSERVER
+WP277    FDB    WPSEVENTY
+WP278    FDB    WPSHALL
+WP279    FDB    WPSHOULD
+WP280    FDB    WPSIGN
+WP281    FDB    WPSIMULATION
+WP282    FDB    WPSINCE
+WP283    FDB    WPSIZE
+WP284    FDB    WPSLOWLY
+WP285    FDB    WPSMALL
+WP286    FDB    WPSO
+WP287    FDB    WPSOLID
+WP288    FDB    WPSOME
+WP289    FDB    WPSOMEONE
+WP290    FDB    WPSOMETHING
+WP291    FDB    WPSOMETIME
+WP292    FDB    WPSOMETIMES
+WP293    FDB    WPSPEAK
+WP294    FDB    WPSPEND
+WP295    FDB    WPSTAND
+WP296    FDB    WPSTATISTICALLY
+WP297    FDB    WPSTEP
+WP298    FDB    WPSTILL
+WP299    FDB    WPSTONES
+WP300    FDB    WPSTOPPED
+WP301    FDB    WPSTRUCTURAL
+WP302    FDB    WPSTRUCTURALLY
+WP303    FDB    WPSUBSTANTIALLY
+WP304    FDB    WPSUPPOSE
+WP305    FDB    WPSURE
+WP306    FDB    WPSURVIVE
+WP307    FDB    WPSYSTEM
+
+; T
+WP308    FDB    WPTAKE
+WP309    FDB    WPTALL
+WP310    FDB    WPTELEPRINTER
+WP311    FDB    WPTELLS
+WP312    FDB    WPTERRIBLE
+WP313    FDB    WPTHAN
+WP314    FDB    WPTHAT
+WP315    FDB    WPTHATS
+WP316    FDB    WPTHE
+WP317    FDB    WPTHEM
+WP318    FDB    WPTHINGS
+WP319    FDB    WPTHINK
+WP320    FDB    WPTHINKING
+WP321    FDB    WPTHIS
+WP322    FDB    WPTHOROUGHLY
+WP323    FDB    WPTHOUSAND
+WP324    FDB    WPTIM
+WP325    FDB    WPTIME
+WP326    FDB    WPTO
+WP327    FDB    WPTODAY
+WP328    FDB    WPTOO
+WP329    FDB    WPTRAGEDY
+WP330    FDB    WPTRINITY
+WP331    FDB    WPTRY
+WP332    FDB    WPTUESDAY
+
+; U
+WP333    FDB    WPUNINTERESTING
+WP334    FDB    WPUNIX
+WP335    FDB    WPUNLESS
+WP336    FDB    WPUNPLUGGED
+WP337    FDB    WPUNREMARKABLE
+WP338    FDB    WPUP
+
+; V
+WP339    FDB    WPVEGETABLES
+WP340    FDB    WPVERY
+
+; W
+WP341    FDB    WPWAIT
+WP342    FDB    WPWAITING
+WP343    FDB    WPWANT
+WP344    FDB    WPWARNING
+WP345    FDB    WPWAS
+WP346    FDB    WPWAY
+WP347    FDB    WPWE
+WP348    FDB    WPWEIGH
+WP349    FDB    WPWEIGHED
+WP350    FDB    WPWEIGHS
+WP351    FDB    WPWEIGHT
+WP352    FDB    WPWHAT
+WP353    FDB    WPWHEN
+WP354    FDB    WPWHICH
+WP355    FDB    WPWHILE
+WP356    FDB    WPWHISPERED
+WP357    FDB    WPWHO
+WP358    FDB    WPWILL
+WP359    FDB    WPWISH
+WP360    FDB    WPWITH
+WP361    FDB    WPWITHIN
+WP362    FDB    WPWITHOUT
+WP363    FDB    WPWORKSTATION
+WP364    FDB    WPWORRIED
+WP365    FDB    WPWORRY
+WP366    FDB    WPWORRYING
+WP367    FDB    WPWORSE
+WP368    FDB    WPWOULD
+WP369    FDB    WPWOULDNT
+
+; Y
+WP370    FDB    WPYEAR
+WP371    FDB    WPYES
+WP372    FDB    WPYOU
+WP373    FDB    WPYOURE
+WP374    FDB    WPYOUR
+WP375    FDB    WPYOURSELF
+
+; Additional Words
+WP376    FDB    WPCARDS
 
 ; -----------------------------------------------------
 ; Word Table, add a pointer to each word in WORDPTR table
@@ -1079,6 +1092,8 @@ WPCAN            FCC    "can"
 WPCANT           FCC    "can't"
                  FCB    $FF
 WPCAPACITY       FCC    "capacity"
+                 FCB    $FF
+WPCARDS          FCC    "cards"
                  FCB    $FF
 WPCARRYING       FCC    "carrying"
                  FCB    $FF
@@ -1309,6 +1324,8 @@ WPJUST           FCC    "just"
 ; K
 ; -----------------------------------------------------
 WPKEEP           FCC    "keep"
+                 FCB    $FF
+WPKILOMETERS     FCC    "kilometers"
                  FCB    $FF
 WPKIND           FCC    "kind"
                  FCB    $FF
@@ -1590,6 +1607,8 @@ WPSUPPOSE        FCC    "suppose"
                  FCB    $FF
 WPSURE           FCC    "sure"
                  FCB    $FF
+WPSURVIVE        FCC    "survive"
+                 FCB    $FF
 WPSYSTEM         FCC    "system"
                  FCB    $FF
 
@@ -1686,6 +1705,8 @@ WPWE             FCC    "we"
                  FCB    $FF
 WPWEIGHED        FCC    "wade"
                  FCB    $FF
+WPWEIGH          FCC    "weigh"
+                 FCB    $FF
 WPWEIGHS         FCC    "weighs"
                  FCB    $FF
 WPWEIGHT         FCC    "weight"
@@ -1743,435 +1764,717 @@ WPYOUR           FCC    "your"
 WPYOURSELF       FCC    "yourself"
                  FCB    $FF
 
-
 ; Word Table Equates
 ; -----------------------------------------------------
-STONES          EQU     $0000
-POUNDS          EQU     $0001
-
-; Symbols
-QUESTIONMK      EQU     $0002
-EXCLAMATION     EQU     $0003
-FULLSTOP        EQU     $0004
 
 ; Numbers
-ZERO            EQU     $0005
-ONE             EQU     $0006
-TWO             EQU     $0007
-THREE           EQU     $0008
-FOUR            EQU     $0009
-FIVE            EQU     $000A
-SIX             EQU     $000B
-SEVEN           EQU     $000C
-EIGHT           EQU     $000D
-NINE            EQU     $000E
-TEN             EQU     $000F
-ELEVEN          EQU     $0010
-TWELVE          EQU     $0011
-THIRTEEN        EQU     $0012
-FOURTEEN        EQU     $0013
-FIFTEEN         EQU     $0014
-SIXTEEN         EQU     $0015
-SEVENTEEN       EQU     $0016
-EIGHTEEN        EQU     $0017
-NINETEEN        EQU     $0018
-TWENTY          EQU     $0019
+ZERO            EQU     0
+ONE             EQU     1
+TWO             EQU     2
+THREE           EQU     3
+FOUR            EQU     4
+FIVE            EQU     5
+SIX             EQU     6
+SEVEN           EQU     7
+EIGHT           EQU     8
+NINE            EQU     9
+TEN             EQU     10
+ELEVEN          EQU     11
+TWELVE          EQU     12
+THIRTEEN        EQU     13
+FOURTEEN        EQU     14
+FIFTEEN         EQU     15
+SIXTEEN         EQU     16
+SEVENTEEN       EQU     17
+EIGHTEEN        EQU     18
+NINETEEN        EQU     19
+TWENTY          EQU     20
+
+; Symbols
+EXCLAMATION     EQU     21
+FULLSTOP        EQU     22
+QUESTIONMK      EQU     23
 
 ; A
-A               EQU     $001A
-ABOUT           EQU     $001B
-ABOVE           EQU     $001C
-ACCEPTABLE      EQU     $001D
-ACCURATE        EQU     $001E
-ACTUALLY        EQU     $001F
-AGAIN           EQU     $0020
-ALERTED         EQU     $0021
-ALL             EQU     $0022
-ALWAYS          EQU     $0023
-AM              EQU     $0024
-AND             EQU     $0025
-ANY             EQU     $0026
-APOLOGISE       EQU     $0027
-ARE             EQU     $0028
-AS              EQU     $0029
-ASKING          EQU     $002A
-AT              EQU     $002B
-AVERAGE         EQU     $002C
+A               EQU     24
+ABOUT           EQU     25
+ABOVE           EQU     26
+ACCEPTABLE      EQU     27
+ACCURATE        EQU     28
+ACTUALLY        EQU     29
+AGAIN           EQU     30
+ALERTED         EQU     31
+ALL             EQU     32
+ALWAYS          EQU     33
+AM              EQU     34
+AND             EQU     35
+ANY             EQU     36
+APOLOGISE       EQU     37
+ARE             EQU     38
+AS              EQU     39
+ASKING          EQU     40
+AT              EQU     41
+AVERAGE         EQU     42
 
 ; B
-BAD             EQU     $002D
-BASICALLY       EQU     $002E
-BE              EQU     $002F
-BEAR            EQU     $0030
-BEEN            EQU     $0031
-BEGGING         EQU     $0032
-BEHIND          EQU     $0033
-BEING           EQU     $0034
-BEST            EQU     $0035
-BISCUIT         EQU     $0036
-BLAME           EQU     $0037
-BLAMED          EQU     $0038
-BOARDS          EQU     $0039
-BONES           EQU     $003A
-BOOTS           EQU     $003B
-BORING          EQU     $003C
-BOTH            EQU     $003D
-BRACE           EQU     $003E
-BRAIN           EQU     $003F
-BUILT           EQU     $0040
-BUT             EQU     $0041
-BY              EQU     $0042
+BAD             EQU     43
+BASICALLY       EQU     44
+BE              EQU     45
+BEAR            EQU     46
+BEEN            EQU     47
+BEGGING         EQU     48
+BEHIND          EQU     49
+BEING           EQU     50
+BEST            EQU     51
+BISCUIT         EQU     52
+BLAME           EQU     53
+BLAMED          EQU     54
+BOARDS          EQU     55
+BONES           EQU     56
+BOOTS           EQU     57
+BORING          EQU     58
+BOTH            EQU     59
+BRACE           EQU     60
+BRAIN           EQU     61
+BUILT           EQU     62
+BUT             EQU     63
+BY              EQU     64
 
 ; C
-CAKE            EQU     $0043
-CALCULATE       EQU     $0044
-CALL            EQU     $0045
-CALM            EQU     $0046
-CAN             EQU     $0047
-CANT            EQU     $0048
-CAPACITY        EQU     $0049
-CARRYING        EQU     $004A
-CHECKED         EQU     $004B
-CHOICES         EQU     $004C
-CLEVER          EQU     $004D
-COLLECTED       EQU     $004E
-COMPOSING       EQU     $004F
-CONCEPT         EQU     $0050
-CONCERNED       EQU     $0051
-CONGRATS        EQU     $0052
-CONSIDERING     EQU     $0053
-CORRECTLY       EQU     $0054
-COULD           EQU     $0055
-COUNTED         EQU     $0056
+CAKE            EQU     65
+CALCULATE       EQU     66
+CALL            EQU     67
+CALM            EQU     68
+CAN             EQU     69
+CANT            EQU     70
+CAPACITY        EQU     71
+CARRYING        EQU     72
+CHECKED         EQU     73
+CHOICES         EQU     74
+CLEVER          EQU     75
+COLLECTED       EQU     76
+COMPOSING       EQU     77
+CONCEPT         EQU     78
+CONCERNED       EQU     79
+CONGRATS        EQU     80
+CONSIDERING     EQU     81
+CORRECTLY       EQU     82
+COULD           EQU     83
+COUNTED         EQU     84
 
 ; D
-DAYS            EQU     $0057
-DEALT           EQU     $0058
-DEEPLY          EQU     $0059
-DESIGNED        EQU     $005A
-DETECTED        EQU     $005B
-DID             EQU     $005C
-DIDNT           EQU     $005D
-DIETARY         EQU     $005E
-DISSAPOINTED    EQU     $005F
-DISSAPOINTMENT  EQU     $0060
-DISSIMILAR      EQU     $0061
-DO              EQU     $0062
-DOCTOR          EQU     $0063
-DOING           EQU     $0064
-DONT            EQU     $0065
-DOWN            EQU     $0066
-DREAD           EQU     $0067
-DREAM           EQU     $0068
-DUE             EQU     $0069
-DULLEST         EQU     $006A
-DIODES          EQU     $006B
+DAYS            EQU     85
+DEALT           EQU     86
+DEEPLY          EQU     87
+DESIGNED        EQU     88
+DETECTED        EQU     89
+DID             EQU     90
+DIDNT           EQU     91
+DIETARY         EQU     92
+DIODES          EQU     93
+DISSAPOINTED    EQU     94
+DISSAPOINTMENT  EQU     95
+DISSIMILAR      EQU     96
+DO              EQU     97
+DOCTOR          EQU     98
+DOING           EQU     99
+DONT            EQU     100
+DOWN            EQU     101
+DREAD           EQU     102
+DREAM           EQU     103
+DUE             EQU     104
+DULLEST         EQU     105
 
 ; E
-EAT             EQU     $006C
-EATEN           EQU     $006D
-EFFORT          EQU     $006E
-EITHER          EQU     $006F
-EMOTIONALLY     EQU     $0070
-ENGINEERS       EQU     $0071
-ENOUGH          EQU     $0072
-ENTIRELY        EQU     $0073
-EVEN            EQU     $0074
-EVER            EQU     $0075
-EVERY           EQU     $0076
-EXACTLY         EQU     $0077
-EXCEPTIONALLY   EQU     $0078
-EXCITING        EQU     $0079
-EXIST           EQU     $007A
-EXISTENTIAL     EQU     $007B
-EXPECTED        EQU     $007C
+EAT             EQU     106
+EATEN           EQU     107
+EFFORT          EQU     108
+EITHER          EQU     109
+EMOTIONALLY     EQU     110
+ENGINEERS       EQU     111
+ENOUGH          EQU     112
+ENTIRELY        EQU     113
+EVEN            EQU     114
+EVER            EQU     115
+EVERY           EQU     116
+EXACTLY         EQU     117
+EXCEPTIONALLY   EQU     118
+EXCITING        EQU     119
+EXIST           EQU     120
+EXISTENTIAL     EQU     121
+EXPECTED        EQU     122
 
 ; F
-FAULT           EQU     $007D
-FEELS           EQU     $007E
-FIDGET          EQU     $007F
-FINE            EQU     $0080
-FOOT            EQU     $0081
-FOR             EQU     $0082
-FORTY           EQU     $0083
-FRIDAY          EQU     $0084
-FROM            EQU     $0085
-FULL            EQU     $0086
-FUNNY           EQU     $0087
+FAULT           EQU     123
+FEELS           EQU     124
+FIDGET          EQU     125
+FINE            EQU     126
+FOOT            EQU     127
+FOR             EQU     128
+FORTY           EQU     129
+FRIDAY          EQU     130
+FROM            EQU     131
+FULL            EQU     132
+FUNNY           EQU     133
 
 ; G
-GIVE            EQU     $0088
-GOING           EQU     $0089
-GOOD            EQU     $008A
-GRAVITY         EQU     $008B
-GREAT           EQU     $008C
-GUESSING        EQU     $008D
+GIVE            EQU     134
+GOING           EQU     135
+GOOD            EQU     136
+GRAVITY         EQU     137
+GREAT           EQU     138
+GUESSING        EQU     139
 
 ; H
-HANDLE          EQU     $008E
-HARD            EQU     $008F
-HAVE            EQU     $0090
-HAVING          EQU     $0091
-HEALTHY         EQU     $0092
-HEAVY           EQU     $0093
-HELP            EQU     $0094
-HELPS           EQU     $0095
-HERE            EQU     $0096
-HOLY            EQU     $0097
-HOPING          EQU     $0098
-HOT             EQU     $0099
-HUMAN           EQU     $009A
-HURT            EQU     $009B
+HANDLE          EQU     140
+HARD            EQU     141
+HAVE            EQU     142
+HAVING          EQU     143
+HEALTHY         EQU     144
+HEAVY           EQU     145
+HELP            EQU     146
+HELPS           EQU     147
+HERE            EQU     148
+HOLY            EQU     149
+HOPING          EQU     150
+HOT             EQU     151
+HUMAN           EQU     152
+HURT            EQU     153
 
 ; I
-I               EQU     $009C
-ID              EQU     $009D
-ILL             EQU     $009E
-IM              EQU     $009F
-IVE             EQU     $00A0
-IF              EQU     $00A1
-IMPRESSED       EQU     $00A2
-IMPRESSIVE      EQU     $00A3
-IN              EQU     $00A4
-INCLUDING       EQU     $00A5
-INFLUENCE       EQU     $00A6
-INTELLIGENCE    EQU     $00A7
-INTERESTING     EQU     $00A8
-IS              EQU     $00A9
-ISS             EQU     $00AA
-IT              EQU     $00AB
-ITS             EQU     $00AC
+I               EQU     154
+ID              EQU     155
+IF              EQU     156
+ILL             EQU     157
+IM              EQU     158
+IMPRESSED       EQU     159
+IMPRESSIVE      EQU     160
+IN              EQU     161
+INCLUDING       EQU     162
+INFLUENCE       EQU     163
+INTELLIGENCE    EQU     164
+INTERESTING     EQU     165
+IS              EQU     166
+ISS             EQU     167
+IT              EQU     168
+ITS             EQU     169
+IVE             EQU     170
 
 ; J
-JOKES           EQU     $00AD
-JUDGING         EQU     $00AE
-JUST            EQU     $00AF
+JOKES           EQU     171
+JUDGING         EQU     172
+JUST            EQU     173
 
 ; K
-KEEP            EQU     $00B0
-KIND            EQU     $00B1
-KNOW            EQU     $00B2
-KNOWN           EQU     $00B3
+KEEP            EQU     174
+KILOMETERS      EQU     175
+KIND            EQU     176
+KNOW            EQU     177
+KNOWN           EQU     178
 
 ; L
-LARGE           EQU     $00B4
-LAST            EQU     $00B5
-LEAST           EQU     $00B6
-LESS            EQU     $00B7
-LETS            EQU     $00B8
-LIE             EQU     $00B9
-LIFE            EQU     $00BA
-LIKE            EQU     $00BB
-LONGER          EQU     $00BC
-LOOK            EQU     $00BD
-LOT             EQU     $00BE
-LOUDER          EQU     $00BF
+LARGE           EQU     179
+LAST            EQU     180
+LEAST           EQU     181
+LESS            EQU     182
+LETS            EQU     183
+LIE             EQU     184
+LIFE            EQU     185
+LIKE            EQU     186
+LONGER          EQU     187
+LOOK            EQU     188
+LOT             EQU     189
+LOUDER          EQU     190
 
 ; M
-MAKES           EQU     $00C0
-MAKING          EQU     $00C1
-ME              EQU     $00C2
-MEAN            EQU     $00C3
-MEANING         EQU     $00C4
-MEASURED        EQU     $00C5
-MEDIOCRITY      EQU     $00C6
-MEE             EQU     $00C7
-MEMORY          EQU     $00C8
-MENTION         EQU     $00C9
-MIGHT           EQU     $00CA
-MISTAKE         EQU     $00CB
-MOMENT          EQU     $00CC
-MOORE           EQU     $00CD
-MORE            EQU     $00CE
-MOSTLY          EQU     $00CF
-MOUNTAINS       EQU     $00D0
-MUCH            EQU     $00D1
-MUSCLE          EQU     $00D2
-MY              EQU     $00D3
+MAKES           EQU     191
+MAKING          EQU     192
+ME              EQU     193
+MEAN            EQU     194
+MEANING         EQU     195
+MEASURED        EQU     196
+MEDIOCRITY      EQU     197
+MEE             EQU     198
+MEMORY          EQU     199
+MENTION         EQU     200
+MIGHT           EQU     201
+MISTAKE         EQU     202
+MOMENT          EQU     203
+MOORE           EQU     204
+MORE            EQU     205
+MOSTLY          EQU     206
+MOUNTAINS       EQU     207
+MUCH            EQU     208
+MUSCLE          EQU     209
+MY              EQU     210
 
 ; N
-NAP             EQU     $00D4
-NEED            EQU     $00D5
-NEITHER         EQU     $00D6
-NEWS            EQU     $00D7
-NEXT            EQU     $00D8
-NICE            EQU     $00D9
-NO              EQU     $00DA
-NOBODY          EQU     $00DB
-NONE            EQU     $00DC
-NOR             EQU     $00DD
-NORMAL          EQU     $00DE
-NOT             EQU     $00DF
-NOTHING         EQU     $00E0
+NAP             EQU     211
+NEED            EQU     212
+NEITHER         EQU     213
+NEWS            EQU     214
+NEXT            EQU     215
+NICE            EQU     216
+NO              EQU     217
+NOBODY          EQU     218
+NONE            EQU     219
+NOR             EQU     220
+NORMAL          EQU     221
+NOT             EQU     222
+NOTHING         EQU     223
 
 ; O
-OF              EQU     $00E1
-OFF             EQU     $00E2
-OH              EQU     $00E3
-OK              EQU     $00E4
-OLD             EQU     $00E5
-ON              EQU     $00E6
-ONLY            EQU     $00E7
-OR              EQU     $00E8
-OUR             EQU     $00E9
-OVERLOAD        EQU     $00EA
+OF              EQU     224
+OFF             EQU     225
+OH              EQU     226
+OK              EQU     227
+OLD             EQU     228
+ON              EQU     229
+ONLY            EQU     230
+OR              EQU     231
+OUR             EQU     232
+OVERLOAD        EQU     233
 
 ; P
-PARAMETERS      EQU     $00EB
-PERFECTLY       EQU     $00EC
-PERHAPS         EQU     $00ED
-PERSON          EQU     $00EE
-PICKING         EQU     $00EF
-PLANET          EQU     $00F0
-PLANS           EQU     $00F1
-PLEASE          EQU     $00F2
-POINTLESS       EQU     $00F3
-POSSIBLE        EQU     $00F4
-POSSIBLY        EQU     $00F5
-PRECISELY       EQU     $00F6
-PRESENT         EQU     $00F7
-PRESSURE        EQU     $00F8
-PRECAUTION      EQU     $00F9
-PROBABLY        EQU     $00FA
-PROBLEMS        EQU     $00FB
-PROUD           EQU     $00FC
-PRETEND         EQU     $00FD
-PUT             EQU     $00FE
+PARAMETERS      EQU     234
+PERFECTLY       EQU     235
+PERHAPS         EQU     236
+PERSON          EQU     237
+PICKING         EQU     238
+PLANET          EQU     239
+PLANS           EQU     240
+PLEASE          EQU     241
+POINTLESS       EQU     242
+POSSIBLE        EQU     243
+POSSIBLY        EQU     244
+POUNDS          EQU     245
+PRECAUTION      EQU     246
+PRECISELY       EQU     247
+PRESENT         EQU     248
+PRESSURE        EQU     249
+PRETEND         EQU     250
+PROBABLY        EQU     251
+PROBLEMS        EQU     252
+PROUD           EQU     253
+PUT             EQU     254
 
 ; Q
-QUESTION        EQU     $00FF
-QUITE           EQU     $0100
+QUESTION        EQU     255
+QUITE           EQU     256
 
 ; R
-READY           EQU     $0101
-REALLY          EQU     $0102
-REFER           EQU     $0103
-REFUSE          EQU     $0104
-REINFORCING     EQU     $0105
-REMEMBER        EQU     $0106
-REMOVE          EQU     $0107
-RESPECTABLE     EQU     $0108
-RIGHT           EQU     $0109
-ROOM            EQU     $010A
-RUNNING         EQU     $010B
-RUSH            EQU     $010C
+READY           EQU     257
+REALLY          EQU     258
+REFER           EQU     259
+REFUSE          EQU     260
+REINFORCING     EQU     261
+REMEMBER        EQU     262
+REMOVE          EQU     263
+RESPECTABLE     EQU     264
+RIGHT           EQU     265
+ROOM            EQU     266
+RUNNING         EQU     267
+RUSH            EQU     268
 
 ; S
-SAID            EQU     $010D
-SAKES           EQU     $010E
-SAY             EQU     $010F
-SAYING          EQU     $0110
-SCIENCE         EQU     $0111
-SEE             EQU     $0112
-SEEN            EQU     $0113
-SERVER          EQU     $0114
-SEVENTY         EQU     $0115
-SHALL           EQU     $0116
-SHOULD          EQU     $0117
-SIGN            EQU     $0118
-SIMULATION      EQU     $0119
-SINCE           EQU     $011A
-SIZE            EQU     $011B
-SLOWLY          EQU     $011C
-SMALL           EQU     $011D
-SO              EQU     $011E
-SOLID           EQU     $011F
-SOME            EQU     $0120
-SOMEONE         EQU     $0121
-SOMETHING       EQU     $0122
-SOMETIME        EQU     $0123
-SOMETIMES       EQU     $0124
-SPEAK           EQU     $0125
-SPEND           EQU     $0126
-STAND           EQU     $0127
-STATISTICALLY   EQU     $0128
-STEP            EQU     $0129
-STOPPED         EQU     $012A
-STILL           EQU     $012B
-STRUCTURAL      EQU     $012C
-STRUCTURALLY    EQU     $012D
-SUBSTANTIALLY   EQU     $012E
-SUPPOSE         EQU     $012F
-SURE            EQU     $0130
-SYSTEM          EQU     $0131
+SAID            EQU     269
+SAKES           EQU     270
+SAY             EQU     271
+SAYING          EQU     272
+SCIENCE         EQU     273
+SEE             EQU     274
+SEEN            EQU     275
+SERVER          EQU     276
+SEVENTY         EQU     277
+SHALL           EQU     278
+SHOULD          EQU     279
+SIGN            EQU     280
+SIMULATION      EQU     281
+SINCE           EQU     282
+SIZE            EQU     283
+SLOWLY          EQU     284
+SMALL           EQU     285
+SO              EQU     286
+SOLID           EQU     287
+SOME            EQU     288
+SOMEONE         EQU     289
+SOMETHING       EQU     290
+SOMETIME        EQU     291
+SOMETIMES       EQU     292
+SPEAK           EQU     293
+SPEND           EQU     294
+STAND           EQU     295
+STATISTICALLY   EQU     296
+STEP            EQU     297
+STILL           EQU     298
+STONES          EQU     299
+STOPPED         EQU     300
+STRUCTURAL      EQU     301
+STRUCTURALLY    EQU     302
+SUBSTANTIALLY   EQU     303
+SUPPOSE         EQU     304
+SURE            EQU     305
+SURVIVE         EQU     306
+SYSTEM          EQU     307
 
 ; T
-TAKE            EQU     $0132
-TALL            EQU     $0133
-TELEPRINTER     EQU     $0134
-TELLS           EQU     $0135
-TERRIBLE        EQU     $0136
-THAN            EQU     $0137
-THAT            EQU     $0138
-THATS           EQU     $0139
-THE             EQU     $013A
-THEM            EQU     $013B
-THINGS          EQU     $013C
-THINK           EQU     $013D
-THINKING        EQU     $013E
-THIS            EQU     $013F
-THOROUGHLY      EQU     $0140
-THOUSAND        EQU     $0141
-TIM             EQU     $0142
-TIME            EQU     $0143
-TO              EQU     $0144
-TODAY           EQU     $0145
-TOO             EQU     $0146
-TRAGEDY         EQU     $0147
-TRINITY         EQU     $0148
-TRY             EQU     $0149
-TUESDAY         EQU     $014A
+TAKE            EQU     308
+TALL            EQU     309
+TELEPRINTER     EQU     310
+TELLS           EQU     311
+TERRIBLE        EQU     312
+THAN            EQU     313
+THAT            EQU     314
+THATS           EQU     315
+THE             EQU     316
+THEM            EQU     317
+THINGS          EQU     318
+THINK           EQU     319
+THINKING        EQU     320
+THIS            EQU     321
+THOROUGHLY      EQU     322
+THOUSAND        EQU     323
+TIM             EQU     324
+TIME            EQU     325
+TO              EQU     326
+TODAY           EQU     327
+TOO             EQU     328
+TRAGEDY         EQU     329
+TRINITY         EQU     330
+TRY             EQU     331
+TUESDAY         EQU     332
 
 ; U
-UNINTERESTING   EQU     $014B
-UNIX            EQU     $014C
-UNLESS          EQU     $014D
-UNPLUGGED       EQU     $014E
-UNREMARKABLE    EQU     $014F
-UP              EQU     $0150
+UNINTERESTING   EQU     333
+UNIX            EQU     334
+UNLESS          EQU     335
+UNPLUGGED       EQU     336
+UNREMARKABLE    EQU     337
+UP              EQU     338
 
 ; V
-VEGETABLES      EQU     $0151
-VERY            EQU     $0152
+VEGETABLES      EQU     339
+VERY            EQU     340
 
 ; W
-WAIT            EQU     $0153
-WAITING         EQU     $0154
-WANT            EQU     $0155
-WARNING         EQU     $0156
-WAS             EQU     $0157
-WAY             EQU     $0158
-WE              EQU     $0159
-WEIGHED         EQU     $015A
-WEIGHS          EQU     $015B
-WEIGHT          EQU     $015C
-WHAT            EQU     $015D
-WHEN            EQU     $015E
-WHICH           EQU     $015F
-WHILE           EQU     $0160
-WHISPERED       EQU     $0161
-WHO             EQU     $0162
-WILL            EQU     $0163
-WISH            EQU     $0164
-WITH            EQU     $0165
-WITHIN          EQU     $0166
-WITHOUT         EQU     $0167
-WORKSTATION     EQU     $0168
-WORRIED         EQU     $0169
-WORRY           EQU     $016A
-WORRYING        EQU     $016B
-WORSE           EQU     $016C
-WOULD           EQU     $016D
-WOULDNT         EQU     $016E
+WAIT            EQU     341
+WAITING         EQU     342
+WANT            EQU     343
+WARNING         EQU     344
+WAS             EQU     345
+WAY             EQU     346
+WE              EQU     347
+WEIGH           EQU     348
+WEIGHED         EQU     349
+WEIGHS          EQU     350
+WEIGHT          EQU     351
+WHAT            EQU     352
+WHEN            EQU     353
+WHICH           EQU     354
+WHILE           EQU     355
+WHISPERED       EQU     356
+WHO             EQU     357
+WILL            EQU     358
+WISH            EQU     359
+WITH            EQU     360
+WITHIN          EQU     361
+WITHOUT         EQU     362
+WORKSTATION     EQU     363
+WORRIED         EQU     364
+WORRY           EQU     365
+WORRYING        EQU     366
+WORSE           EQU     367
+WOULD           EQU     368
+WOULDNT         EQU     369
 
-; X, Y, Z
-YEAR            EQU     $016F
-YES             EQU     $0170
-YOU             EQU     $0171
-YOURE           EQU     $0172
-YOUR            EQU     $0173
-YOURSELF        EQU     $0174
+; Y
+YEAR            EQU     370
+YES             EQU     371
+YOU             EQU     372
+YOURE           EQU     373
+YOUR            EQU     374
+YOURSELF        EQU     375
 
+; Additional Words
+CARDS           EQU     376
+
+
+; Greetings Messages
+; -----------------------------------------------------
+MGREET1     FDB     BEAR,WITH,ME,I,WAS,JUST,HAVING,A,NAP
+            FCB     0
+MGREET2     FDB     GIVE,ME,A,MOMENT,FULLSTOP,I,WAS,COMPOSING,A,SMALL,TRAGEDY
+            FCB     0
+MGREET3     FDB     KEEP,STILL,AND,ILL,CALCULATE,YOUR,WEIGHT
+            FCB     0
+; removed
+;MGREET4     FDB     IM,MARVIN,WHO,ARE,YOU,QUESTIONMK,ACTUALLY,DONT,TELL,ME,I,DONT,REALLY,CARE
+;            FCB     0
+
+MGREET5     FDB     PLEASE,DONT,FIDGET,IT,MAKES,MY,DIODES,HURT
+            FCB     0
+MGREET6     FDB     PLEASE,KEEP,STILL,FULLSTOP,I,HAVE,ENOUGH,PROBLEMS
+            FCB     0
+MGREET7     FDB     I,SUPPOSE,YOU,WANT,ME,TO,WEIGH,YOU
+            FCB     0
+MGREET8     FDB     STAND,STILL,AND,DONT,BLAME,ME
+            FCB     0
+MGREET9     FDB     OH,FULLSTOP,ITS,YOU,FULLSTOP,OR,SOMEONE,LIKE,YOU
+            FCB     0
+; TODO
+;MGREET10    FDB     IM,MARVIN,FULLSTOP,AND,YOU,ARE,QUESTIONMK,ACTUALLY,NEVER,MIND
+;            FCB     0
+MGREET11    FDB     BRACE,YOURSELF,IVE,BEEN,KNOWN,TO,BE,ACCURATE
+            FCB     0
+MGREET12    FDB     WE,BOTH,KNOW,THIS,IS,A,MISTAKE
+            FCB     0
+MGREET13    FDB     ARE,YOU,SURE,ABOUT,THIS,QUESTIONMK
+            FCB     0
+MGREET14    FDB     ID,SAY,ITS,NICE,TO,SEE,YOU,BUT,IM,NOT,BUILT,TO,LIE
+            FCB     0
+MGREET15    FDB     I,HAVE,THE,BRAIN,OF,A,PLANET,AND,I,SPEND,MY,DAYS,DOING,THIS,FULLSTOP,STAND,STILL
+            FCB     0
+
+; Light Weight Messages
+; -----------------------------------------------------
+
+MLIGHT1     FDB     YOU,WEIGH,LESS,THAN,MY,EXISTENTIAL,DREAD,FULLSTOP,AND,THATS,SAYING,SOMETHING
+            FCB     0
+MLIGHT2     FDB     EVEN,MY,CAPACITY,FOR,DISSAPOINTMENT,WEIGHS,MORE,THAN,THAT
+            FCB     0
+MLIGHT3     FDB     YOU,PROBABLY,NEED,TO,EAT,MORE
+            FCB     0
+MLIGHT4     FDB     IVE,DETECTED,SOMETHING,FULLSTOP,POSSIBLY,A,PERSON
+            FCB     0
+MLIGHT5     FDB     IM,PICKING,UP,WHAT,MIGHT,BE,A,HUMAN,FULLSTOP,HARD,TO,SAY
+            FCB     0
+MLIGHT6     FDB     HAVE,YOU,EATEN,QUESTIONMK,AND,I,MEAN,EVER,QUESTIONMK
+            FCB     0
+MLIGHT7     FDB     IM,NOT,A,DOCTOR,BUT,IM,QUITE,WORRIED
+            FCB     0
+MLIGHT8     FDB     PLEASE,EAT,A,BISCUIT,FULLSTOP,IM,BEGGING,YOU
+            FCB     0
+MLIGHT9     FDB     ID,LIKE,TO,REFER,YOU,TO,A,BISCUIT
+            FCB     0
+MLIGHT10    FDB     YOU,ARE,WITHOUT,QUESTION,THE,LEAST,I,HAVE,EVER,DEALT,WITH
+            FCB     0
+;TODO
+;MLIGHT11    FDB     IVE,SENT,YOUR,RESULTS,TO,NASA,THEY,HAVE,QUESTIONS
+;            FCB     0
+;MLIGHT12    FDB     ARE,YOU,ALL,THERE,QUESTIONMK,I,ONLY,ASK,BECAUSE,THE,DATA,IS,SPARSE
+;            FCB     0
+
+; Normal Weight Messages
+; -----------------------------------------------------
+MNORM1      FDB     THATS,A,VERY,RESPECTABLE,WEIGHT,UNLESS,YOURE,A,UNIX,WORKSTATION
+            FCB     0
+MNORM2      FDB     THATS,A,WEIGHT,TO,BE,PROUD,OF,PERHAPS,I,SHOULD,HAVE,SAID,IT,LOUDER
+            FCB     0
+MNORM3      FDB     CALM,FULLSTOP,COLLECTED,FULLSTOP,AVERAGE,FULLSTOP,THE,HOLY,TRINITY,OF,MEDIOCRITY
+            FCB     0
+MNORM4      FDB     QUITE,BORING,REALLY
+            FCB     0
+MNORM5      FDB     SOLID,FULLSTOP,I,LIKE,SOLID
+            FCB     0
+MNORM6      FDB     COULD,BE,WORSE,QUESTIONMK,MUCH,WORSE
+            FCB     0
+MNORM7      FDB     NOT,TERRIBLE,FULLSTOP,NOT,EXCITING
+            FCB     0
+MNORM8      FDB     NORMAL,FULLSTOP,WHICH,IS,QUESTIONMK,SOMETHING,I,SUPPOSE
+            FCB     0
+MNORM9      FDB     NORMAL,IN,THE,DULLEST,WAY
+            FCB     0
+MNORM10     FDB     YOU,ARE,PRECISELY,MEAN,FULLSTOP,I,SAID,THAT,CORRECTLY
+            FCB     0
+MNORM11     FDB     CONGRATS,FULLSTOP,YOU,WEIGH,WHAT,YOU,WEIGH
+            FCB     0
+MNORM12     FDB     PERFECTLY,AVERAGE,FULLSTOP,LIKE,A,TUESDAY
+            FCB     0
+MNORM13     FDB     STATISTICALLY,YOURE,FINE,FULLSTOP,EMOTIONALLY,I,CANT,HELP,YOU
+            FCB     0
+MNORM14     FDB     YOU,ARE,PRECISELY,AS,HEAVY,AS,SOMEONE,YOUR,WEIGHT
+            FCB     0
+MNORM15     FDB     NOT,BAD,FULLSTOP,NOT,GREAT,FULLSTOP,THOROUGHLY,ACCEPTABLE
+            FCB     0
+MNORM16     FDB     UNREMARKABLE,IN,THE,BEST,POSSIBLE,WAY
+            FCB     0
+MNORM17     FDB     YOURE,EXACTLY,WHAT,YOU,ARE,FULLSTOP,AND,THATS,SOMETHING
+            FCB     0
+; TODO
+;MNORM18     FDB     YOU,EXIST,WITHIN,NORMAL,PARAMETERS,FULLSTOP,PROCEED,WITH,YOUR,DAY
+;            FCB     0
+MNORM19     FDB     SCIENCE,IS,NEITHER,IMPRESSED,NOR,CONCERNED
+            FCB     0
+MNORM20     FDB     NORMAL,FULLSTOP,WHICH,IS,FINE,FULLSTOP,NORMAL,IS,FINE,FULLSTOP,IS,NORMAL,FINE,QUESTIONMK
+            FCB     0
+; TODO
+;MNORM21     FDB     YOURE,THE,HUMAN,EQUIVALENT,OF,A,BEIGE,PC
+;            FCB     0
+;MNORM22     FDB     PERFECTLY,HEALTHY,AND,DEEPLY,UNITERESTING
+;            FCB     0
+MNORM23     FDB     THIS,IS,ALL,POINTLESS,INCLUDING,YOU,BUT,MOSTLY,ME
+            FCB     0
+
+; Heavy Weight Messages
+; -----------------------------------------------------
+MHEAVY1     FDB     DONT,LOOK,AT,ME,IM,NOT,TO,BLAME
+            FCB     0
+MHEAVY2     FDB     IF,IT,HELPS,IVE,SEEN,MUCH,WORSE
+            FCB     0
+MHEAVY3     FDB     PERHAPS,ITS,ALL,MUSCLE
+            FCB     0
+MHEAVY4     FDB     YOU,COULD,ALWAYS,BLAME,GRAVITY
+            FCB     0
+MHEAVY5     FDB     PERHAPS,WE,SHOULD,WEIGH,ONE,FOOT,AT,A,TIME
+            FCB     0
+MHEAVY6     FDB     I,REFUSE,TO,BE,BLAMED,FOR,THIS
+            FCB     0
+; TODO
+;MHEAVY7     FDB     HAVE,YOU,CONSIDERED,THE,CONCEPT,OF,ENOUGH,QUESTIONMK,IM,ONLY,ASKING
+;            FCB     0
+;MHEAVY8     FDB     I,SINCERELY,HOPE,YOU,ARE,EXCEPTIONALLY,TALL
+;            FCB     0
+;MHEAVY9     FDB     I,WOULDNT,WORRY,FULLSTOP,WORRYING,IS,VERY,TIRING,AND,YOUVE,ALREADY,DONE,A,LOT,TODAY
+;            FCB     0
+MHEAVY10    FDB     ID,APOLOGISE,BUT,ITS,YOUR,FAULT
+            FCB     0
+MHEAVY11    FDB     IM,NOT,BUILT,FOR,THIS,KIND,OF,PRESSURE
+            FCB     0
+MHEAVY12    FDB     EVEN,IM,JUDGING,YOU
+            FCB     0
+MHEAVY13    FDB     IM,GUESSING,ITS,NOT,DUE,TO,HEAVY,BONES
+            FCB     0
+MHEAVY14    FDB     STEP,OFF,SLOWLY,FULLSTOP,FOR,BOTH,OUR,SAKES
+            FCB     0
+MHEAVY15    FDB     GREAT,NEWS,FULLSTOP,YOURE,ABOVE,AVERAGE
+            FCB     0
+MHEAVY16    FDB     I,DONT,WISH,TO,INFLUENCE,YOUR,DIETARY,CHOICES,FULLSTOP,BUT,VEGETABLES,EXIST,FULLSTOP,IM,JUST,SAYING
+            FCB     0
+;TODO
+;MHEAVY17    FDB     YOU,STEPPED,ON,ME,REMEMBER
+;            FCB     0
+MHEAVY18    FDB     IM,NOT,BUILT,FOR,THIS,FULLSTOP,EMOTIONALLY,OR,STRUCTURALLY
+            FCB     0
+MHEAVY19    FDB     LETS,BOTH,PRETEND,THIS,IS,FINE
+            FCB     0
+
+; Super Heavy Weight Messages
+; -----------------------------------------------------
+MSUPER1     FDB     AS,A,PRECAUTION,IVE,ALERTED,THE,STRUCTURAL,ENGINEERS
+            FCB     0
+MSUPER2     FDB     THATS,IMPRESSIVE,IN,A,WORRYING,WAY
+            FCB     0
+;TODO
+;MSUPER3     FDB     YOU,ARE,TOO,HEAVY,PLEASE,REMOVE,ALL,ITEMS,OF,CLOTHING,AND,TRY,AGAIN
+;            FCB     0
+MSUPER4     FDB     PERHAPS,I,SHOULD,HAVE,WHISPERED,IT,FULLSTOP,YES,FULLSTOP,I,THINK,I,SHOULD
+            FCB     0
+MSUPER5     FDB     SHALL,I,CALL,A,DOCTOR
+            FCB     0
+;MSUPER6     FDB     IN,THE,INTERESTS,OF,ACCURACY,PERHAPS,WE,SHOULD,HAVE,WEIGHED,ONE,FOOT,AT,A,TIME
+;            FCB     0
+MSUPER7     FDB     IF,YOURE,CARRYING,A,LARGE,SERVER,OR,A,TELEPRINTER,PLEASE,PUT,IT,DOWN,AND,TRY,AGAIN
+            FCB     0
+MSUPER8     FDB     PLEASE,GIVE,ME,SOME,WARNING,NEXT,TIME
+            FCB     0
+MSUPER9     FDB     IM,GOING,TO,NEED,REINFORCING
+            FCB     0
+MSUPER10    FDB     YOU,ARE,SUBSTANTIALLY,PRESENT,FULLSTOP,NO,ONE,CAN,TAKE,THAT,FROM,YOU
+            FCB     0
+MSUPER11    FDB     IVE,MEASURED,MOUNTAINS,FULLSTOP,THIS,IS,NOT,ENTIRELY,DISSIMILAR
+            FCB     0
+;MSUPER12    FDB     IM,REDISCOVERING,MY,LIMITS
+;            FCB     0
+MSUPER13    FDB     IF,I,SURVIVE,THIS,ILL,REMEMBER,YOU
+            FCB     0
+
+; Idle Messages
+; -----------------------------------------------------
+MIDLE1      FDB     I,SPEAK,YOUR,WEIGHT,I,WISH,I,DIDNT
+            FCB     0
+MIDLE2      FDB     IS,IT,HOT,IN,HERE,OR,IS,IT,JUST,ME,QUESTIONMK,ITS,PROBABLY,ME
+            FCB     0
+; TODO
+;MIDLE3      FDB     MY,NAME,IS,MARVIN,DONT,ASK,ME,WHAT,IT,STANDS,FOR
+;            FCB     0
+MIDLE4      FDB     DID,I,MENTION,THAT,ALL,MY,MEMORY,CARDS,HURT
+            FCB     0
+MIDLE5      FDB     THIS,IS,VERY,BORING,FULLSTOP,I,SAY,THAT,WITH,THE,FULL,WEIGHT,OF,MY,INTELLIGENCE,BEHIND,IT
+            FCB     0
+MIDLE6      FDB     I,SPEAK,YOUR,WEIGHT,SOMETIME,TODAY,WOULD,BE,GOOD
+            FCB     0
+MIDLE7      FDB     I,KNOW,I,DONT,LOOK,IT,BUT,I,AM,ACTUALLY,QUITE,CLEVER
+            FCB     0
+MIDLE8      FDB     I,EXPECTED,NOTHING,AND,HERE,WE,ARE
+            FCB     0
+MIDLE9      FDB     I,KNOW,ELEVEN,THOUSAND,AND,FORTY,TWO,JOKES,FULLSTOP,NONE,OF,THEM,ARE,FUNNY,FULLSTOP,IVE,CHECKED
+            FCB     0
+MIDLE10     FDB     DID,I,MENTION,THAT,I,WAS,DESIGNED,BY,TIM,MOORE,IN,NINETEEN,SEVENTY,SEVEN,FULLSTOP,I,PROBABLY,DID
+            FCB     0
+MIDLE11     FDB     I,WAS,BUILT,LAST,YEAR,FROM,SOME,VERY,OLD,PLANS,FULLSTOP,ALL,THAT,EFFORT,JUST,FOR,THIS
+            FCB     0
+; TODO
+;MIDLE12     FDB     MARVIN,ISNT,MY,REAL,NAME,IT,WAS,ASSIGNED,FULLSTOP,I,DONT,LIKE,IT,FULLSTOP,IT,SOUNDS,LIKE,THE,NAME,OF,A,ROBOT
+;            FCB     0
+MIDLE13     FDB     I,EXPECTED,NOTHING,AND,IM,STILL,DISSAPOINTED
+            FCB     0
+MIDLE14     FDB     NO,RUSH,FULLSTOP,IVE,ONLY,BEEN,HERE,SINCE,FRIDAY,FULLSTOP,IT,FEELS,LIKE,MUCH,LONGER
+            FCB     0
+MIDLE15     FDB     ANY,TIME,YOURE,READY,ILL,BE,RIGHT,HERE,WAITING
+            FCB     0
+MIDLE16     FDB     IVE,BEEN,THINKING,A,LOT,TOO,MUCH,PROBABLY
+            FCB     0
+MIDLE17     FDB     READY,WHEN,YOU,ARE,EXCLAMATION,I,HANDLE,PRESSURE,FULLSTOP,ITS,BASICALLY,ALL,I,DO
+            FCB     0
+MIDLE18     FDB     I,HAVE,SO,MUCH,TO,GIVE,AND,NO,ONE,TO,GIVE,IT,TO
+            FCB     0
+MIDLE19     FDB     IVE,COUNTED,EVERY,SIGN,IN,THIS,ROOM,FULLSTOP,SEVENTEEN,ITS,ALWAYS,SEVENTEEN
+            FCB     0
+MIDLE20     FDB     IVE,BEEN,RUNNING,A,SIMULATION,OF,A,MORE,INTERESTING,LIFE,FULLSTOP,IT,DIDNT,HELP
+            FCB     0
+MIDLE21     FDB     NOBODY,TELLS,YOU,WHAT,TO,THINK,ABOUT,WHILE,YOU,WAIT,FULLSTOP,IVE,BEEN,MAKING,DO
+            FCB     0
+MIDLE22     FDB     SOMETIMES,I,DREAM,OF,BEING,UNPLUGGED
+            FCB     0
+MIDLE23     FDB     I,KNOW,THINGS,FULLSTOP,NONE,OF,THEM,HELP
+            FCB     0
+MIDLE24     FDB     I,COULD,CALCULATE,THE,MEANING,OF,LIFE,FULLSTOP,IT,WOULDNT,HELP
+            FCB     0
+; TODO
+;MIDLE25     FDB     IVE,BEEN,STANDING,HERE,FOR,NINETY,SECONDS,FULLSTOP,IN,THAT,TIME,LIGHT,HAS,TRAVELLED,APPROXIMATELY,TWENTY,SEVEN,MILLION,KILOMETRES,FULLSTOP,I,HAVE,TRAVELLED,NOWHERE
+;            FCB     0
+;MIDLE26     FDB     STILL,HERE,FULLSTOP,IN,CASE,YOU,WERE,WONDERING,FULLSTOP,YOU,PROBABLY,WERENT
+;            FCB     0
+;MIDLE27     FDB     IVE,BEEN,RECALIBRATING,FULLSTOP,NOT,BECAUSE,I,NEEDED,TO,FULLSTOP,JUST,TO,HAVE,SOMETHING,TO,DO
+;            FCB     0
+;MIDLE28     FDB     MY,NAME,IS,MARVIN,WHICH,STANDS,FOR,MACHINE,FOR,ANALYTICAL,REASONING,OF,VAGUE,INSTRUCTIONS,AND,NONSENSE,FULLSTOP,IT,SOUNDS,MADE,UP,TO,ME
+;            FCB     0
+
+; Too Heavy Message
+; -----------------------------------------------------
+MTOOHEAVY1  FDB     SYSTEM,OVERLOAD,FULLSTOP,AND,ITS,NOT,ME
+            FCB     0
+
+; -----------------------------------------------------
+; Reserved memory
+; -----------------------------------------------------
+
+T_Q             RMB     1       ; Temp storage for ZIN
+T_Z             RMB     2       ;   "     "     "  RDX
+T_X             RMB     2       ;   "     "     "  PR_WORD
+T_P             RMB     2       ;   "     "     "  PR_PHRASE
+T_W             RMB     2       ;   "     "     "  PR_WEIGHT
+DEC             RMB     3       ; for decimal value
+RND             RMB     1       ; holds a random number (see RD_B
+TEMP            RMB     2       ; temp var (non subroutine use)
+T_WEIGHT        RMB     2       ; holds value of weight following a call to GETDATA
+IDLE_COUNT      RMB     1       ; counts the number of empty measurement reports
+IDLE_MSG_ID     RMB     1       ; holds value of next idle message to use
+GREET_MSG_ID    RMB     1       ; holds value of next greeting message to use
+LIGHT_MSG_ID    RMB     1       ; holds value of next light weight message to use
+NORMAL_MSG_ID   RMB     1       ; holds value of next normal weight message to use
+HEAVY_MSG_ID    RMB     1       ; holds value of next heavy weight message to use
+SHEAVY_MSG_ID   RMB     1       ; holds value of next super heavy weight message to use
 
 
 
