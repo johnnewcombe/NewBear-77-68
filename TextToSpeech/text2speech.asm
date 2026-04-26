@@ -27,8 +27,9 @@ NORM_WGHT           EQU 10
 HEAVY_WGHT          EQU 13
 SHEAVY_WGHT         EQU 15
 
-IDLE_MSG_CNT        EQU 1       ; number of messages
 GREET_MSG_CNT       EQU 1       ; number of messages
+IDLE_MSG_CNT        EQU 1       ; number of messages
+
 LIGHT_MSG_CNT       EQU 1       ; number of messages
 NORM_MSG_CNT        EQU 1       ; number of messages
 HEAVY_MSG_CNT       EQU 1       ; number of messages
