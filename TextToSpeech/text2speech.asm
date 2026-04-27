@@ -21,19 +21,18 @@ BINARY              EQU $FC31   ; Converts ASCII hex digits in A and B to binary
 RD_X                EQU $FC65   ; Read 4 hex digits Value from ACIA(a) and put value into X.
 VHEX                EQU $FC1D   ; Checks that A contains a HEX character
 
-IDLE_SECS           EQU 90      ; seconds between idle messages
+IDLE_SECS           EQU 2      ; seconds between idle messages
 LIGHT_WGHT          EQU 6       ; greater than 6 stones
 NORM_WGHT           EQU 10
 HEAVY_WGHT          EQU 13
 SHEAVY_WGHT         EQU 15
 
-GREET_MSG_CNT       EQU 1       ; number of messages
-IDLE_MSG_CNT        EQU 1       ; number of messages
-
-LIGHT_MSG_CNT       EQU 1       ; number of messages
-NORM_MSG_CNT        EQU 1       ; number of messages
-HEAVY_MSG_CNT       EQU 1       ; number of messages
-SHEAVY_MSG_CNT      EQU 1       ; number of messages
+GREET_MSG_CNT       EQU 5       ; number of messages
+IDLE_MSG_CNT        EQU 5       ; number of messages
+LIGHT_MSG_CNT       EQU 5       ; number of messages
+NORM_MSG_CNT        EQU 5       ; number of messages
+HEAVY_MSG_CNT       EQU 5       ; number of messages
+SHEAVY_MSG_CNT      EQU 5       ; number of messages
 
 	    ORG $0200
 
@@ -41,6 +40,10 @@ SHEAVY_MSG_CNT      EQU 1       ; number of messages
 TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
         STAA    CTRLB   ;   ACIA.A
 
+TEST:
+        LDX     #395
+        JSR     PR_WORD
+        JMP     START
 
 MAINLOOP:
 ; -----------------------------------------------------
@@ -420,64 +423,31 @@ PR_PH2  RTS
 ;            RTS
 
 ; -----------------------------------------------------
-; Outputs a word based on value in A
+; Outputs a word based on value in X
 ; -----------------------------------------------------
 ; The routine loops through all of the word pointers derementing X as it goes
 ; When X = 0, then the pointer to the word has been found.
-PR_WORD     LDX     #WORDPTR        ; base of pointer table
-PR_WORD1    TSTA                    ; is A zero?
-            BEQ     FOUNDW          ; yes, use current entry
-            INX                     ; advance to next 2-byte entry
-            INX
-            DECA                    ; decrement index
-            BRA     PR_WORD1        ; loop
-FOUNDW      LDAA    0,X             ; load high byte of pointer
+PR_WORD
+            STX     T_X             ; use ASL and ROL to multiply by 2 (pointer is 2 bytes wide)
+            ASL     T_X+1           ; shift low byte left, bit 7 goes to carry
+            ROL     T_X             ; rotate high byte left, carry in from low byte
+            LDX     T_X
+            STX     T_X             ; Stash X
+            LDAA    T_X             ; High byte of X
+            LDAB    T_X+1           ; Low byte of X
+            ADDB    #WORDPTR&255    ; Add low byte of WORDPTR address
+            ADCA    #WORDPTR/256    ; Add high byte of WORDPTR address + carry
+            STAA    T_X             ; T_X has the address of the pointer NOT the word
+            STAB    T_X+1
+            LDX     T_X             ; X has the address of the pointer NOT the word
+
+            LDAA    0,X             ; get the hi byte of the word
             STAA    T_X
-            LDAA    1,X             ; load low byte of pointer
+            LDAA    1,X             ; get the low byte of the word
             STAA    T_X+1
-            LDX     T_X             ; load X with the word pointer
+            LDX     T_X             ; X now has address of the word
             JSR     STRINGBX        ; output the word
             RTS
-
-; -----------------------------------------------------
-; Phrases (each holds a list of word pointers)
-; -----------------------------------------------------
-;All valid weight messages include ...
-;
-;   Greeting message (waiting for the weight to settle)
-;   the weight message
-;   comment.
-
-
-; -----------------------------------------------------
-; Phrase Pointers to the categorised phases
-; -----------------------------------------------------
-PHRASEPTR
-
-; idle phrase ponters
-IDLEPTR
-
-; light weight phrase ponters
-LIGHTPTR
-
-; normal weight phrase ponters
-NORMALPTR
-
-; heavy weight phrase ponters
-HEAVYPTR
-
-; super heavy weight  phrase ponters
-SHEAVYPTR
-
-; greeting phrase ponters
-GREETTPTR
-
-; error phrase pointer
-ERRORTPTR
-
-; overload phrase pointer
-OVERLOADTPTR
-
 
 ; -----------------------------------------------------
 ; Word pointer table (max words 256)
@@ -2281,8 +2251,29 @@ MILLION         EQU     394
 NOWHERE         EQU     395
 
 
+; -----------------------------------------------------
+; Phrases (each holds a list of word pointers)
+; -----------------------------------------------------
+;All valid weight messages include ...
+;
+;   Greeting message (waiting for the weight to settle)
+;   the weight message
+;   comment.
+
+
+; -----------------------------------------------------
+; Phrase Pointers to the categorised phases
+; -----------------------------------------------------
+PHRASEPTR
+; TODO Fix this
+ERRORTPTR
+; TODO Fix this
+OVERLOADTPTR
+; TODO Fix this
+
 ; Greetings Messages
 ; -----------------------------------------------------
+GREETTPTR
 MGREET1     FDB     BEAR,WITH,ME,I,WAS,JUST,HAVING,A,NAP
             FCB     0
 MGREET2     FDB     GIVE,ME,A,MOMENT,FULLSTOP,I,WAS,COMPOSING,A,SMALL,TRAGEDY
@@ -2316,7 +2307,7 @@ MGREET15    FDB     I,HAVE,THE,BRAIN,OF,A,PLANET,AND,I,SPEND,MY,DAYS,DOING,THIS,
 
 ; Light Weight Messages
 ; -----------------------------------------------------
-
+LIGHTPTR
 MLIGHT1     FDB     YOU,WEIGH,LESS,THAN,MY,EXISTENTIAL,DREAD,FULLSTOP,AND,THATS,SAYING,SOMETHING
             FCB     0
 MLIGHT2     FDB     EVEN,MY,CAPACITY,FOR,DISSAPOINTMENT,WEIGHS,MORE,THAN,THAT
@@ -2340,6 +2331,7 @@ MLIGHT10    FDB     YOU,ARE,WITHOUT,QUESTION,THE,LEAST,I,HAVE,EVER,DEALT,WITH
 
 ; Normal Weight Messages
 ; -----------------------------------------------------
+NORMALPTR
 MNORM1      FDB     THATS,A,VERY,RESPECTABLE,WEIGHT,UNLESS,YOURE,A,UNIX,WORKSTATION
             FCB     0
 MNORM2      FDB     THATS,A,WEIGHT,TO,BE,PROUD,OF,PERHAPS,I,SHOULD,HAVE,SAID,IT,LOUDER
@@ -2385,6 +2377,7 @@ MNORM23     FDB     THIS,IS,ALL,POINTLESS,INCLUDING,YOU,BUT,MOSTLY,ME
 
 ; Heavy Weight Messages
 ; -----------------------------------------------------
+HEAVYPTR
 MHEAVY1     FDB     DONT,LOOK,AT,ME,IM,NOT,TO,BLAME
             FCB     0
 MHEAVY2     FDB     IF,IT,HELPS,IVE,SEEN,MUCH,WORSE
@@ -2426,6 +2419,7 @@ MHEAVY19    FDB     LETS,BOTH,PRETEND,THIS,IS,FINE
 
 ; Super Heavy Weight Messages
 ; -----------------------------------------------------
+SHEAVYPTR
 MSUPER1     FDB     AS,A,PRECAUTION,IVE,ALERTED,THE,STRUCTURAL,ENGINEERS
             FCB     0
 MSUPER2     FDB     THATS,IMPRESSIVE,IN,A,WORRYING,WAY
@@ -2453,6 +2447,7 @@ MSUPER13    FDB     IF,I,SURVIVE,THIS,ILL,REMEMBER,YOU
 
 ; Idle Messages
 ; -----------------------------------------------------
+IDLEPTR
 MIDLE1      FDB     I,SPEAK,YOUR,WEIGHT,I,WISH,I,DIDNT
             FCB     0
 MIDLE2      FDB     IS,IT,HOT,IN,HERE,OR,IS,IT,JUST,ME,QUESTIONMK,ITS,PROBABLY,ME

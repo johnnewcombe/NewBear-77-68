@@ -143,7 +143,8 @@
 // Type     Name          Start    End
 //------   -------------  ------  ------
 //classROM   objROM_DEMON ( 0xF800, 0xFFFF, u8DEMON_F800_FFFF);  // DEMON monitor program (ROM)(2KB)
-classROM   objROM_DEMON (0xFC00,0xFFFF, u8MINIMON_FC00_ffff); // MINIMON MONITOR
+//classROM   objROM_DEMON (0xFC00,0xFFFF, u8MINIMON_FC00_ffff); // MINIMON MONITOR
+classROM   objROM_DEMON (0xFC00,0xFFFF, uJMON_FC00_ffff); // MINIMON MONITOR
 
 #if cNEWBEAR_MAX_RAM
  // 1 big chunk of RAM up to before main board RAM (no orignal Newbear board did this)...

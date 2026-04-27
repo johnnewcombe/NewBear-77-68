@@ -29,6 +29,27 @@
 ; S19 format files have been configured for 8 Data Bits, No Parity, 2 Stop
 ; Bits.
 ;
+
+
+; ----------------------------------------------------------------------------
+; TODO
+; One subtle code issue worth noting — in STERMR, the LDX #8 is hardcoded. The
+; comment says "A will contain the number of bytes to follow" but it ignores A
+; entirely. If whatever is sending the S19 file adds trailing whitespace or a
+; newline after S9030000FC, STERMR will consume garbage. Not related to 07D0
+; but worth knowing.
+;
+; A slight red flag in the source — FOUND in the command dispatcher does:
+;
+;   LDAB 1,X   ; B = high byte
+;   LDAA 2,X   ; A = low byte
+;   PSHA       ; pushes LOW byte first
+;   PSHB       ; pushes HIGH byte second (now on top of stack)
+;   RTS        ; 6800 RTS pulls PCH then PCL
+;
+;This actually works correctly on the 6800 — RTS pulls the top byte as PCH
+; (high) and the next as PCL (low). The inline comment in the source saying
+; "push high first" is misleading but the code is right.
 ; ----------------------------------------------------------------------------
 
 CTRLA   EQU     $F401       ; ACIA.A Ctrl/Status

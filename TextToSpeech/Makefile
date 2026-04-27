@@ -22,7 +22,7 @@ build:
 	srec_cat $(NAME).s19 -crop 0x1B00 0x1F00 -o $(NAME)_part7.s19 -Output_Block_Size=16 -Execution_Start_Address 0x0000
 
 	# Multiple ORGs in source so .ptp version not valid
-	echo -n "SS" > $(NAME).ptp
+	echo -n "" > $(NAME).ptp
 	cat  $(NAME).bin >> $(NAME).ptp
 
 	cp $(NAME).s19 ../Releases
