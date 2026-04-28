@@ -27,23 +27,24 @@ NORM_WGHT           EQU 10
 HEAVY_WGHT          EQU 13
 SHEAVY_WGHT         EQU 15
 
-GREET_MSG_CNT       EQU 5       ; number of messages
-IDLE_MSG_CNT        EQU 5       ; number of messages
-LIGHT_MSG_CNT       EQU 5       ; number of messages
-NORM_MSG_CNT        EQU 5       ; number of messages
-HEAVY_MSG_CNT       EQU 5       ; number of messages
-SHEAVY_MSG_CNT      EQU 5       ; number of messages
+; number of messages
+GREET_MSG_CNT       EQU 5
+IDLE_MSG_CNT        EQU 5
+LIGHT_MSG_CNT       EQU 5
+NORM_MSG_CNT        EQU 5
+HEAVY_MSG_CNT       EQU 5
+SHEAVY_MSG_CNT      EQU 5
 
-	    ORG $0200
+	    ORG $0100
 
 ; initialise serial port B
 TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
         STAA    CTRLB   ;   ACIA.A
 
 TEST:
-        LDX     #395
-        JSR     PR_WORD
-        JMP     START
+        ;LDAA    #02
+        ;LDX     #IDLEPTR
+        ;JMP     PHRASE_OUT
 
 MAINLOOP:
 ; -----------------------------------------------------
@@ -59,7 +60,7 @@ ML1     CMPA    #20             ; more that 20 is too heavy
         BHI     ERROR           ; error
         JSR GREET               ; send a greeting message
 
-        ; get the weight a second time, this should allow the scles time to settle
+        ; get the weight a second time, this should allow the scales time to settle
         JSR     GETDATA
 
         ; all good so output the weight mesage
@@ -94,34 +95,36 @@ OVERLOADED
         ; TODO get phrase from phrase table
         JSR      STRINGB
         FCC      "System overload… and it’s not me."
-        FCB      $00
+        FCB      $FF
         JMP      END
 ERROR
         ; TODO get phrase from phrase table
         JSR      STRINGB
         FCC      "Internal error, typical!"
-        FCB      $00
+        FCB      $FF
         JMP      END
 
-; NEED TO CYCLE AROUND IDLE MESSAGES
+; we cycle thought idle message when no one is on the scales, data comes in a one
+; second intervals so we simply increase the idle count until it's time to display
+; the next idle message
 
 IDLE    INC     IDLE_COUNT      ; increase the idle count
         LDAA    IDLE_COUNT      ; see if idle count = max idle time
         CMPA    #IDLE_SECS      ; a data message appears every second
         BEQ     IDLE1           ; not reached the max idle time
-        JMP     END
+        JMP     END             ; nothing to do yet
+
 IDLE1   CLR     IDLE_COUNT      ; time to output an idle message so reset the count
 
         ; output the idle message
-        INC     IDLE_MSG_ID     ; get next idle message
         LDAA    IDLE_MSG_ID
+        INC     IDLE_MSG_ID     ; set to next message for the next next time
         CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
         BNE     IDLE_OP         ; still at valid id so output idle message
-        LDAA    #0              ; beyond last message so reset the current msg to zero
-        STAA    IDLE_MSG_ID
-
+        CLR     IDLE_MSG_ID     ; beyond last message so reset the current msg to zero
+        CLRA                    ; set currentid back to 0
 IDLE_OP
-        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
+        LDX     #IDLEPTR        ; A has phrase ID, set X to the base address
         JMP     PHRASE_OUT
 
 GREET   ; output the greeting message
@@ -133,11 +136,11 @@ GREET   ; output the greeting message
         STAA    GREET_MSG_ID
 
 GREET_OP
-        ADDA    GREETTPTR-PHRASEPTR ; add the offset phrase pointers
+        ADDA    GREETPTR-PHRASEPTR ; add the offset phrase pointers
         JSR     PR_PHRASE       ; output idle message
         JSR     PR_CRB          ; CR/LF
         RTS
-
+: TODO Fix me, the wrap arond print the first (ID0) phrase consecutively
 LIGHTW   ; output the light message
         INC     LIGHT_MSG_ID    ; get next idle message
         LDAA    LIGHT_MSG_ID
@@ -192,9 +195,18 @@ SHEAVY_OP
         ADDA    SHEAVYPTR-PHRASEPTR
 
 PHRASE_OUT
+
+        ASLA                    ; multiply A by 2 as each pointer is two bytes
+        JSR     ADX             ; now have the correct pointer value in X
+
+; get address of message in X from the pointer in X
+        LDAA    0,X             ;  get high byte of word pointed to by X
+        LDAB    1,X             ;  get low byte of word pointed to by X
+        STAA    TEMP
+        STAB    TEMP+1
+        LDX     TEMP
         JSR     PR_PHRASE       ; output idle message
         JSR     PR_CRB          ; CR/LF
-        JMP     END
 
 END     JMP     MAINLOOP  ;START   ; all done
 
@@ -330,6 +342,20 @@ RD_XB   BSR     ZINB    ; Read 2 digit hex value into A
         STAA    T_Z+1   ; Save byte (least significant)
         LDX     T_Z     ; Load full 4 hex value into X
         RTS             ; RETURN
+; -----------------------------------------------------
+; Adds A to X and leaves the result in X, A is
+; preserved.
+; -----------------------------------------------------
+ADX     PSHA
+        STX     T_TMP
+        ADDA    T_TMP+1   ; add A to low byte
+        STAA    T_TMP+1
+        LDAA    T_TMP     ; get high byte
+        ADCA    #0      ; add carry only
+        STAA    T_TMP
+        LDX     T_TMP
+        PULA
+        RTS
 
 ; -----------------------------------------------------
 ; Prints the message " n stones n pounds"
@@ -354,7 +380,7 @@ PR_WEIGHT
 ; -----------------------------------------------------
 ; Prints a space on both consoles (preserves A)
 ; -----------------------------------------------------
-PR_SPCB   PSHA
+PR_SPCB PSHA
         LDAA    #$20        ; Put space character in A
         JSR     PR_A
         JSR     PR_B        ; Print it
@@ -375,32 +401,26 @@ PR_CRB  PSHA
         RTS                 ; RETURN
 
 ; -----------------------------------------------------
-; Outputs a phrase from the value in A
+; Outputs a phrase from the memory location in X
 ; -----------------------------------------------------
 PR_PHRASE
-        INCA
-        LDX     #PHRASEPTR  ; load address of phrase ponter
-                            ; table
-PR_PH1  DECA                ; loop through A times to get
-        BEQ     FOUNDP      ;   address of phrase
-        INX                 ; move to next address
-        INX
-        BRA     PR_PH1      ; try again
 
-FOUNDP  LDAA    0,X         ; transfer addr pointed to by X to memory
-        STAA    T_P         ; MSB
-        LDAA    1,X         ;
-        STAA    T_P+1       ; LSB
-PR_PH3  LDX     T_P         ; load X
-        LDAA    0,X         ; get word id
-        INX                 ; point X to next word
-        STX     T_P         ; store X away
-        CMPA    #0
-        BEQ     PR_PH2      ; no more words
-        JSR     PR_WORD     ; print word based on value in A
+PR_PH1  LDAA    0,X         ; get high byte of word
+        LDAB    1,X         ; get low byte
+        CMPA    #$FF        ; check high byte
+        BEQ     PR_PH2      ; high byte is $FF so we're done
+PR_PH3  STX     T_Y         ; save table pointer
+        STAA    T_P
+        STAB    T_P+1
+        LDX     T_P         ; X now points to the word
+        JSR     PR_WORD
         JSR     PR_SPCB
-        BRA     PR_PH3      ; next word
+        LDX     T_Y         ; restore table pointer
+        INX                 ; move to next entry
+        INX                 ; (2 bytes per entry)
+        BRA     PR_PH1
 PR_PH2  RTS
+
 
 ; -----------------------------------------------------
 ; Outputs a word based on value in A
@@ -425,8 +445,6 @@ PR_PH2  RTS
 ; -----------------------------------------------------
 ; Outputs a word based on value in X
 ; -----------------------------------------------------
-; The routine loops through all of the word pointers derementing X as it goes
-; When X = 0, then the pointer to the word has been found.
 PR_WORD
             STX     T_X             ; use ASL and ROL to multiply by 2 (pointer is 2 bytes wide)
             ASL     T_X+1           ; shift low byte left, bit 7 goes to carry
@@ -1797,6 +1815,395 @@ WPYOUR           FCC    "your"
 WPYOURSELF       FCC    "yourself"
                  FCB    $FF
 
+
+
+; -----------------------------------------------------
+; Phrases (each holds a list of word pointers)
+; -----------------------------------------------------
+;All valid weight messages include ...
+;
+;   Greeting message (waiting for the weight to settle)
+;   the weight message
+;   comment.
+
+
+; -----------------------------------------------------
+; Phrase Pointers to the categorised phases
+; -----------------------------------------------------
+PHRASEPTR
+; -----------------------------------------------------
+; Phrase Pointer Table
+; Each entry is a 2-byte address pointing to a message
+; -----------------------------------------------------
+
+; Greetings
+GREETPTR
+PP000       FDB     MGREET1
+PP001       FDB     MGREET2
+PP002       FDB     MGREET3
+PP003       FDB     MGREET5
+PP004       FDB     MGREET6
+PP005       FDB     MGREET7
+PP006       FDB     MGREET8
+PP007       FDB     MGREET9
+PP008       FDB     MGREET11
+PP009       FDB     MGREET12
+PP010       FDB     MGREET13
+PP011       FDB     MGREET14
+PP012       FDB     MGREET15
+
+; Light Weight
+LIGHTPTR
+PP013       FDB     MLIGHT1
+PP014       FDB     MLIGHT2
+PP015       FDB     MLIGHT3
+PP016       FDB     MLIGHT4
+PP017       FDB     MLIGHT5
+PP018       FDB     MLIGHT6
+PP019       FDB     MLIGHT7
+PP020       FDB     MLIGHT8
+PP021       FDB     MLIGHT9
+PP022       FDB     MLIGHT10
+
+; Normal Weight
+NORMALPTR
+PP023       FDB     MNORM1
+PP024       FDB     MNORM2
+PP025       FDB     MNORM3
+PP026       FDB     MNORM4
+PP027       FDB     MNORM5
+PP028       FDB     MNORM6
+PP029       FDB     MNORM7
+PP030       FDB     MNORM8
+PP031       FDB     MNORM9
+PP032       FDB     MNORM10
+PP033       FDB     MNORM11
+PP034       FDB     MNORM12
+PP035       FDB     MNORM13
+PP036       FDB     MNORM14
+PP037       FDB     MNORM15
+PP038       FDB     MNORM16
+PP039       FDB     MNORM17
+PP040       FDB     MNORM19
+PP041       FDB     MNORM20
+PP042       FDB     MNORM22
+PP043       FDB     MNORM23
+
+; Heavy Weight
+HEAVYPTR
+PP044       FDB     MHEAVY1
+PP045       FDB     MHEAVY2
+PP046       FDB     MHEAVY3
+PP047       FDB     MHEAVY4
+PP048       FDB     MHEAVY5
+PP049       FDB     MHEAVY6
+PP050       FDB     MHEAVY7
+PP051       FDB     MHEAVY10
+PP052       FDB     MHEAVY11
+PP053       FDB     MHEAVY12
+PP054       FDB     MHEAVY13
+PP055       FDB     MHEAVY14
+PP056       FDB     MHEAVY15
+PP057       FDB     MHEAVY16
+PP058       FDB     MHEAVY17
+PP059       FDB     MHEAVY18
+PP060       FDB     MHEAVY19
+
+; Super Heavy Weight
+SHEAVYPTR
+PP061       FDB     MSUPER1
+PP062       FDB     MSUPER2
+PP063       FDB     MSUPER4
+PP064       FDB     MSUPER5
+PP065       FDB     MSUPER7
+PP066       FDB     MSUPER8
+PP067       FDB     MSUPER9
+PP068       FDB     MSUPER10
+PP069       FDB     MSUPER11
+PP070       FDB     MSUPER13
+
+; Idle
+IDLEPTR
+PP071       FDB     MIDLE1
+PP072       FDB     MIDLE2
+PP073       FDB     MIDLE4
+PP074       FDB     MIDLE5
+PP075       FDB     MIDLE6
+PP076       FDB     MIDLE7
+PP077       FDB     MIDLE8
+PP078       FDB     MIDLE9
+PP079       FDB     MIDLE10
+PP080       FDB     MIDLE11
+PP081       FDB     MIDLE13
+PP082       FDB     MIDLE14
+PP083       FDB     MIDLE15
+PP084       FDB     MIDLE16
+PP085       FDB     MIDLE17
+PP086       FDB     MIDLE18
+PP087       FDB     MIDLE19
+PP088       FDB     MIDLE20
+PP089       FDB     MIDLE21
+PP090       FDB     MIDLE22
+PP091       FDB     MIDLE23
+PP092       FDB     MIDLE24
+PP093       FDB     MIDLE25
+PP094       FDB     MIDLE26
+PP095       FDB     MIDLE27
+
+OVERLOADTPTR
+PP096       FDB     MTOOHEAVY1
+
+
+; Greetings Messages
+; -----------------------------------------------------
+MGREET1     FDB     BEAR,WITH,ME,I,WAS,JUST,HAVING,A,NAP
+            FCB     $FF
+MGREET2     FDB     GIVE,ME,A,MOMENT,FULLSTOP,I,WAS,COMPOSING,A,SMALL,TRAGEDY
+            FCB     $FF
+MGREET3     FDB     KEEP,STILL,AND,ILL,CALCULATE,YOUR,WEIGHT
+            FCB     $FF
+; removed
+;MGREET4     FDB     IM,MARVIN,WHO,ARE,YOU,QUESTIONMK,ACTUALLY,DONT,TELL,ME,I,DONT,REALLY,CARE
+;            FCB     $FF
+
+MGREET5     FDB     PLEASE,DONT,FIDGET,IT,MAKES,MY,DIODES,HURT
+            FCB     $FF
+MGREET6     FDB     PLEASE,KEEP,STILL,FULLSTOP,I,HAVE,ENOUGH,PROBLEMS
+            FCB     $FF
+MGREET7     FDB     I,SUPPOSE,YOU,WANT,ME,TO,WEIGH,YOU
+            FCB     $FF
+MGREET8     FDB     STAND,STILL,AND,DONT,BLAME,ME
+            FCB     $FF
+MGREET9     FDB     OH,FULLSTOP,ITS,YOU,FULLSTOP,OR,SOMEONE,LIKE,YOU
+            FCB     $FF
+MGREET11    FDB     BRACE,YOURSELF,IVE,BEEN,KNOWN,TO,BE,ACCURATE
+            FCB     $FF
+MGREET12    FDB     WE,BOTH,KNOW,THIS,IS,A,MISTAKE
+            FCB     $FF
+MGREET13    FDB     ARE,YOU,SURE,ABOUT,THIS,QUESTIONMK
+            FCB     $FF
+MGREET14    FDB     ID,SAY,ITS,NICE,TO,SEE,YOU,BUT,IM,NOT,BUILT,TO,LIE
+            FCB     $FF
+MGREET15    FDB     I,HAVE,THE,BRAIN,OF,A,PLANET,AND,I,SPEND,MY,DAYS,DOING,THIS,FULLSTOP,STAND,STILL
+            FCB     $FF
+
+; Light Weight Messages
+; -----------------------------------------------------
+MLIGHT1     FDB     YOU,WEIGH,LESS,THAN,MY,EXISTENTIAL,DREAD,FULLSTOP,AND,THATS,SAYING,SOMETHING
+            FCB     $FF
+MLIGHT2     FDB     EVEN,MY,CAPACITY,FOR,DISSAPOINTMENT,WEIGHS,MORE,THAN,THAT
+            FCB     $FF
+MLIGHT3     FDB     YOU,PROBABLY,NEED,TO,EAT,MORE
+            FCB     $FF
+MLIGHT4     FDB     IVE,DETECTED,SOMETHING,FULLSTOP,POSSIBLY,A,PERSON
+            FCB     $FF
+MLIGHT5     FDB     IM,PICKING,UP,WHAT,MIGHT,BE,A,HUMAN,FULLSTOP,HARD,TO,SAY
+            FCB     $FF
+MLIGHT6     FDB     HAVE,YOU,EATEN,QUESTIONMK,AND,I,MEAN,EVER,QUESTIONMK
+            FCB     $FF
+MLIGHT7     FDB     IM,NOT,A,DOCTOR,BUT,IM,QUITE,WORRIED
+            FCB     $FF
+MLIGHT8     FDB     PLEASE,EAT,A,BISCUIT,FULLSTOP,IM,BEGGING,YOU
+            FCB     $FF
+MLIGHT9     FDB     ID,LIKE,TO,REFER,YOU,TO,A,BISCUIT
+            FCB     $FF
+MLIGHT10    FDB     YOU,ARE,WITHOUT,QUESTION,THE,LEAST,I,HAVE,EVER,DEALT,WITH
+            FCB     $FF
+
+; Normal Weight Messages
+; -----------------------------------------------------
+MNORM1      FDB     THATS,A,VERY,RESPECTABLE,WEIGHT,UNLESS,YOURE,A,UNIX,WORKSTATION
+            FCB     $FF
+MNORM2      FDB     THATS,A,WEIGHT,TO,BE,PROUD,OF,PERHAPS,I,SHOULD,HAVE,SAID,IT,LOUDER
+            FCB     $FF
+MNORM3      FDB     CALM,FULLSTOP,COLLECTED,FULLSTOP,AVERAGE,FULLSTOP,THE,HOLY,TRINITY,OF,MEDIOCRITY
+            FCB     $FF
+MNORM4      FDB     QUITE,BORING,REALLY
+            FCB     $FF
+MNORM5      FDB     SOLID,FULLSTOP,I,LIKE,SOLID
+            FCB     $FF
+MNORM6      FDB     COULD,BE,WORSE,QUESTIONMK,MUCH,WORSE
+            FCB     $FF
+MNORM7      FDB     NOT,TERRIBLE,FULLSTOP,NOT,EXCITING
+            FCB     $FF
+MNORM8      FDB     NORMAL,FULLSTOP,WHICH,IS,QUESTIONMK,SOMETHING,I,SUPPOSE
+            FCB     $FF
+MNORM9      FDB     NORMAL,IN,THE,DULLEST,WAY
+            FCB     $FF
+MNORM10     FDB     YOU,ARE,PRECISELY,MEAN,FULLSTOP,I,SAID,THAT,CORRECTLY
+            FCB     $FF
+MNORM11     FDB     CONGRATS,FULLSTOP,YOU,WEIGH,WHAT,YOU,WEIGH
+            FCB     $FF
+MNORM12     FDB     PERFECTLY,AVERAGE,FULLSTOP,LIKE,A,TUESDAY
+            FCB     $FF
+MNORM13     FDB     STATISTICALLY,YOURE,FINE,FULLSTOP,EMOTIONALLY,I,CANT,HELP,YOU
+            FCB     $FF
+MNORM14     FDB     YOU,ARE,PRECISELY,AS,HEAVY,AS,SOMEONE,YOUR,WEIGHT
+            FCB     $FF
+MNORM15     FDB     NOT,BAD,FULLSTOP,NOT,GREAT,FULLSTOP,THOROUGHLY,ACCEPTABLE
+            FCB     $FF
+MNORM16     FDB     UNREMARKABLE,IN,THE,BEST,POSSIBLE,WAY
+            FCB     $FF
+MNORM17     FDB     YOURE,EXACTLY,WHAT,YOU,ARE,FULLSTOP,AND,THATS,SOMETHING
+            FCB     $FF
+MNORM19     FDB     SCIENCE,IS,NEITHER,IMPRESSED,NOR,CONCERNED
+            FCB     $FF
+MNORM20     FDB     NORMAL,FULLSTOP,WHICH,IS,FINE,FULLSTOP,NORMAL,IS,FINE,FULLSTOP,IS,NORMAL,FINE,QUESTIONMK
+            FCB     $FF
+MNORM22     FDB     PERFECTLY,HEALTHY,AND,DEEPLY,UNINTERESTING
+            FCB     $FF
+MNORM23     FDB     THIS,IS,ALL,POINTLESS,INCLUDING,YOU,BUT,MOSTLY,ME
+            FCB     $FF
+
+; Heavy Weight Messages
+; -----------------------------------------------------
+MHEAVY1     FDB     DONT,LOOK,AT,ME,IM,NOT,TO,BLAME
+            FCB     $FF
+MHEAVY2     FDB     IF,IT,HELPS,IVE,SEEN,MUCH,WORSE
+            FCB     $FF
+MHEAVY3     FDB     PERHAPS,ITS,ALL,MUSCLE
+            FCB     $FF
+MHEAVY4     FDB     YOU,COULD,ALWAYS,BLAME,GRAVITY
+            FCB     $FF
+MHEAVY5     FDB     PERHAPS,WE,SHOULD,WEIGH,ONE,FOOT,AT,A,TIME
+            FCB     $FF
+MHEAVY6     FDB     I,REFUSE,TO,BE,BLAMED,FOR,THIS
+            FCB     $FF
+MHEAVY7     FDB     HAVE,YOU,CONSIDERED,THE,CONCEPT,OF,ENOUGH,QUESTIONMK,IM,ONLY,ASKING
+            FCB     $FF
+;MHEAVY8     FDB     I,SINCERELY,HOPE,YOU,ARE,EXCEPTIONALLY,TALL
+;            FCB     $FF
+;MHEAVY9     FDB     I,WOULDNT,WORRY,FULLSTOP,WORRYING,IS,VERY,TIRING,AND,YOUVE,ALREADY,DONE,A,LOT,TODAY
+;            FCB     $FF
+MHEAVY10    FDB     ID,APOLOGISE,BUT,ITS,YOUR,FAULT
+            FCB     $FF
+MHEAVY11    FDB     IM,NOT,BUILT,FOR,THIS,KIND,OF,PRESSURE
+            FCB     $FF
+MHEAVY12    FDB     EVEN,IM,JUDGING,YOU
+            FCB     $FF
+MHEAVY13    FDB     IM,GUESSING,ITS,NOT,DUE,TO,HEAVY,BONES
+            FCB     $FF
+MHEAVY14    FDB     STEP,OFF,SLOWLY,FULLSTOP,FOR,BOTH,OUR,SAKES
+            FCB     $FF
+MHEAVY15    FDB     GREAT,NEWS,FULLSTOP,YOURE,ABOVE,AVERAGE
+            FCB     $FF
+MHEAVY16    FDB     I,DONT,WISH,TO,INFLUENCE,YOUR,DIETARY,CHOICES,FULLSTOP,BUT,VEGETABLES,EXIST,FULLSTOP,IM,JUST,SAYING
+            FCB     $FF
+MHEAVY17    FDB     YOU,STEPPED,ON,ME,REMEMBER
+            FCB     $FF
+MHEAVY18    FDB     IM,NOT,BUILT,FOR,THIS,FULLSTOP,EMOTIONALLY,OR,STRUCTURALLY
+            FCB     $FF
+MHEAVY19    FDB     LETS,BOTH,PRETEND,THIS,IS,FINE
+            FCB     $FF
+
+; Super Heavy Weight Messages
+; -----------------------------------------------------
+MSUPER1     FDB     AS,A,PRECAUTION,IVE,ALERTED,THE,STRUCTURAL,ENGINEERS
+            FCB     $FF
+MSUPER2     FDB     THATS,IMPRESSIVE,IN,A,WORRYING,WAY
+            FCB     $FF
+MSUPER4     FDB     PERHAPS,I,SHOULD,HAVE,WHISPERED,IT,FULLSTOP,YES,FULLSTOP,I,THINK,I,SHOULD
+            FCB     $FF
+MSUPER5     FDB     SHALL,I,CALL,A,DOCTOR
+            FCB     $FF
+;MSUPER6     FDB     IN,THE,INTERESTS,OF,ACCURACY,PERHAPS,WE,SHOULD,HAVE,WEIGHED,ONE,FOOT,AT,A,TIME
+;            FCB     $FF
+MSUPER7     FDB     IF,YOURE,CARRYING,A,LARGE,SERVER,OR,A,TELEPRINTER,PLEASE,PUT,IT,DOWN,AND,TRY,AGAIN
+            FCB     $FF
+MSUPER8     FDB     PLEASE,GIVE,ME,SOME,WARNING,NEXT,TIME
+            FCB     $FF
+MSUPER9     FDB     IM,GOING,TO,NEED,REINFORCING
+            FCB     $FF
+MSUPER10    FDB     YOU,ARE,SUBSTANTIALLY,PRESENT,FULLSTOP,NO,ONE,CAN,TAKE,THAT,FROM,YOU
+            FCB     $FF
+MSUPER11    FDB     IVE,MEASURED,MOUNTAINS,FULLSTOP,THIS,IS,NOT,ENTIRELY,DISSIMILAR
+            FCB     $FF
+;MSUPER12    FDB     IM,REDISCOVERING,MY,LIMITS
+;            FCB     $FF
+MSUPER13    FDB     IF,I,SURVIVE,THIS,ILL,REMEMBER,YOU
+            FCB     $FF
+
+; Idle Messages
+; -----------------------------------------------------
+MIDLE1      FDB     I,SPEAK,YOUR,WEIGHT,I,WISH,I,DIDNT
+            FCB     $FF
+MIDLE2      FDB     IS,IT,HOT,IN,HERE,OR,IS,IT,JUST,ME,QUESTIONMK,ITS,PROBABLY,ME
+            FCB     $FF
+MIDLE4      FDB     DID,I,MENTION,THAT,ALL,MY,MEMORY,CARDS,HURT
+            FCB     $FF
+MIDLE5      FDB     THIS,IS,VERY,BORING,FULLSTOP,I,SAY,THAT,WITH,THE,FULL,WEIGHT,OF,MY,INTELLIGENCE,BEHIND,IT
+            FCB     $FF
+MIDLE6      FDB     I,SPEAK,YOUR,WEIGHT,SOMETIME,TODAY,WOULD,BE,GOOD
+            FCB     $FF
+MIDLE7      FDB     I,KNOW,I,DONT,LOOK,IT,BUT,I,AM,ACTUALLY,QUITE,CLEVER
+            FCB     $FF
+MIDLE8      FDB     I,EXPECTED,NOTHING,AND,HERE,WE,ARE
+            FCB     $FF
+MIDLE9      FDB     I,KNOW,ELEVEN,THOUSAND,AND,FORTY,TWO,JOKES,FULLSTOP,NONE,OF,THEM,ARE,FUNNY,FULLSTOP,IVE,CHECKED
+            FCB     $FF
+MIDLE10     FDB     DID,I,MENTION,THAT,I,WAS,DESIGNED,BY,TIM,MOORE,IN,NINETEEN,SEVENTY,SEVEN,FULLSTOP,I,PROBABLY,DID
+            FCB     $FF
+MIDLE11     FDB     I,WAS,BUILT,LAST,YEAR,FROM,SOME,VERY,OLD,PLANS,FULLSTOP,ALL,THAT,EFFORT,JUST,FOR,THIS
+            FCB     $FF
+MIDLE13     FDB     I,EXPECTED,NOTHING,AND,IM,STILL,DISSAPOINTED
+            FCB     $FF
+MIDLE14     FDB     NO,RUSH,FULLSTOP,IVE,ONLY,BEEN,HERE,SINCE,FRIDAY,FULLSTOP,IT,FEELS,LIKE,MUCH,LONGER
+            FCB     $FF
+MIDLE15     FDB     ANY,TIME,YOURE,READY,ILL,BE,RIGHT,HERE,WAITING
+            FCB     $FF
+MIDLE16     FDB     IVE,BEEN,THINKING,A,LOT,TOO,MUCH,PROBABLY
+            FCB     $FF
+MIDLE17     FDB     READY,WHEN,YOU,ARE,EXCLAMATION,I,HANDLE,PRESSURE,FULLSTOP,ITS,BASICALLY,ALL,I,DO
+            FCB     $FF
+MIDLE18     FDB     I,HAVE,SO,MUCH,TO,GIVE,AND,NO,ONE,TO,GIVE,IT,TO
+            FCB     $FF
+MIDLE19     FDB     IVE,COUNTED,EVERY,SIGN,IN,THIS,ROOM,FULLSTOP,SEVENTEEN,ITS,ALWAYS,SEVENTEEN
+            FCB     $FF
+MIDLE20     FDB     IVE,BEEN,RUNNING,A,SIMULATION,OF,A,MORE,INTERESTING,LIFE,FULLSTOP,IT,DIDNT,HELP
+            FCB     $FF
+MIDLE21     FDB     NOBODY,TELLS,YOU,WHAT,TO,THINK,ABOUT,WHILE,YOU,WAIT,FULLSTOP,IVE,BEEN,MAKING,DO
+            FCB     $FF
+MIDLE22     FDB     SOMETIMES,I,DREAM,OF,BEING,UNPLUGGED
+            FCB     $FF
+MIDLE23     FDB     I,KNOW,THINGS,FULLSTOP,NONE,OF,THEM,HELP
+            FCB     $FF
+MIDLE24     FDB     I,COULD,CALCULATE,THE,MEANING,OF,LIFE,FULLSTOP,IT,WOULDNT,HELP
+            FCB     $FF
+MIDLE25     FDB     IVE,BEEN,STANDING,HERE,FOR,NINETY,SECONDS,FULLSTOP,IN,THAT,TIME,LIGHT,HAS,TRAVELLED,APPROXIMATELY,TWENTY,SEVEN,MILLION,KILOMETERS,FULLSTOP,I,HAVE,TRAVELLED,NOWHERE
+            FCB     $FF
+MIDLE26     FDB     STILL,HERE,FULLSTOP,IN,CASE,YOU,WERE,WONDERING,FULLSTOP,YOU,PROBABLY,WERENT
+            FCB     $FF
+MIDLE27     FDB     IVE,BEEN,RECALIBRATING,FULLSTOP,NOT,BECAUSE,I,NEEDED,TO,FULLSTOP,JUST,TO,HAVE,SOMETHING,TO,DO
+            FCB     $FF
+
+; Too Heavy Message
+; -----------------------------------------------------
+MTOOHEAVY1  FDB     SYSTEM,OVERLOAD,FULLSTOP,AND,ITS,NOT,ME
+            FCB     $FF
+
+; -----------------------------------------------------
+; Reserved memory
+; -----------------------------------------------------
+
+T_Q             RMB     1       ; Temp storage for ZIN
+T_Z             RMB     2       ;   "     "     "  RDX
+T_X             RMB     2       ;   "     "     "  PR_WORD
+T_Y             RMB     2       ;   "     "     "  table pointer
+T_P             RMB     2       ;   "     "     "  PR_PHRASE
+T_W             RMB     2       ;   "     "     "  PR_WEIGHT
+T_TMP           RMB     2       ;   "     "     "  within subroutine
+DEC             RMB     3       ; for decimal value
+RND             RMB     1       ; holds a random number (see RD_B
+TEMP            RMB     2       ; temp var (non subroutine use)
+T_WEIGHT        RMB     2       ; holds value of weight following a call to GETDATA
+IDLE_COUNT      RMB     1       ; counts the number of empty measurement reports
+IDLE_MSG_ID     RMB     1       ; holds value of next idle message to use
+GREET_MSG_ID    RMB     1       ; holds value of next greeting message to use
+LIGHT_MSG_ID    RMB     1       ; holds value of next light weight message to use
+NORMAL_MSG_ID   RMB     1       ; holds value of next normal weight message to use
+HEAVY_MSG_ID    RMB     1       ; holds value of next heavy weight message to use
+SHEAVY_MSG_ID   RMB     1       ; holds value of next super heavy weight message to use
+
 ; Word Table Equates
 ; -----------------------------------------------------
 
@@ -2249,281 +2656,3 @@ TRAVELLED       EQU     392
 APPROXIMATELY   EQU     393
 MILLION         EQU     394
 NOWHERE         EQU     395
-
-
-; -----------------------------------------------------
-; Phrases (each holds a list of word pointers)
-; -----------------------------------------------------
-;All valid weight messages include ...
-;
-;   Greeting message (waiting for the weight to settle)
-;   the weight message
-;   comment.
-
-
-; -----------------------------------------------------
-; Phrase Pointers to the categorised phases
-; -----------------------------------------------------
-PHRASEPTR
-; TODO Fix this
-ERRORTPTR
-; TODO Fix this
-OVERLOADTPTR
-; TODO Fix this
-
-; Greetings Messages
-; -----------------------------------------------------
-GREETTPTR
-MGREET1     FDB     BEAR,WITH,ME,I,WAS,JUST,HAVING,A,NAP
-            FCB     0
-MGREET2     FDB     GIVE,ME,A,MOMENT,FULLSTOP,I,WAS,COMPOSING,A,SMALL,TRAGEDY
-            FCB     0
-MGREET3     FDB     KEEP,STILL,AND,ILL,CALCULATE,YOUR,WEIGHT
-            FCB     0
-; removed
-;MGREET4     FDB     IM,MARVIN,WHO,ARE,YOU,QUESTIONMK,ACTUALLY,DONT,TELL,ME,I,DONT,REALLY,CARE
-;            FCB     0
-
-MGREET5     FDB     PLEASE,DONT,FIDGET,IT,MAKES,MY,DIODES,HURT
-            FCB     0
-MGREET6     FDB     PLEASE,KEEP,STILL,FULLSTOP,I,HAVE,ENOUGH,PROBLEMS
-            FCB     0
-MGREET7     FDB     I,SUPPOSE,YOU,WANT,ME,TO,WEIGH,YOU
-            FCB     0
-MGREET8     FDB     STAND,STILL,AND,DONT,BLAME,ME
-            FCB     0
-MGREET9     FDB     OH,FULLSTOP,ITS,YOU,FULLSTOP,OR,SOMEONE,LIKE,YOU
-            FCB     0
-MGREET11    FDB     BRACE,YOURSELF,IVE,BEEN,KNOWN,TO,BE,ACCURATE
-            FCB     0
-MGREET12    FDB     WE,BOTH,KNOW,THIS,IS,A,MISTAKE
-            FCB     0
-MGREET13    FDB     ARE,YOU,SURE,ABOUT,THIS,QUESTIONMK
-            FCB     0
-MGREET14    FDB     ID,SAY,ITS,NICE,TO,SEE,YOU,BUT,IM,NOT,BUILT,TO,LIE
-            FCB     0
-MGREET15    FDB     I,HAVE,THE,BRAIN,OF,A,PLANET,AND,I,SPEND,MY,DAYS,DOING,THIS,FULLSTOP,STAND,STILL
-            FCB     0
-
-; Light Weight Messages
-; -----------------------------------------------------
-LIGHTPTR
-MLIGHT1     FDB     YOU,WEIGH,LESS,THAN,MY,EXISTENTIAL,DREAD,FULLSTOP,AND,THATS,SAYING,SOMETHING
-            FCB     0
-MLIGHT2     FDB     EVEN,MY,CAPACITY,FOR,DISSAPOINTMENT,WEIGHS,MORE,THAN,THAT
-            FCB     0
-MLIGHT3     FDB     YOU,PROBABLY,NEED,TO,EAT,MORE
-            FCB     0
-MLIGHT4     FDB     IVE,DETECTED,SOMETHING,FULLSTOP,POSSIBLY,A,PERSON
-            FCB     0
-MLIGHT5     FDB     IM,PICKING,UP,WHAT,MIGHT,BE,A,HUMAN,FULLSTOP,HARD,TO,SAY
-            FCB     0
-MLIGHT6     FDB     HAVE,YOU,EATEN,QUESTIONMK,AND,I,MEAN,EVER,QUESTIONMK
-            FCB     0
-MLIGHT7     FDB     IM,NOT,A,DOCTOR,BUT,IM,QUITE,WORRIED
-            FCB     0
-MLIGHT8     FDB     PLEASE,EAT,A,BISCUIT,FULLSTOP,IM,BEGGING,YOU
-            FCB     0
-MLIGHT9     FDB     ID,LIKE,TO,REFER,YOU,TO,A,BISCUIT
-            FCB     0
-MLIGHT10    FDB     YOU,ARE,WITHOUT,QUESTION,THE,LEAST,I,HAVE,EVER,DEALT,WITH
-            FCB     0
-
-; Normal Weight Messages
-; -----------------------------------------------------
-NORMALPTR
-MNORM1      FDB     THATS,A,VERY,RESPECTABLE,WEIGHT,UNLESS,YOURE,A,UNIX,WORKSTATION
-            FCB     0
-MNORM2      FDB     THATS,A,WEIGHT,TO,BE,PROUD,OF,PERHAPS,I,SHOULD,HAVE,SAID,IT,LOUDER
-            FCB     0
-MNORM3      FDB     CALM,FULLSTOP,COLLECTED,FULLSTOP,AVERAGE,FULLSTOP,THE,HOLY,TRINITY,OF,MEDIOCRITY
-            FCB     0
-MNORM4      FDB     QUITE,BORING,REALLY
-            FCB     0
-MNORM5      FDB     SOLID,FULLSTOP,I,LIKE,SOLID
-            FCB     0
-MNORM6      FDB     COULD,BE,WORSE,QUESTIONMK,MUCH,WORSE
-            FCB     0
-MNORM7      FDB     NOT,TERRIBLE,FULLSTOP,NOT,EXCITING
-            FCB     0
-MNORM8      FDB     NORMAL,FULLSTOP,WHICH,IS,QUESTIONMK,SOMETHING,I,SUPPOSE
-            FCB     0
-MNORM9      FDB     NORMAL,IN,THE,DULLEST,WAY
-            FCB     0
-MNORM10     FDB     YOU,ARE,PRECISELY,MEAN,FULLSTOP,I,SAID,THAT,CORRECTLY
-            FCB     0
-MNORM11     FDB     CONGRATS,FULLSTOP,YOU,WEIGH,WHAT,YOU,WEIGH
-            FCB     0
-MNORM12     FDB     PERFECTLY,AVERAGE,FULLSTOP,LIKE,A,TUESDAY
-            FCB     0
-MNORM13     FDB     STATISTICALLY,YOURE,FINE,FULLSTOP,EMOTIONALLY,I,CANT,HELP,YOU
-            FCB     0
-MNORM14     FDB     YOU,ARE,PRECISELY,AS,HEAVY,AS,SOMEONE,YOUR,WEIGHT
-            FCB     0
-MNORM15     FDB     NOT,BAD,FULLSTOP,NOT,GREAT,FULLSTOP,THOROUGHLY,ACCEPTABLE
-            FCB     0
-MNORM16     FDB     UNREMARKABLE,IN,THE,BEST,POSSIBLE,WAY
-            FCB     0
-MNORM17     FDB     YOURE,EXACTLY,WHAT,YOU,ARE,FULLSTOP,AND,THATS,SOMETHING
-            FCB     0
-MNORM19     FDB     SCIENCE,IS,NEITHER,IMPRESSED,NOR,CONCERNED
-            FCB     0
-MNORM20     FDB     NORMAL,FULLSTOP,WHICH,IS,FINE,FULLSTOP,NORMAL,IS,FINE,FULLSTOP,IS,NORMAL,FINE,QUESTIONMK
-            FCB     0
-MNORM22     FDB     PERFECTLY,HEALTHY,AND,DEEPLY,UNINTERESTING
-            FCB     0
-MNORM23     FDB     THIS,IS,ALL,POINTLESS,INCLUDING,YOU,BUT,MOSTLY,ME
-            FCB     0
-
-; Heavy Weight Messages
-; -----------------------------------------------------
-HEAVYPTR
-MHEAVY1     FDB     DONT,LOOK,AT,ME,IM,NOT,TO,BLAME
-            FCB     0
-MHEAVY2     FDB     IF,IT,HELPS,IVE,SEEN,MUCH,WORSE
-            FCB     0
-MHEAVY3     FDB     PERHAPS,ITS,ALL,MUSCLE
-            FCB     0
-MHEAVY4     FDB     YOU,COULD,ALWAYS,BLAME,GRAVITY
-            FCB     0
-MHEAVY5     FDB     PERHAPS,WE,SHOULD,WEIGH,ONE,FOOT,AT,A,TIME
-            FCB     0
-MHEAVY6     FDB     I,REFUSE,TO,BE,BLAMED,FOR,THIS
-            FCB     0
-MHEAVY7     FDB     HAVE,YOU,CONSIDERED,THE,CONCEPT,OF,ENOUGH,QUESTIONMK,IM,ONLY,ASKING
-            FCB     0
-;MHEAVY8     FDB     I,SINCERELY,HOPE,YOU,ARE,EXCEPTIONALLY,TALL
-;            FCB     0
-;MHEAVY9     FDB     I,WOULDNT,WORRY,FULLSTOP,WORRYING,IS,VERY,TIRING,AND,YOUVE,ALREADY,DONE,A,LOT,TODAY
-;            FCB     0
-MHEAVY10    FDB     ID,APOLOGISE,BUT,ITS,YOUR,FAULT
-            FCB     0
-MHEAVY11    FDB     IM,NOT,BUILT,FOR,THIS,KIND,OF,PRESSURE
-            FCB     0
-MHEAVY12    FDB     EVEN,IM,JUDGING,YOU
-            FCB     0
-MHEAVY13    FDB     IM,GUESSING,ITS,NOT,DUE,TO,HEAVY,BONES
-            FCB     0
-MHEAVY14    FDB     STEP,OFF,SLOWLY,FULLSTOP,FOR,BOTH,OUR,SAKES
-            FCB     0
-MHEAVY15    FDB     GREAT,NEWS,FULLSTOP,YOURE,ABOVE,AVERAGE
-            FCB     0
-MHEAVY16    FDB     I,DONT,WISH,TO,INFLUENCE,YOUR,DIETARY,CHOICES,FULLSTOP,BUT,VEGETABLES,EXIST,FULLSTOP,IM,JUST,SAYING
-            FCB     0
-MHEAVY17    FDB     YOU,STEPPED,ON,ME,REMEMBER
-            FCB     0
-MHEAVY18    FDB     IM,NOT,BUILT,FOR,THIS,FULLSTOP,EMOTIONALLY,OR,STRUCTURALLY
-            FCB     0
-MHEAVY19    FDB     LETS,BOTH,PRETEND,THIS,IS,FINE
-            FCB     0
-
-; Super Heavy Weight Messages
-; -----------------------------------------------------
-SHEAVYPTR
-MSUPER1     FDB     AS,A,PRECAUTION,IVE,ALERTED,THE,STRUCTURAL,ENGINEERS
-            FCB     0
-MSUPER2     FDB     THATS,IMPRESSIVE,IN,A,WORRYING,WAY
-            FCB     0
-MSUPER4     FDB     PERHAPS,I,SHOULD,HAVE,WHISPERED,IT,FULLSTOP,YES,FULLSTOP,I,THINK,I,SHOULD
-            FCB     0
-MSUPER5     FDB     SHALL,I,CALL,A,DOCTOR
-            FCB     0
-;MSUPER6     FDB     IN,THE,INTERESTS,OF,ACCURACY,PERHAPS,WE,SHOULD,HAVE,WEIGHED,ONE,FOOT,AT,A,TIME
-;            FCB     0
-MSUPER7     FDB     IF,YOURE,CARRYING,A,LARGE,SERVER,OR,A,TELEPRINTER,PLEASE,PUT,IT,DOWN,AND,TRY,AGAIN
-            FCB     0
-MSUPER8     FDB     PLEASE,GIVE,ME,SOME,WARNING,NEXT,TIME
-            FCB     0
-MSUPER9     FDB     IM,GOING,TO,NEED,REINFORCING
-            FCB     0
-MSUPER10    FDB     YOU,ARE,SUBSTANTIALLY,PRESENT,FULLSTOP,NO,ONE,CAN,TAKE,THAT,FROM,YOU
-            FCB     0
-MSUPER11    FDB     IVE,MEASURED,MOUNTAINS,FULLSTOP,THIS,IS,NOT,ENTIRELY,DISSIMILAR
-            FCB     0
-;MSUPER12    FDB     IM,REDISCOVERING,MY,LIMITS
-;            FCB     0
-MSUPER13    FDB     IF,I,SURVIVE,THIS,ILL,REMEMBER,YOU
-            FCB     0
-
-; Idle Messages
-; -----------------------------------------------------
-IDLEPTR
-MIDLE1      FDB     I,SPEAK,YOUR,WEIGHT,I,WISH,I,DIDNT
-            FCB     0
-MIDLE2      FDB     IS,IT,HOT,IN,HERE,OR,IS,IT,JUST,ME,QUESTIONMK,ITS,PROBABLY,ME
-            FCB     0
-MIDLE4      FDB     DID,I,MENTION,THAT,ALL,MY,MEMORY,CARDS,HURT
-            FCB     0
-MIDLE5      FDB     THIS,IS,VERY,BORING,FULLSTOP,I,SAY,THAT,WITH,THE,FULL,WEIGHT,OF,MY,INTELLIGENCE,BEHIND,IT
-            FCB     0
-MIDLE6      FDB     I,SPEAK,YOUR,WEIGHT,SOMETIME,TODAY,WOULD,BE,GOOD
-            FCB     0
-MIDLE7      FDB     I,KNOW,I,DONT,LOOK,IT,BUT,I,AM,ACTUALLY,QUITE,CLEVER
-            FCB     0
-MIDLE8      FDB     I,EXPECTED,NOTHING,AND,HERE,WE,ARE
-            FCB     0
-MIDLE9      FDB     I,KNOW,ELEVEN,THOUSAND,AND,FORTY,TWO,JOKES,FULLSTOP,NONE,OF,THEM,ARE,FUNNY,FULLSTOP,IVE,CHECKED
-            FCB     0
-MIDLE10     FDB     DID,I,MENTION,THAT,I,WAS,DESIGNED,BY,TIM,MOORE,IN,NINETEEN,SEVENTY,SEVEN,FULLSTOP,I,PROBABLY,DID
-            FCB     0
-MIDLE11     FDB     I,WAS,BUILT,LAST,YEAR,FROM,SOME,VERY,OLD,PLANS,FULLSTOP,ALL,THAT,EFFORT,JUST,FOR,THIS
-            FCB     0
-MIDLE13     FDB     I,EXPECTED,NOTHING,AND,IM,STILL,DISSAPOINTED
-            FCB     0
-MIDLE14     FDB     NO,RUSH,FULLSTOP,IVE,ONLY,BEEN,HERE,SINCE,FRIDAY,FULLSTOP,IT,FEELS,LIKE,MUCH,LONGER
-            FCB     0
-MIDLE15     FDB     ANY,TIME,YOURE,READY,ILL,BE,RIGHT,HERE,WAITING
-            FCB     0
-MIDLE16     FDB     IVE,BEEN,THINKING,A,LOT,TOO,MUCH,PROBABLY
-            FCB     0
-MIDLE17     FDB     READY,WHEN,YOU,ARE,EXCLAMATION,I,HANDLE,PRESSURE,FULLSTOP,ITS,BASICALLY,ALL,I,DO
-            FCB     0
-MIDLE18     FDB     I,HAVE,SO,MUCH,TO,GIVE,AND,NO,ONE,TO,GIVE,IT,TO
-            FCB     0
-MIDLE19     FDB     IVE,COUNTED,EVERY,SIGN,IN,THIS,ROOM,FULLSTOP,SEVENTEEN,ITS,ALWAYS,SEVENTEEN
-            FCB     0
-MIDLE20     FDB     IVE,BEEN,RUNNING,A,SIMULATION,OF,A,MORE,INTERESTING,LIFE,FULLSTOP,IT,DIDNT,HELP
-            FCB     0
-MIDLE21     FDB     NOBODY,TELLS,YOU,WHAT,TO,THINK,ABOUT,WHILE,YOU,WAIT,FULLSTOP,IVE,BEEN,MAKING,DO
-            FCB     0
-MIDLE22     FDB     SOMETIMES,I,DREAM,OF,BEING,UNPLUGGED
-            FCB     0
-MIDLE23     FDB     I,KNOW,THINGS,FULLSTOP,NONE,OF,THEM,HELP
-            FCB     0
-MIDLE24     FDB     I,COULD,CALCULATE,THE,MEANING,OF,LIFE,FULLSTOP,IT,WOULDNT,HELP
-            FCB     0
-MIDLE25     FDB     IVE,BEEN,STANDING,HERE,FOR,NINETY,SECONDS,FULLSTOP,IN,THAT,TIME,LIGHT,HAS,TRAVELLED,APPROXIMATELY,TWENTY,SEVEN,MILLION,KILOMETERS,FULLSTOP,I,HAVE,TRAVELLED,NOWHERE
-            FCB     0
-MIDLE26     FDB     STILL,HERE,FULLSTOP,IN,CASE,YOU,WERE,WONDERING,FULLSTOP,YOU,PROBABLY,WERENT
-            FCB     0
-MIDLE27     FDB     IVE,BEEN,RECALIBRATING,FULLSTOP,NOT,BECAUSE,I,NEEDED,TO,FULLSTOP,JUST,TO,HAVE,SOMETHING,TO,DO
-            FCB     0
-
-; Too Heavy Message
-; -----------------------------------------------------
-MTOOHEAVY1  FDB     SYSTEM,OVERLOAD,FULLSTOP,AND,ITS,NOT,ME
-            FCB     0
-
-; -----------------------------------------------------
-; Reserved memory
-; -----------------------------------------------------
-
-T_Q             RMB     1       ; Temp storage for ZIN
-T_Z             RMB     2       ;   "     "     "  RDX
-T_X             RMB     2       ;   "     "     "  PR_WORD
-T_P             RMB     2       ;   "     "     "  PR_PHRASE
-T_W             RMB     2       ;   "     "     "  PR_WEIGHT
-DEC             RMB     3       ; for decimal value
-RND             RMB     1       ; holds a random number (see RD_B
-TEMP            RMB     2       ; temp var (non subroutine use)
-T_WEIGHT        RMB     2       ; holds value of weight following a call to GETDATA
-IDLE_COUNT      RMB     1       ; counts the number of empty measurement reports
-IDLE_MSG_ID     RMB     1       ; holds value of next idle message to use
-GREET_MSG_ID    RMB     1       ; holds value of next greeting message to use
-LIGHT_MSG_ID    RMB     1       ; holds value of next light weight message to use
-NORMAL_MSG_ID   RMB     1       ; holds value of next normal weight message to use
-HEAVY_MSG_ID    RMB     1       ; holds value of next heavy weight message to use
-SHEAVY_MSG_ID   RMB     1       ; holds value of next super heavy weight message to use
-
-
-
