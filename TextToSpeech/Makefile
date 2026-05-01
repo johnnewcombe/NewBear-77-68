@@ -1,34 +1,34 @@
 NAME=text2speech
-ASSEMBLER=../Tools/as6800
+#ASSEMBLER=../Tools/as6800
 CCS19 = ../Tools/ccs19
 
 # consider using one of the cross compilers located in
 #  /home/john/Dropbox/Repositories/asxv5p50p5/asxv5pxx/asxmak/linux/exe
 # these are very current i.e. 2026 and support most CPUs
 # https://shop-pdp.net/ashtml/asxdoc.htm
-#ASSEMBLER=../Tools/asxv5p50p5/as6800
+ASSEMBLER=../Tools/asxv5p50p5/as6800
 
 build:
-	../Tools/asxv5p50p5/as6800 -ls -o test.asm
-	../Tools/asxv5p50p5/aslink -i test.rel
+	../Tools/asxv5p50p5/as6800 -ls -o $(NAME).asm
+	../Tools/asxv5p50p5/aslink -i $(NAME).rel
 
 	# -data-only removes the S022 record and -line-length=46 ensures s113 data records
 	# -disable=header can be used if just the header should be removed
-	srec_cat -data-only test.hex -Intel -o test.s19 -Motorola -line-length=46
-	srec_cat -data-only test.hex -Intel -o test.bin -Binary
+	srec_cat -data-only $(NAME).hex -Intel -o $(NAME).s19 -Motorola -line-length=46
+	srec_cat -data-only $(NAME).hex -Intel -o $(NAME).bin -Binary
 
 	# the following utility creates a C type data file for use in emulators etc.
-	$(CCS19) test.s19 test.c -ofc
-
-
-	$(ASSEMBLER) $(NAME).asm # Motorola Hex
-	$(ASSEMBLER) $(NAME).asm -h # Intel Hex
-	$(ASSEMBLER) $(NAME).asm -b # 64k binary
-	$(ASSEMBLER) $(NAME).asm -l > $(NAME).lst # list
-
 	$(CCS19) $(NAME).s19 $(NAME).c -ofc
-	$(CCS19) $(NAME).s19 $(NAME).bin -ofb
-	unix2dos -r $(NAME).s19 $(NAME).s19
+
+
+#	$(ASSEMBLER) $(NAME).asm # Motorola Hex
+#	$(ASSEMBLER) $(NAME).asm -h # Intel Hex
+#	$(ASSEMBLER) $(NAME).asm -b # 64k binary
+#	$(ASSEMBLER) $(NAME).asm -l > $(NAME).lst # list
+
+#	$(CCS19) $(NAME).s19 $(NAME).c -ofc
+#	$(CCS19) $(NAME).s19 $(NAME).bin -ofb
+#	unix2dos -r $(NAME).s19 $(NAME).s19
 
 	# Split the .S19 file as some terminals such as GTKTerm cant handle large files.
 	srec_cat $(NAME).s19 -crop 0x0200 0x0600 -o $(NAME)_part1.s19 -Output_Block_Size=16 -Execution_Start_Address 0x0000
@@ -47,10 +47,12 @@ build:
 
 clean:
 	rm $(NAME).lst
-	rm $(NAME).s19
-	rm $(NAME).obj
+	rm *.s19
 	rm $(NAME).c
 	rm $(NAME).bin
 	rm $(NAME).ptp
 	rm $(NAME).hex
+	rm $(NAME).sym
+	rm $(NAME).hlr
+	rm $(NAME).rel
 
