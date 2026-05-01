@@ -1,108 +1,99 @@
-        .area   CODE1  (ABS)        ; absolute i.e. not relocatable
-        .org    0x0100
-
 ;------------------------------------------------------------------
 ; text2speech.asm
 ;------------------------------------------------------------------
-DATAA               .equ 0xF400 ; ACIA(a) Data register
-CTRLA               .equ 0xF401 ; ACIA(a) Ctrl/Status
-DATAB               .equ 0xF402 ; ACIA(b) Data register
-CTRLB               .equ 0xF403 ; ACIA(b) Ctrl/Status
+
+                .area   CODE1 (ABS)     ; absolute i.e. not relocatable
+                .org    0x0100
+
+DATAA           .equ    0xF400          ; ACIA(a) Data register
+CTRLA           .equ    0xF401          ; ACIA(a) Ctrl/Status
+DATAB           .equ    0xF402          ; ACIA(b) Data register
+CTRLB           .equ    0xF403          ; ACIA(b) Ctrl/Status
 
 ; MINIMON routines
-STRING              .equ 0xFC76   ; Prints a string. The string should follow JSR and be terminated with 0xFF.
-GETADD              .equ 0xFC89   ; Get Address, read 4 digit hex value.
-ZOUT                .equ 0xFCC9   ; Print value in A as 2 hex digits.
-NEWLINE             .equ 0xFE97   ; Prints a new line.
-START               .equ 0xFF8F   ; Restarts MniMon.
-PR_A                .equ 0xFC0F   ; Print char in A to ACIA (a)
-RD_A                .equ 0xFD2B   ; Read char from A
-PRSP                .equ 0xFD4D   ; Print a space
-BINARY              .equ 0xFC31   ; Converts ASCII hex digits in A and B to binary?
-RD_X                .equ 0xFC65   ; Read 4 hex digits Value from ACIA(a) and put value into X.
-VHEX                .equ 0xFC1D   ; Checks that A contains a HEX character
+STRING          .equ    0xFC76          ; Prints a string.
+GETADD          .equ    0xFC89          ; Get Address, read 4 digit hex value.
+ZOUT            .equ    0xFCC9          ; Print value in A as 2 hex digits.
+NEWLINE         .equ    0xFE97          ; Prints a new line.
+START           .equ    0xFF8F          ; Restarts MniMon.
+PR_A            .equ    0xFC0F          ; Print char in A to ACIA (a)
+RD_A            .equ    0xFD2B          ; Read char from A
+PRSP            .equ    0xFD4D          ; Print a space
+BINARY          .equ    0xFC31          ; Converts ASCII hex digits in A and B to binary?
+RD_X            .equ    0xFC65          ; Read 4 hex digits Value from ACIA(a) and put value into X.
+VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
 
-IDLE_SECS           .equ 2      ; seconds between idle messages
-LIGHT_WGHT          .equ 6       ; greater than 6 stones
-NORM_WGHT           .equ 10
-HEAVY_WGHT          .equ 13
-SHEAVY_WGHT         .equ 15
+IDLE_SECS       .equ    10              ; seconds between idle messages
+SHEAVY_WGHT     .equ    15              ; >= 15 stones
+HEAVY_WGHT      .equ    13              ; >= 13 stones
+NORM_WGHT       .equ    10              ; >= 10 stones
+LIGHT_WGHT      .equ    6               ; >= 6 stones
+TOO_HEAVY       .equ    20
 
 ; number of messages
-GREET_MSG_CNT       .equ 5
-IDLE_MSG_CNT        .equ 5
-LIGHT_MSG_CNT       .equ 5
-NORM_MSG_CNT        .equ 5
-HEAVY_MSG_CNT       .equ 5
-SHEAVY_MSG_CNT      .equ 5
+GREET_MSG_CNT   .equ    13
+IDLE_MSG_CNT    .equ    5
+LIGHT_MSG_CNT   .equ    10
+NORM_MSG_CNT    .equ    21
+HEAVY_MSG_CNT   .equ    17
+SHEAVY_MSG_CNT  .equ    10
 
 ; initialise serial port B
-TX2SP:   LDAA    #0x11    ; 8 Data, No Parity, 2 Stop Bits
-        STAA    CTRLB   ;   ACIA.A
-
-TEST:
-        ;LDAA    #02
-        ;LDX     #GREETPTR
-        ;JMP     PHRASE_OUT
+TX2SP:          LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
+                STAA    CTRLB           ;   ACIA.A
 
 MAINLOOP:
 ; -----------------------------------------------------
 ; Data arrives at port B as four hex characters
 ; -----------------------------------------------------
-        JSR     GETDATA         ; value in T_WEIGHT, stones in A
-        BCS     ML1             ; is it invalid i.e. carry clear
-        JMP     IDLE
-ML1:     CMPA    #20             ; more that 20 is too heavy
-        BHI     OVERLOADED
-        LDAA    T_WEIGHT+1      ; validate pounds
-        CMPA    #13             ; invalid pounds
-        BHI     ERROR           ; error
-        JSR GREET               ; send a greeting message
+                JSR     GETDATA         ; value in T_WEIGHT, stones in A
+                BCS     ML1             ; is it invalid i.e. carry clear
+                JMP     IDLE
+ML1:            CMPA    #TOO_HEAVY      ; more that 20 is too heavy
+                BHI     OVERLOADED
+                LDAA    T_WEIGHT+1      ; validate pounds
+                CMPA    #13             ; invalid pounds
+                BHI     ERROR           ; error
+                JSR     GREET           ; send a greeting message
 
-        ; get the weight a second time, this should allow the scales time to settle
-        JSR     GETDATA
+                ; get the weight a second time, this should allow the scales time to settle
+                JSR     GETDATA
+                JSR     STRINGB         ; all good so output the weight message
+                .fcc     "You weigh "   ; TODO use a phrase
+                .fcb     0xff
+                LDX     T_WEIGHT        ; restore X
+                JSR     PR_WEIGHT       ; weight back X so output the weight
 
-        ; all good so output the weight mesage
-        ; TODO get phrase from phrase table as per other message output routines
-        JSR     STRINGB
-        .fcc     "You weigh"
-        .fcb     0x00
-        LDX     T_WEIGHT        ; restore X
-        JSR     PR_WEIGHT       ; weight back X so output the weight
-
-        ; determine phrase category (light normal, heavy etc.) and jump to the section
-        LDAA    T_WEIGHT
-        CMPA    #LIGHT_WGHT
-        BHI     ML2             ; less than light weight gets no comment
-        JMP     MAINLOOP
-ML2:     CMPA    #NORM_WGHT      ; less than normal is light
-        BHI     ML3
-        JMP     LIGHTW
-ML3:     CMPA    #HEAVY_WGHT     ; less than heavy is normal
-        BHI     ML4
-        JMP     NORMALW
-ML4:    CMPA    #SHEAVY_WGHT    ; less than super heavy is heavy
-        BMI     ML5
-        JMP     HEAVYW
-ML5:     JMP     SHEAVYW
-        JMP     MAINLOOP
+                ; determine phrase category (light normal, heavy etc.) and jump to the section
+                LDAA    T_WEIGHT        ; stones
+                CMPA    #SHEAVY_WGHT
+                BLO     ML2             ; not super heavy weight
+                JMP     SHEAVYW
+ML2:            CMPA    #HEAVY_WGHT
+                BLO     ML3             ; not heavy weight
+                JMP     HEAVYW
+ML3:            CMPA    #NORM_WGHT
+                BLO     ML4             ; not normal weight
+                JMP     NORMALW
+ML4:            CMPA    #LIGHT_WGHT
+                BLO     ML5             ; not light weight
+                JMP     LIGHTW
+ML5:            JMP     MAINLOOP        ; no comments for less than light weight
 
 ; -----------------------------------------------------
 ; Over 20 stone so random heavy phrase to ports B
 ; -----------------------------------------------------
 OVERLOADED:
-        ; TODO get phrase from phrase table
-        JSR      STRINGB
-        .fcc      "System overload, and its not me."
-        .fcb      0xFF
-        JMP      MAINLOOP
+                JSR     STRINGB         ; TODO Use a phrase
+                .fcc    "System overload, and its not me."
+                .fcb    0x0D,0x0A,0xFF
+                JMP     MAINLOOP
 ERROR:
-        SWI
-        ; TODO get phrase from phrase table
-        JSR      STRINGB
-        .fcc      "Internal error, typical!"
-        .fcb      0xFF
-        JMP      MAINLOOP
+                ; TODO get phrase from phrase table
+                JSR     STRINGB         ; TODO Use a phrase
+                .fcc    "Internal error, typical!"
+                .fcb    0x0D,0x0A,0xFF
+                JMP     MAINLOOP
 
 ; we cycle thought idle message when no one is on the scales, data comes in a one
 ; second intervals so we simply increase the idle count until it's time to display
@@ -317,6 +308,7 @@ Z_PRQM:  ;LDAA    #'?     ; Load `?` into A
         ;BSR     PR_B    ; Print it
         BRA     ZINB    ; Go back to start of hex input
 
+
 ; -----------------------------------------------------
 ; Print character in A to ACIA(b)
 ; -----------------------------------------------------
@@ -335,6 +327,7 @@ RD_XB:   BSR     ZINB    ; Read 2 digit hex value into A
         STAA    T_Z+1   ; Save byte (least significant)
         LDX     T_Z     ; Load full 4 hex value into X
         RTS             ; RETURN
+
 ; -----------------------------------------------------
 ; Adds A to X and leaves the result in X, A is
 ; preserved.
@@ -351,20 +344,31 @@ ADX:     PSHA
         RTS
 
 ; -----------------------------------------------------
+; Loads X with A, A is preserved.
+; -----------------------------------------------------
+TAX:    STAA    T_TMP+1       ; store A as low byte of X
+        CLR     T_TMP         ; zero the high byte
+        LDX     T_TMP         ; load X
+        RTS
+
+; -----------------------------------------------------
 ; Prints the message " n stones n pounds"
 ; place stones in MSB of X and pound in LSB
 ; -----------------------------------------------------
 PR_WEIGHT:
+
         STX     T_W
-        LDAA    T_W             ; Load high byte of X into Accumulator A
+        LDAA    T_W
+        JSR     TAX
         JSR     PR_WORD         ; n
         JSR     PR_SPCB
-        LDAA    #0x1B
+        LDX     #STONES
         JSR     PR_WORD         ; "stones"
         JSR     PR_SPCB
         LDAA    T_W+1            ; Load high byte of X into Accumulator A
+        JSR     TAX
         JSR     PR_WORD         ; n
-        LDAA    #0x1C
+        LDX     #POUNDS
         JSR     PR_SPCB
         JSR     PR_WORD         ; "pounds"
         JSR     PR_CRB
@@ -413,27 +417,6 @@ PR_PH3:  STX     T_Y         ; save table pointer
         INX                 ; (2 bytes per entry)
         BRA     PR_PH1
 PR_PH2:  RTS
-
-
-; -----------------------------------------------------
-; Outputs a word based on value in A
-; -----------------------------------------------------
-; TODO See new routine below.
-
-;PR_WORD:     INCA    ;
-;            LDX     #WORDPTR  ; base of offset table
-;PR_WORD1:    DECA
-;            BEQ     FOUNDW
-;            INX                 ; move to next address
-;            INX
-;            BNE     PR_WORD1    ; loop around to retest
-;FOUNDW:      LDAA    0,X
-;            STAA    T_X
-;            LDAA    1,X
-;            STAA    T_X+1
-;            LDX     T_X
-;            JSR     STRINGBX
-;            RTS
 
 ; -----------------------------------------------------
 ; Outputs a word based on value in X

@@ -5,7 +5,7 @@
 ; To create new wordk add the word in the correct
 ; (alphabetical) position in the word table. Then add
 ; a pointer to that word at the END of the Word Pointer
-; table. Finally add an .equATE using the word as a label
+; table. Finally add an equate (.equ) using the word as a label
 ; in the word equates table;
 ; -----------------------------------------------------
 
