@@ -1,8 +1,6 @@
 ;------------------------------------------------------------------
 ; text2speech.asm
 ;------------------------------------------------------------------
-
-; 7768 ACIA
 DATAA               EQU $F400 ; ACIA(a) Data register
 CTRLA               EQU $F401 ; ACIA(a) Ctrl/Status
 DATAB               EQU $F402 ; ACIA(b) Data register
@@ -43,7 +41,7 @@ TX2SP   LDAA    #$11    ; 8 Data, No Parity, 2 Stop Bits
 
 TEST:
         ;LDAA    #02
-        ;LDX     #IDLEPTR
+        ;LDX     #GREETPTR
         ;JMP     PHRASE_OUT
 
 MAINLOOP:
@@ -75,7 +73,7 @@ ML1     CMPA    #20             ; more that 20 is too heavy
         LDAA    T_WEIGHT
         CMPA    #LIGHT_WGHT
         BHI     ML2             ; less than light weight gets no comment
-        JMP     END
+        JMP     MAINLOOP
 ML2     CMPA    #NORM_WGHT      ; less than normal is light
         BHI     ML3
         JMP     LIGHTW
@@ -85,8 +83,8 @@ ML3     CMPA    #HEAVY_WGHT     ; less than heavy is normal
 ML4     CMPA    #SHEAVY_WGHT    ; less than super heavy is heavy
         BMI     ML5
         JMP     HEAVYW
-ML5     JMP     SHEAVY
-        JMP END
+ML5     JMP     SHEAVYW
+        JMP     MAINLOOP
 
 ; -----------------------------------------------------
 ; Over 20 stone so random heavy phrase to ports B
@@ -94,15 +92,16 @@ ML5     JMP     SHEAVY
 OVERLOADED
         ; TODO get phrase from phrase table
         JSR      STRINGB
-        FCC      "System overload… and it’s not me."
+        FCC      "System overload, and its not me."
         FCB      $FF
-        JMP      END
+        JMP      MAINLOOP
 ERROR
+        SWI
         ; TODO get phrase from phrase table
         JSR      STRINGB
         FCC      "Internal error, typical!"
         FCB      $FF
-        JMP      END
+        JMP      MAINLOOP
 
 ; we cycle thought idle message when no one is on the scales, data comes in a one
 ; second intervals so we simply increase the idle count until it's time to display
@@ -112,87 +111,79 @@ IDLE    INC     IDLE_COUNT      ; increase the idle count
         LDAA    IDLE_COUNT      ; see if idle count = max idle time
         CMPA    #IDLE_SECS      ; a data message appears every second
         BEQ     IDLE1           ; not reached the max idle time
-        JMP     END             ; nothing to do yet
+        JMP     MAINLOOP             ; nothing to do yet
 
 IDLE1   CLR     IDLE_COUNT      ; time to output an idle message so reset the count
-
-        ; output the idle message
-        LDAA    IDLE_MSG_ID
-        INC     IDLE_MSG_ID     ; set to next message for the next next time
+        LDAA    IDLE_MSG_ID     ; get next Message ID
         CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
         BNE     IDLE_OP         ; still at valid id so output idle message
         CLR     IDLE_MSG_ID     ; beyond last message so reset the current msg to zero
         CLRA                    ; set currentid back to 0
 IDLE_OP
+        INC     IDLE_MSG_ID     ; set to next message for the next next time
         LDX     #IDLEPTR        ; A has phrase ID, set X to the base address
-        JMP     PHRASE_OUT
+        JSR     PHRASE_OUT
+        JMP     MAINLOOP
 
 GREET   ; output the greeting message
-        INC     GREET_MSG_ID    ; get next idle message
-        LDAA    GREET_MSG_ID
+        LDAA    GREET_MSG_ID    ; get next Message ID
         CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
         BNE     GREET_OP        ; still at valid id so output idle message
-        LDAA    #0              ; beyond last message so reset the current msg to zero
-        STAA    GREET_MSG_ID
-
+        CLR     GREET_MSG_ID    ; beyond last message so reset the current msg to zero
+        CLRA                    ; set currentid back to 0
 GREET_OP
-        ADDA    GREETPTR-PHRASEPTR ; add the offset phrase pointers
-        JSR     PR_PHRASE       ; output idle message
-        JSR     PR_CRB          ; CR/LF
+        INC     GREET_MSG_ID    ; set to next message for the next next time
+        LDX     #GREETPTR       ; A has phrase ID, set X to the base address
+        JSR     PHRASE_OUT
         RTS
-: TODO Fix me, the wrap arond print the first (ID0) phrase consecutively
-LIGHTW   ; output the light message
-        INC     LIGHT_MSG_ID    ; get next idle message
-        LDAA    LIGHT_MSG_ID
+
+LIGHTW   ; output the lightweight message
+        LDAA    LIGHT_MSG_ID    ; get next Message ID
         CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
         BNE     LIGHT_OP        ; still at valid id so output idle message
-        LDAA    #0              ; beyond last message so reset the current msg to zero
-        STAA    LIGHT_MSG_ID
-
+        CLR     LIGHT_MSG_ID    ; beyond last message so reset the current msg to zero
+        CLRA                    ; set currentid back to 0
 LIGHT_OP
-        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
-        ADDA    LIGHTPTR-PHRASEPTR
-        JMP     PHRASE_OUT
+        INC     LIGHT_MSG_ID    ; set to next message for the next next time
+        LDX     #LIGHTPTR       ; A has phrase ID, set X to the base address
+        JSR     PHRASE_OUT
+        JMP     MAINLOOP
 
 NORMALW ; output the normal message
-        INC     NORMAL_MSG_ID   ; get next idle message
-        LDAA    NORMAL_MSG_ID
+        LDAA    NORMAL_MSG_ID   ; get next Message ID
         CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
         BNE     NORMAL_OP       ; still at valid id so output idle message
-        LDAA    #0              ; beyond last message so reset the current msg to zero
-        STAA    NORMAL_MSG_ID
-
+        CLR     NORMAL_MSG_ID   ; beyond last message so reset the current msg to zero
+        CLRA                    ; set currentid back to 0
 NORMAL_OP
-        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
-        ADDA    NORMALPTR-PHRASEPTR
-        JMP     PHRASE_OUT
+        INC     NORMAL_MSG_ID   ; set to next message for the next next time
+        LDX     #NORMALPTR      ; A has phrase ID, set X to the base address
+        JSR     PHRASE_OUT
+        JMP     MAINLOOP
 
 HEAVYW  ; output the heavy message
-        INC     HEAVY_MSG_ID    ; get next idle message
-        LDAA    HEAVY_MSG_ID
+        LDAA    HEAVY_MSG_ID    ; get next Message ID
         CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
         BNE     HEAVY_OP        ; still at valid id so output idle message
-        LDAA    #0              ; beyond last message so reset the current msg to zero
-        STAA    HEAVY_MSG_ID
-
+        CLR     HEAVY_MSG_ID    ; beyond last message so reset the current msg to zero
+        CLRA                    ; set currentid back to 0
 HEAVY_OP
-        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
-        ADDA    HEAVYPTR-PHRASEPTR
-        JMP     PHRASE_OUT
+        INC     HEAVY_MSG_ID    ; set to next message for the next next time
+        LDX     #HEAVYPTR       ; A has phrase ID, set X to the base address
+        JSR     PHRASE_OUT
+        JMP     MAINLOOP
 
-SHEAVY   ; output the heavy message
-        INC     SHEAVY_MSG_ID   ; get next idle message
-        LDAA    SHEAVY_MSG_ID
+SHEAVYW ; output the superheavy message
+        LDAA    SHEAVY_MSG_ID   ; get next Message ID
         CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
         BNE     SHEAVY_OP       ; still at valid id so output idle message
-        LDAA    #0              ; beyond last message so reset the current msg to zero
-        STAA    HEAVY_MSG_ID
-
+        CLR     SHEAVY_MSG_ID   ; beyond last message so reset the current msg to zero
+        CLRA                    ; set currentid back to 0
 SHEAVY_OP
-        ; TODO consider the offset depending upon where the idle phrases are within the phrase pointer table
-        ; add PHRASE
-        ; follows on to PHRASE_OUT
-        ADDA    SHEAVYPTR-PHRASEPTR
+        INC     SHEAVY_MSG_ID   ; set to next message for the next next time
+        LDX     #SHEAVYPTR      ; A has phrase ID, set X to the base address
+        BSR     PHRASE_OUT
+        JMP     MAINLOOP
 
 PHRASE_OUT
 
@@ -207,8 +198,9 @@ PHRASE_OUT
         LDX     TEMP
         JSR     PR_PHRASE       ; output idle message
         JSR     PR_CRB          ; CR/LF
+        RTS
 
-END     JMP     MAINLOOP  ;START   ; all done
+;END     JMP     MAINLOOP  ;START   ; all done
 
 ;--------------------------------------------------------------
 ; Gets the weight data from the scales and rerurns with carry
@@ -1054,7 +1046,7 @@ WPBE             FCC    "be"
                  FCB    $FF
 WPBEAR           FCC    "bear"
                  FCB    $FF
-WPBECAUSE        FCB    'because'
+WPBECAUSE        FCC    "because"
                  FCB    $FF
 WPBEEN           FCC    "been"
                  FCB    $FF
@@ -1636,7 +1628,7 @@ WPSTEP           FCC    "step"
                  FCB    $FF
 WPSTEPPED        FCC    "stepped"
                  FCB    $FF
-WPSTOPPED        FCC    "stepped"
+WPSTOPPED        FCC    "stopped"
                  FCB    $FF
 WPSTILL          FCC    "still"
                  FCB    $FF

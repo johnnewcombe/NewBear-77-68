@@ -2,7 +2,25 @@ NAME=text2speech
 ASSEMBLER=../Tools/as6800
 CCS19 = ../Tools/ccs19
 
+# consider using one of the cross compilers located in
+#  /home/john/Dropbox/Repositories/asxv5p50p5/asxv5pxx/asxmak/linux/exe
+# these are very current i.e. 2026 and support most CPUs
+# https://shop-pdp.net/ashtml/asxdoc.htm
+#ASSEMBLER=../Tools/asxv5p50p5/as6800
+
 build:
+	../Tools/asxv5p50p5/as6800 -ls -o test.asm
+	../Tools/asxv5p50p5/aslink -i test.rel
+
+	# -data-only removes the S022 record and -line-length=46 ensures s113 data records
+	# -disable=header can be used if just the header should be removed
+	srec_cat -data-only test.hex -Intel -o test.s19 -Motorola -line-length=46
+	srec_cat -data-only test.hex -Intel -o test.bin -Binary
+
+	# the following utility creates a C type data file for use in emulators etc.
+	$(CCS19) test.s19 test.c -ofc
+
+
 	$(ASSEMBLER) $(NAME).asm # Motorola Hex
 	$(ASSEMBLER) $(NAME).asm -h # Intel Hex
 	$(ASSEMBLER) $(NAME).asm -b # 64k binary
