@@ -72,6 +72,8 @@ N RESET   FF81 - Resets ACIAs saves the callers stack pointer and restarts JMON.
 
 ## S Record Format
 
+### Format
+
 ```text
 Record structure
 S  Type  Byte Count  Address  Data  Checksum
@@ -86,4 +88,20 @@ An SREC format file consists of a series of ASCII text records. The records have
 * Data - a sequence of 2n hex digits, for n bytes of the data. For S1/S2/S3 records, a maximum of 32 bytes per record is typical since it will fit on an 80 character wide terminal screen, though 16 bytes would be easier to visually decode each byte at a specific address.
 * Checksum - two hex digits, the least significant byte of ones' complement of the sum of the values represented by the two hex digit pairs for the Byte Count, Address and Data fields. In the C programming language, the sum is converted into the checksum by: 0xFF - (sum & 0xFF)
 
-Note that the S9 terminating record is ignored by the SREC parser within the monitor and can be removed from the file if so desired. Similarly the terminating record is not created by the PUNCH command.
+
+### A note about creating S Records
+
+The primary method of loading software into the 77-68 when using JMON, is to use a Motorola S-Record file. For JMON the file should be set to data only with the addition of a final S9 execution record.
+
+e.g.
+
+    S11319307D0146001600AD0146008E0122014600DD
+    S113194061FF013300E90016002300A900DE00C195
+    S1041950FF93
+    S9030000FC
+
+A suitable S-Record file can be created using the srec_cat utility e.g.
+
+    srec_cat -data-only $(NAME).hex -Intel -o $(NAME).s19 -Motorola -line-length=46 -execution-start-address 0x0000
+
+Note that JMON does not interpret the execution address so any value will work, however, 0x0000 is recommended in order to remain compatible with future versions. If an S9 record is not present, the loading process will not automatically terminate, however, this can be achieved by pressing the '.' key.
