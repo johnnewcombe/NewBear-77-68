@@ -32,17 +32,44 @@ TOO_HEAVY       .equ    20
 
 ; number of messages
 GREET_MSG_CNT   .equ    13
-IDLE_MSG_CNT    .equ    5
+IDLE_MSG_CNT    .equ    25
 LIGHT_MSG_CNT   .equ    10
 NORM_MSG_CNT    .equ    21
 HEAVY_MSG_CNT   .equ    17
 SHEAVY_MSG_CNT  .equ    10
 
-; initialise serial port B
+
+INIT:
+                ; clear the counters
+                CLR     IDLE_COUNT
+                CLR     IDLE_MSG_ID
+                CLR     GREET_MSG_ID
+                CLR     LIGHT_MSG_ID
+                CLR     NORMAL_MSG_ID
+                CLR     HEAVY_MSG_ID
+                CLR     SHEAVY_MSG_ID
+
+                ; initialise serial port B
 TX2SP:          LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
                 STAA    CTRLB           ;   ACIA.A
 
 MAINLOOP:
+
+                JSR STRING
+                .fcc    "Speak Your Weight (c) John Newcombe 2026"
+                .Fcb    0xFF
+
+                ; peach processor initialisation
+                ;   @R6 = excitability (Default=3)
+                ;   @W2 = speed (Default=3)
+                ;   @F8 = pitch center (Default=8)
+                ;   @V3 = one of six preset voices
+                ;   @K0 = male or non-male table
+                ;
+                JSR STRINGB
+                .fcc    "@R6@W2@F8@V3@K0"
+                .fcb    0xFF
+
 ; -----------------------------------------------------
 ; Data arrives at port B as four hex characters
 ; -----------------------------------------------------
