@@ -38,7 +38,6 @@ NORM_MSG_CNT    .equ    21
 HEAVY_MSG_CNT   .equ    17
 SHEAVY_MSG_CNT  .equ    10
 
-
 INIT:
                 ; clear the counters
                 CLR     IDLE_COUNT
@@ -50,16 +49,14 @@ INIT:
                 CLR     SHEAVY_MSG_ID
 
                 ; initialise serial port B
-TX2SP:          LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
+                LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
                 STAA    CTRLB           ;   ACIA.A
-
-MAINLOOP:
 
                 JSR STRING
                 .fcc    "Speak Your Weight (c) John Newcombe 2026"
                 .Fcb    0xFF
 
-                ; peach processor initialisation
+                ; initialise the speach processor
                 ;   @R6 = excitability (Default=3)
                 ;   @W2 = speed (Default=3)
                 ;   @F8 = pitch center (Default=8)
@@ -69,6 +66,8 @@ MAINLOOP:
                 JSR STRINGB
                 .fcc    "@R6@W2@F8@V3@K0"
                 .fcb    0xFF
+
+MAINLOOP:
 
 ; -----------------------------------------------------
 ; Data arrives at port B as four hex characters
