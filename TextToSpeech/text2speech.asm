@@ -23,6 +23,9 @@ BINARY          .equ    0xFC31          ; Converts ASCII hex digits in A and B t
 RD_X            .equ    0xFC65          ; Read 4 hex digits Value from ACIA(a) and put value into X.
 VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
 
+PANEL           .equ    0xF0FF          ; LEDs and switches
+DELAY_VAL       .EQU    0x00FF          ; Delay loop count - adjust to taste (16 BIT VALUE)
+
 IDLE_SECS       .equ    10              ; seconds between idle messages
 SHEAVY_WGHT     .equ    15              ; >= 15 stones
 HEAVY_WGHT      .equ    13              ; >= 13 stones
@@ -47,6 +50,14 @@ INIT:
                 CLR     NORMAL_MSG_ID
                 CLR     HEAVY_MSG_ID
                 CLR     SHEAVY_MSG_ID
+                CLR     PROCESSING_FLG
+                CLR     SYLLABLES
+                CLR     PANEL
+
+                ; TODO add syllables to end of each phrase
+                ; temp setting for syllables
+                LDAA    #3
+                STAA    SYLLABLES
 
                 ; initialise serial port B
                 LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
@@ -54,7 +65,7 @@ INIT:
 
                 JSR STRING
                 .fcc    "Speak Your Weight (c) John Newcombe 2026"
-                .Fcb    0xFF
+                .Fcb    0x0d, 0x0a, 0xFF
 
                 ; initialise the speach processor
                 ;   @R6 = excitability (Default=3)
@@ -65,7 +76,7 @@ INIT:
                 ;
                 JSR STRINGB
                 .fcc    "@R6@W2@F8@V3@K0"
-                .fcb    0xFF
+                .fcb    0x0d, 0x0a, 0xFF
 
 MAINLOOP:
 
@@ -75,7 +86,10 @@ MAINLOOP:
                 JSR     GETDATA         ; value in T_WEIGHT, stones in A
                 BCS     ML1             ; is it invalid i.e. carry clear
                 JMP     IDLE
-ML1:            CMPA    #TOO_HEAVY      ; more that 20 is too heavy
+ML1:            TST     PROCESSING_FLG  ; are we already processing a weight
+                BNE     MAINLOOP        ; flag non-zero so ignore everything that follows
+                INC     PROCESSING_FLG  ; ignore any following data until we next idle
+                CMPA    #TOO_HEAVY      ; more that 20 is too heavy
                 BHI     OVERLOADED
                 LDAA    T_WEIGHT+1      ; validate pounds
                 CMPA    #13             ; invalid pounds
@@ -125,7 +139,9 @@ ERROR:
 ; second intervals so we simply increase the idle count until it's time to display
 ; the next idle message
 
-IDLE:    INC     IDLE_COUNT      ; increase the idle count
+IDLE:   CLR     PROCESSING_FLG  ; clear the processing flag as no one
+                                ;   is standing on the scales
+        INC     IDLE_COUNT      ; increase the idle count
         LDAA    IDLE_COUNT      ; see if idle count = max idle time
         CMPA    #IDLE_SECS      ; a data message appears every second
         BEQ     IDLE1           ; not reached the max idle time
@@ -216,6 +232,9 @@ PHRASE_OUT:
         LDX     TEMP
         JSR     PR_PHRASE       ; output idle message
         JSR     PR_CRB          ; CR/LF
+
+        JSR     PANEL_DISP
+
         RTS
 
 ;END:     JMP     MAINLOOP  ;START   ; all done
@@ -299,11 +318,12 @@ ENDSTR:  INS             ; Clean up stack...
 STRINGBX:    LDAA    0,X         ; get char
             CMPA    #0xFF        ; is character NULL?
             BEQ     DONEB       ; yes, end of string
+            STAA     PANEL
             JSR     PR_A        ; Print the byte to ACIA(a) (A is maintained)
             BSR     PR_B        ; Print the byte to ACIA(b)
             INX
             BRA     STRINGBX
-DONEB:       RTS
+DONEB:      RTS
 
 ; -----------------------------------------------------
 ; Reads a character from ACIA(b) into A
@@ -472,14 +492,43 @@ PR_WORD:
                 .include    "words.asm"
                 .include    "phrases.asm"
 
-; -----------------------------------------------------
-; Phrases (each holds a list of word pointers)
-; -----------------------------------------------------
-;All valid weight messages include ...
-;
-;   Greeting message (waiting for the weight to settle)
-;   the weight message
-;   comment.
+; -----------------------------------------------
+; LED Pattern Display - MC6800
+; -----------------------------------------------
+PANEL_DISP:
+
+; --- Main loop ---
+PSTART: DEC     SYLLABLES
+        BEQ     PDONE       ; nearest RTS
+        LDX     #PTABLE     ; Point X at start of table
+NXTVAL: LDAA    ,X          ; Load pattern value from table
+        STAA    PANEL       ; Send to LED port
+        BSR     DELAY       ; Delay so we can see it
+        INX                 ; Advance to next entry
+        CPX     #PTEND      ; Reached end of table?
+        BNE     NXTVAL      ; No - go again
+        BRA     PSTART      ; Yes - loop back to beginning
+
+; --- Delay routine ---
+; Kills time so the eye can see each LED pattern
+DELAY:  STX     T_TMP
+        LDX     #DELAY_VAL  ; Load delay count
+DLOOP:  DEX                 ; Decrement
+        BNE     DLOOP       ; Not zero - keep counting
+        LDX     T_TMP
+PDONE:  RTS                 ; Done
+
+; --- Pattern table ---
+PTABLE: .FCB     0xFF         ; 1111 1111
+        .FCB     0xE7         ; 1110 0111
+        .FCB     0xC3         ; 1100 0011
+        .FCB     0x81         ; 1000 0001
+        .FCB     0x00         ; 0000 0000
+        .FCB     0x81         ; 1000 0001
+        .FCB     0xC3         ; 1100 0011
+        .FCB     0xE7         ; 1110 0111
+        .FCB     0xFF         ; 1111 1111
+PTEND:                        ; Address just past end of table
 
 
 ; -----------------------------------------------------
@@ -495,6 +544,7 @@ T_W:             .rmb     2       ;   "     "     "  PR_WEIGHT
 T_TMP:           .rmb     2       ;   "     "     "  within subroutine
 DEC:             .rmb     3       ; for decimal value
 RND:             .rmb     1       ; holds a random number (see RD_B
+SYLLABLES:       .rmb     1       ; number of phrase syllables for the panel LED routines
 TEMP:            .rmb     2       ; temp var (non subroutine use)
 T_WEIGHT:        .rmb     2       ; holds value of weight following a call to GETDATA
 IDLE_COUNT:      .rmb     1       ; counts the number of empty measurement reports
@@ -504,5 +554,7 @@ LIGHT_MSG_ID:    .rmb     1       ; holds value of next light weight message to 
 NORMAL_MSG_ID:   .rmb     1       ; holds value of next normal weight message to use
 HEAVY_MSG_ID:    .rmb     1       ; holds value of next heavy weight message to use
 SHEAVY_MSG_ID:   .rmb     1       ; holds value of next super heavy weight message to use
-
+PROCESSING_FLG:  .rmb     1       ; non-zero indicates that that a weight is being processed
+                                  ;   all following weight data is ignored until the next
+                                  ;   idle (0000h) data resets it.
 
