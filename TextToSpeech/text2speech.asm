@@ -26,7 +26,7 @@ VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
 PANEL           .equ    0xF0FF          ; LEDs and switches
 DELAY_VAL       .EQU    0x00FF          ; Delay loop count - adjust to taste (16 BIT VALUE)
 
-IDLE_SECS       .equ    10              ; seconds between idle messages
+IDLE_TICS       .equ    45              ; ticks between idle messages (1 tic = 2 secs approx)
 SHEAVY_WGHT     .equ    15              ; >= 15 stones
 HEAVY_WGHT      .equ    13              ; >= 13 stones
 NORM_WGHT       .equ    10              ; >= 10 stones
@@ -35,11 +35,11 @@ TOO_HEAVY       .equ    20
 
 ; number of messages
 GREET_MSG_CNT   .equ    13
-IDLE_MSG_CNT    .equ    25
 LIGHT_MSG_CNT   .equ    10
 NORM_MSG_CNT    .equ    21
 HEAVY_MSG_CNT   .equ    17
 SHEAVY_MSG_CNT  .equ    10
+IDLE_MSG_CNT    .equ    25
 
 INIT:
                 ; clear the counters
@@ -98,13 +98,24 @@ ML1:            TST     PROCESSING_FLG  ; are we already processing a weight
 
                 ; get the weight a second time, this should allow the scales time to settle
                 JSR     GETDATA
-                JSR     STRINGB         ; all good so output the weight message
-                .fcc     "You weigh "   ; TODO use a phrase
-                .fcb     0xff
+
+                ; output "you weigh" maybe use a phrase rather than individual words
+                ;LDX     #YOU
+                ;JSR     PR_WORD
+                ;JSR     PR_SPCB
+                ;LDX     #WEIGH
+                ;JSR     PR_WORD
+                ;JSR     PR_SPCB
+
+                LDX     #MYOUWEIGH
+                JSR     PR_PHRASE
+
                 LDX     T_WEIGHT        ; restore X
                 JSR     PR_WEIGHT       ; weight back X so output the weight
 
-                ; determine phrase category (light normal, heavy etc.) and jump to the section
+                JSR     PANEL_DISP
+
+
                 LDAA    T_WEIGHT        ; stones
                 CMPA    #SHEAVY_WGHT
                 BLO     ML2             ; not super heavy weight
@@ -143,7 +154,7 @@ IDLE:   CLR     PROCESSING_FLG  ; clear the processing flag as no one
                                 ;   is standing on the scales
         INC     IDLE_COUNT      ; increase the idle count
         LDAA    IDLE_COUNT      ; see if idle count = max idle time
-        CMPA    #IDLE_SECS      ; a data message appears every second
+        CMPA    #IDLE_TICS      ; a data message appears every second
         BEQ     IDLE1           ; not reached the max idle time
         JMP     MAINLOOP             ; nothing to do yet
 
@@ -251,19 +262,9 @@ GETDATA:
         CLC
         LDAA    T_WEIGHT        ; get fist byte (stones)
         BEQ     GDDONE          ; idle message
-        CLR     IDLE_SECS       ; not an idle message so reset the idle counter
+        CLR     IDLE_TICS       ; not an idle message so reset the idle counter
         SEC                     ; non idle message return with carry set
 GDDONE:  RTS
-
-;--------------------------------------------------------------
-; DECIMAL CONVERSION EXAMPLE
-;--------------------------------------------------------------
-        ;JSR     PR_DEC          ; puts 3 decimal digits in DEC, DEC+1 and DEC+2
-        ;LDAA    DEC+1           ; don't care about the hundreds        ADDA    #0x30
-        ;JSR     PR_WORD
-        ;JSR     PR_SPCB
-        ;LDAA    DEC+2
-        ;JSR     PR_WORD
 
 ; -----------------------------------------------------
 ; PR_DEC: Puts 3 decimal digits in DEC, DEC+1 and DEC+2
@@ -299,28 +300,35 @@ UNITS:   STAB    DEC+1
 ; ACIA(b) and ACIA(b)
 ; -----------------------------------------------------
 STRINGB: TSX             ; Get loc. of return addr to X
-        LDX     0,X     ; Get return addr to X
-        DEX             ; Point to byte before
+         LDX     0,X     ; Get return addr to X
+         DEX             ; Point to byte before
 STRB1:   INX             ; Point to next byte
-        LDAA    0,X     ; Get byte to be printed
-        CMPA    #0xFF    ; End-string ?
-        BEQ     ENDSTR  ; Yes: Go to finish up
-        JSR     PR_A    ; Print the byte to ACIA(a) (A is maintained)
-        BSR     PR_B    ; Print the byte to ACIA(b)
-        BRA     STRB1   ; Go back for next byte
+         LDAA    0,X     ; Get byte to be printed
+         CMPA    #0xFF    ; End-string ?
+         BEQ     ENDSTR  ; Yes: Go to finish up
+         LDAB    PANEL
+         BITB     #1
+         BEQ     STRB    ; panel switch 0 is debug and copies data to A
+         JSR     PR_A    ; Print the byte to ACIA(a) (A is maintained)
+                         ;  DEBUG depending on panel data switch zero
+STRB:    BSR     PR_B    ; Print the byte to ACIA(b)
+         BRA     STRB1   ; Go back for next byte
 ENDSTR:  INS             ; Clean up stack...
-        INS             ;  ( pop off the return addr )
-        JMP     1,X     ; Jump back to caller (RETURN)
+         INS             ;  ( pop off the return addr )
+         JMP     1,X     ; Jump back to caller (RETURN)
 
 ; -----------------------------------------------------
 ; Prints a string pointed to by X
 ; -----------------------------------------------------
-STRINGBX:    LDAA    0,X         ; get char
+STRINGBX:   LDAA    0,X         ; get char
             CMPA    #0xFF        ; is character NULL?
             BEQ     DONEB       ; yes, end of string
-            STAA     PANEL
+            ;STAA   PANEL     ; REMOVED, too much activity
+            LDAB    PANEL
+            BITB    #1
+            BEQ     STRBX       ; panel switch 0 is debug and copies data to A
             JSR     PR_A        ; Print the byte to ACIA(a) (A is maintained)
-            BSR     PR_B        ; Print the byte to ACIA(b)
+STRBX:      BSR     PR_B        ; Print the byte to ACIA(b)
             INX
             BRA     STRINGBX
 DONEB:      RTS
@@ -433,15 +441,18 @@ PR_SPCB: PSHA
 ; -----------------------------------------------------
 ; Prints a CRLF on both consoles (preserves A)
 ; -----------------------------------------------------
-PR_CRB:  PSHA
-        LDAA    #0x0D        ; Put CHAR character in A
-        JSR     PR_A
-        JSR     PR_B        ; Print it
-        LDAA    #0x0A
-        JSR     PR_A
-        JSR     PR_B        ; Print it
-        PULA
-        RTS                 ; RETURN
+PR_CRB:     PSHA
+            LDAA    #0x0D        ; Put CHAR character in A
+            JSR     PR_A
+            JSR     PR_B        ; Print it
+            LDAA    #0x0A
+            LDAB     PANEL
+            BITB    #1
+            BEQ     PR_CRB1
+            JSR     PR_A
+PR_CRB1:    JSR     PR_B        ; Print it
+            PULA
+            RTS                 ; RETURN
 
 ; -----------------------------------------------------
 ; Outputs a phrase from the memory location in X
@@ -487,6 +498,7 @@ PR_WORD:
             STAA    T_X+1
             LDX     T_X             ; X now has address of the word
             JSR     STRINGBX        ; output the word
+            INC     SYLLABLES
             RTS
 
                 .include    "words.asm"
@@ -498,15 +510,16 @@ PR_WORD:
 PANEL_DISP:
 
 ; --- Main loop ---
-PSTART: DEC     SYLLABLES
-        BEQ     PDONE       ; nearest RTS
-        LDX     #PTABLE     ; Point X at start of table
+PSTART: LDX     #PTABLE     ; Point X at start of table
 NXTVAL: LDAA    ,X          ; Load pattern value from table
         STAA    PANEL       ; Send to LED port
+        ;JSR     ZOUT        ; X not affected
         BSR     DELAY       ; Delay so we can see it
         INX                 ; Advance to next entry
         CPX     #PTEND      ; Reached end of table?
         BNE     NXTVAL      ; No - go again
+        DEC     SYLLABLES   ; decrement the syllables to mimic
+        BEQ     PDONE       ; nearest RTS
         BRA     PSTART      ; Yes - loop back to beginning
 
 ; --- Delay routine ---
@@ -544,7 +557,6 @@ T_W:             .rmb     2       ;   "     "     "  PR_WEIGHT
 T_TMP:           .rmb     2       ;   "     "     "  within subroutine
 DEC:             .rmb     3       ; for decimal value
 RND:             .rmb     1       ; holds a random number (see RD_B
-SYLLABLES:       .rmb     1       ; number of phrase syllables for the panel LED routines
 TEMP:            .rmb     2       ; temp var (non subroutine use)
 T_WEIGHT:        .rmb     2       ; holds value of weight following a call to GETDATA
 IDLE_COUNT:      .rmb     1       ; counts the number of empty measurement reports
@@ -557,4 +569,7 @@ SHEAVY_MSG_ID:   .rmb     1       ; holds value of next super heavy weight messa
 PROCESSING_FLG:  .rmb     1       ; non-zero indicates that that a weight is being processed
                                   ;   all following weight data is ignored until the next
                                   ;   idle (0000h) data resets it.
-
+SYLLABLES:       .rmb     1       ; number of phrase syllables for the panel LED routines
+                                  ;  this is updated each time a word is transmitted and
+                                  ;  when PANELDISP is called, usually after acall to PR_PHRASE
+                                  ;  the lights are manipulated.

@@ -340,6 +340,7 @@ MIDLE25:     .fdb     IVE,BEEN,RECALIBRATING,FULLSTOP,NOT,BECAUSE,I,NEEDED,TO,FU
 
 ; Too Heavy Message
 ; -----------------------------------------------------
-MTOOHEAVY1:  .fdb     SYSTEM,OVERLOAD,FULLSTOP,ANDD,ITS,NOT,ME
+MTOOHEAVY1: .fdb     SYSTEM,OVERLOAD,FULLSTOP,ANDD,ITS,NOT,ME
             .fcb     0xFF
-
+MYOUWEIGH:  .fdb     YOU,WEIGH
+            .fcb     0xFF
