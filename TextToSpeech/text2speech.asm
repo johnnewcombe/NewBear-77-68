@@ -54,11 +54,6 @@ INIT:
                 CLR     SYLLABLES
                 CLR     PANEL
 
-                ; TODO add syllables to end of each phrase
-                ; temp setting for syllables
-                LDAA    #3
-                STAA    SYLLABLES
-
                 ; initialise serial port B
                 LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
                 STAA    CTRLB           ;   ACIA.A
