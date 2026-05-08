@@ -24,7 +24,7 @@ RD_X            .equ    0xFC65          ; Read 4 hex digits Value from ACIA(a) a
 VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
 
 PANEL           .equ    0xF0FF          ; LEDs and switches
-DELAY_VAL       .EQU    0x00FF          ; Delay loop count - adjust to taste (16 BIT VALUE)
+DELAY_VAL       .EQU    0x03FF          ; Delay loop count - adjust to taste (16 BIT VALUE)
 
 IDLE_TICS       .equ    45              ; ticks between idle messages (1 tic = 2 secs approx)
 SHEAVY_WGHT     .equ    15              ; >= 15 stones
@@ -37,7 +37,7 @@ TOO_HEAVY       .equ    20
 GREET_MSG_CNT   .equ    13
 LIGHT_MSG_CNT   .equ    10
 NORM_MSG_CNT    .equ    21
-HEAVY_MSG_CNT   .equ    17
+HEAVY_MSG_CNT   .equ    18
 SHEAVY_MSG_CNT  .equ    10
 IDLE_MSG_CNT    .equ    25
 
@@ -88,29 +88,20 @@ ML1:            TST     PROCESSING_FLG  ; are we already processing a weight
                 BHI     OVERLOADED
                 LDAA    T_WEIGHT+1      ; validate pounds
                 CMPA    #13             ; invalid pounds
-                BHI     ERROR           ; error
+                BHI     IERROR          ; internal error
                 JSR     GREET           ; send a greeting message
 
                 ; get the weight a second time, this should allow the scales time to settle
                 JSR     GETDATA
 
                 ; output "you weigh" maybe use a phrase rather than individual words
-                ;LDX     #YOU
-                ;JSR     PR_WORD
-                ;JSR     PR_SPCB
-                ;LDX     #WEIGH
-                ;JSR     PR_WORD
-                ;JSR     PR_SPCB
-
                 LDX     #MYOUWEIGH
                 JSR     PR_PHRASE
-
                 LDX     T_WEIGHT        ; restore X
                 JSR     PR_WEIGHT       ; weight back X so output the weight
-
                 JSR     PANEL_DISP
 
-
+                ; output a comments
                 LDAA    T_WEIGHT        ; stones
                 CMPA    #SHEAVY_WGHT
                 BLO     ML2             ; not super heavy weight
@@ -130,15 +121,16 @@ ML5:            JMP     MAINLOOP        ; no comments for less than light weight
 ; Over 20 stone so random heavy phrase to ports B
 ; -----------------------------------------------------
 OVERLOADED:
-                JSR     STRINGB         ; TODO Use a phrase
-                .fcc    "System overload, and its not me."
-                .fcb    0x0D,0x0A,0xFF
+                LDX     #MTOOHEAVY1
+                JSR     PR_PHRASE
+                JSR     PR_CRB
+                JSR     PANEL_DISP
                 JMP     MAINLOOP
-ERROR:
-                ; TODO get phrase from phrase table
-                JSR     STRINGB         ; TODO Use a phrase
-                .fcc    "Internal error, typical!"
-                .fcb    0x0D,0x0A,0xFF
+IERROR:
+                LDX     #MERROR
+                JSR     PR_PHRASE
+                JSR     PR_CRB
+                JSR     PANEL_DISP
                 JMP     MAINLOOP
 
 ; we cycle thought idle message when no one is on the scales, data comes in a one
@@ -494,6 +486,10 @@ PR_WORD:
             LDX     T_X             ; X now has address of the word
             JSR     STRINGBX        ; output the word
             INC     SYLLABLES
+            ; TODO remove or add as sub routine etc. (outputs to ACIA(a))
+            LDAA    SYLLABLES
+            JSR     ZOUT
+            JSR     PRSP
             RTS
 
                 .include    "words.asm"
@@ -514,7 +510,8 @@ NXTVAL: LDAA    ,X          ; Load pattern value from table
         CPX     #PTEND      ; Reached end of table?
         BNE     NXTVAL      ; No - go again
         DEC     SYLLABLES   ; decrement the syllables to mimic
-        BEQ     PDONE       ; nearest RTS
+                            ;  this doesn't affect carry
+        BEQ     PDONE       ; head to nearest RTS
         BRA     PSTART      ; Yes - loop back to beginning
 
 ; --- Delay routine ---
@@ -536,8 +533,8 @@ PTABLE: .FCB     0xFF         ; 1111 1111
         .FCB     0xC3         ; 1100 0011
         .FCB     0xE7         ; 1110 0111
         .FCB     0xFF         ; 1111 1111
+        .fcb     0X00         ; 0000 0000
 PTEND:                        ; Address just past end of table
-
 
 ; -----------------------------------------------------
 ; Reserved memory

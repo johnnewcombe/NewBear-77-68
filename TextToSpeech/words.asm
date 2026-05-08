@@ -461,6 +461,10 @@ TRAVELLED       .equ     392
 APPROXIMATELY   .equ     393
 MILLION         .equ     394
 NOWHERE         .equ     395
+ERROR           .equ     396
+INTERNAL        .equ     397
+TYPICAL         .equ     398
+COMMA           .equ     399
 
 WORDPTR:
 
@@ -913,6 +917,10 @@ WORDPTR:
          .fdb    WPAPPROXIMATELY
          .fdb    WPMILLION
          .fdb    WPNOWHERE
+         .fdb    WPERROR
+         .fdb    WPINTERNAL
+         .fdb    WPTYPICAL
+         .fdb    WPCOMMA
 
 ; -----------------------------------------------------
 ; Word Table, add a pointer to each word in WORDPTR table
@@ -927,13 +935,14 @@ WPPOUNDS:         .fcc     "pounds"
 
 ; Symbols
 ; -----------------------------------------------------
-WPQUESTIONMK:     .fcc     "?"
+WPQUESTIONMK:    .fcc     "?"
                  .fcb     0xFF
-WPEXCLAMATION:    .fcc     "!"
+WPEXCLAMATION:   .fcc     "!"
                  .fcb     0xFF
-WPFULLSTOP:       .fcc     "."
+WPFULLSTOP:      .fcc     "."
                  .fcb     0xFF
-
+WPCOMMA:         .fcc     ","
+                 .fcb     0xFF
 
 ; Numbers
 ; -----------------------------------------------------
@@ -1191,6 +1200,8 @@ WPENTIRELY:       .fcc    "entirely"
                  .fcb    0xFF
 WPEQUIVALENT:     .fcc    "equivalent"
                  .fcb    0xFF
+WPERROR:         .fcc    "error"
+                 .fcb    0xFF
 WPEVEN:           .fcc    "even"
                  .fcb    0xFF
 WPEVER:           .fcc    "ever"
@@ -1311,6 +1322,8 @@ WPINTELLIGENCE:   .fcc    "intelligence"
                  .fcb    0xFF
 WPINTERESTING:    .fcc    "interesting"
                  .fcb    0xFF
+WPINTERNAL:       .fcc  "internal"
+                  .fcb  0xFF
 WPIS:             .fcc    "is"
                  .fcb    0xFF
 WPISS:            .fcc    "iss"
@@ -1401,7 +1414,7 @@ WPMISTAKE:        .fcc    "mistake"
                  .fcb    0xFF
 WPMOMENT:         .fcc    "moment"
                  .fcb    0xFF
-WPMOORE:          .fcc    "moore"
+WPMOORE:          .fcc    "moor"
                  .fcb    0xFF
 WPMORE:           .fcc    "more"
                  .fcb    0xFF
@@ -1691,6 +1704,8 @@ WPTRINITY:        .fcc    "trinity"
 WPTRY:            .fcc    "try"
                  .fcb    0xFF
 WPTUESDAY:        .fcc    "tuesday"
+                 .fcb    0xFF
+WPTYPICAL:        .fcc    "typicql"
                  .fcb    0xFF
 
 ; U
