@@ -22,11 +22,14 @@ PRSP            .equ    0xFD4D          ; Print a space
 BINARY          .equ    0xFC31          ; Converts ASCII hex digits in A and B to binary?
 RD_X            .equ    0xFC65          ; Read 4 hex digits Value from ACIA(a) and put value into X.
 VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
+PRX             .equ    0xFCBB          ; print val in X as four hex digits
 
 PANEL           .equ    0xF0FF          ; LEDs and switches
 DELAY_VAL       .EQU    0x03FF          ; Delay loop count - adjust to taste (16 BIT VALUE)
 
-IDLE_TICS       .equ    45              ; ticks between idle messages (1 tic = 2 secs approx)
+; TODO put IDLE_TICS back to 45
+IDLE_TICS       .equ    5               ; ticks between idle messages (1 tic = 2 secs approx)
+;IDLE_TICS       .equ   45              ; ticks between idle messages (1 tic = 2 secs approx)
 SHEAVY_WGHT     .equ    15              ; >= 15 stones
 HEAVY_WGHT      .equ    13              ; >= 13 stones
 NORM_WGHT       .equ    10              ; >= 10 stones
@@ -60,7 +63,7 @@ INIT:
 
                 JSR STRING
                 .fcc    "Speak Your Weight (c) John Newcombe 2026"
-                .Fcb    0x0d, 0x0a, 0xFF
+                .Fcb    0x0d, 0x0a, 0xff
 
                 ; initialise the speach processor
                 ;   @R6 = excitability (Default=3)
@@ -74,7 +77,6 @@ INIT:
                 .fcb    0x0d, 0x0a, 0xFF
 
 MAINLOOP:
-
 ; -----------------------------------------------------
 ; Data arrives at port B as four hex characters
 ; -----------------------------------------------------
@@ -121,12 +123,18 @@ ML5:            JMP     MAINLOOP        ; no comments for less than light weight
 ; Over 20 stone so random heavy phrase to ports B
 ; -----------------------------------------------------
 OVERLOADED:
+                JSR     STRING
+                .fcc    "ST: OVERLOAD"
+                .fcb    0x0d,0x0a,0xff
                 LDX     #MTOOHEAVY1
                 JSR     PR_PHRASE
                 JSR     PR_CRB
                 JSR     PANEL_DISP
                 JMP     MAINLOOP
 IERROR:
+                JSR     STRING
+                .fcc    "ST: INT ERROR"
+                .fcb    0x0d,0x0a,0xff
                 LDX     #MERROR
                 JSR     PR_PHRASE
                 JSR     PR_CRB
@@ -145,7 +153,10 @@ IDLE:   CLR     PROCESSING_FLG  ; clear the processing flag as no one
         BEQ     IDLE1           ; not reached the max idle time
         JMP     MAINLOOP             ; nothing to do yet
 
-IDLE1:   CLR     IDLE_COUNT      ; time to output an idle message so reset the count
+IDLE1:  JSR     STRING
+        .fcc    "ST: IDLE MSG"
+        .fcb    0x0d,0x0a,0xff
+        CLR     IDLE_COUNT      ; time to output an idle message so reset the count
         LDAA    IDLE_MSG_ID     ; get next Message ID
         CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
         BNE     IDLE_OP         ; still at valid id so output idle message
@@ -158,6 +169,9 @@ IDLE_OP:
         JMP     MAINLOOP
 
 GREET:   ; output the greeting message
+        JSR     STRING
+        .fcc    "ST: GREET MSG"
+        .fcb    0x0d,0x0a,0xff
         LDAA    GREET_MSG_ID    ; get next Message ID
         CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
         BNE     GREET_OP        ; still at valid id so output idle message
@@ -170,6 +184,9 @@ GREET_OP:
         RTS
 
 LIGHTW:   ; output the lightweight message
+        JSR     STRING
+        .fcc    "ST: LIGHT MSG"
+        .fcb    0x0d,0x0a,0xff
         LDAA    LIGHT_MSG_ID    ; get next Message ID
         CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
         BNE     LIGHT_OP        ; still at valid id so output idle message
@@ -182,6 +199,9 @@ LIGHT_OP:
         JMP     MAINLOOP
 
 NORMALW: ; output the normal message
+        JSR     STRING
+        .fcc    "ST: NORM MSG"
+        .fcb    0x0d,0x0a,0xff
         LDAA    NORMAL_MSG_ID   ; get next Message ID
         CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
         BNE     NORMAL_OP       ; still at valid id so output idle message
@@ -194,6 +214,9 @@ NORMAL_OP:
         JMP     MAINLOOP
 
 HEAVYW:  ; output the heavy message
+        JSR     STRING
+        .fcc    "ST: HEAVY MSG"
+        .fcb    0x0d,0x0a,0xff
         LDAA    HEAVY_MSG_ID    ; get next Message ID
         CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
         BNE     HEAVY_OP        ; still at valid id so output idle message
@@ -206,6 +229,9 @@ HEAVY_OP:
         JMP     MAINLOOP
 
 SHEAVYW: ; output the superheavy message
+        JSR     STRING
+        .fcc    "ST: SHEAVY MSG"
+        .fcb    0x0d,0x0a,0xff
         LDAA    SHEAVY_MSG_ID   ; get next Message ID
         CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
         BNE     SHEAVY_OP       ; still at valid id so output idle message
@@ -246,41 +272,18 @@ PHRASE_OUT:
 GETDATA:
         JSR     RD_XB           ; read 4 hex characters into X
         STX     T_WEIGHT        ; store X
+        JSR     STRING
+        .fcc    "DR: "
+        .fcb    0xff
+        LDX     T_WEIGHT
+        JSR     PRX             ; print the data
+        JSR    PR_CR
         CLC
         LDAA    T_WEIGHT        ; get fist byte (stones)
         BEQ     GDDONE          ; idle message
         CLR     IDLE_TICS       ; not an idle message so reset the idle counter
         SEC                     ; non idle message return with carry set
 GDDONE:  RTS
-
-; -----------------------------------------------------
-; PR_DEC: Puts 3 decimal digits in DEC, DEC+1 and DEC+2
-;
-;       !! ONLY WORKS WITH VALUES BELOW 128 !!
-; -----------------------------------------------------
-PR_DEC:  CLRB            ; Clear B for hundreds
-
-HUND:    CMPA    #100    ; 100 or more?
-
-        BLT     TENS
-        SUBA    #100    ; Sub 100
-        INCB            ; Increment hundred counter
-        BRA     HUND
-
-TENS:    STAB    DEC     ; store the hundreds
-
-        CLRB
-TENS1:   CMPA    #10     ; 10 or more?
-        BLT     UNITS
-        SUBA    #10     ; Sub 10
-        INCB            ; Increment ten counter
-        BRA     TENS1
-
-UNITS:   STAB    DEC+1
-        STAA    DEC+2   ; Final remainder is units
-
-        RTS
-
 
 ; -----------------------------------------------------
 ; Print string FOLLOWING JSR ( terminated by 0xFF ) to
@@ -442,6 +445,17 @@ PR_CRB1:    JSR     PR_B        ; Print it
             RTS                 ; RETURN
 
 ; -----------------------------------------------------
+; Prints a CR/LF to ACIA(a) A is preserved
+; -----------------------------------------------------
+PR_CR:     PSHA
+            LDAA    #0x0D        ; Put CHAR character in A
+            JSR     PR_A
+            LDAA    #0x0A
+            JSR     PR_A
+PR_CR1:    PULA
+            RTS                 ; RETURN
+
+; -----------------------------------------------------
 ; Outputs a phrase from the memory location in X
 ; -----------------------------------------------------
 PR_PHRASE:
@@ -486,9 +500,6 @@ PR_WORD:
             LDX     T_X             ; X now has address of the word
             JSR     STRINGBX        ; output the word
             INC     SYLLABLES
-            ; TODO remove or add as sub routine etc. (outputs to ACIA(a))
-            LDAA    SYLLABLES
-            JSR     ZOUT
             JSR     PRSP
             RTS
 
@@ -547,10 +558,11 @@ T_Y:             .rmb     2       ;   "     "     "  table pointer
 T_P:             .rmb     2       ;   "     "     "  PR_PHRASE
 T_W:             .rmb     2       ;   "     "     "  PR_WEIGHT
 T_TMP:           .rmb     2       ;   "     "     "  within subroutine
-DEC:             .rmb     3       ; for decimal value
 RND:             .rmb     1       ; holds a random number (see RD_B
 TEMP:            .rmb     2       ; temp var (non subroutine use)
 T_WEIGHT:        .rmb     2       ; holds value of weight following a call to GETDATA
+
+; these are cleared at start up
 IDLE_COUNT:      .rmb     1       ; counts the number of empty measurement reports
 IDLE_MSG_ID:     .rmb     1       ; holds value of next idle message to use
 GREET_MSG_ID:    .rmb     1       ; holds value of next greeting message to use
@@ -565,3 +577,4 @@ SYLLABLES:       .rmb     1       ; number of phrase syllables for the panel LED
                                   ;  this is updated each time a word is transmitted and
                                   ;  when PANELDISP is called, usually after acall to PR_PHRASE
                                   ;  the lights are manipulated.
+

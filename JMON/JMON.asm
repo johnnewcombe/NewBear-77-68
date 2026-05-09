@@ -256,14 +256,19 @@ ADD     ADDB    #$37        ; Make it an ASII letter
 
 ; -----------------------------------------------------
 ; Print value in X as 4 hex digits
+; A and X are not preserved
 ; FCBB
 ; -----------------------------------------------------
 PRX     STX     T_TMPX      ; Save X
         LDAA    T_TMPX      ; Get high order byte to A
         BSR     ZOUT        ; Print A as 2 hex digits
         LDAA    T_TMPX+1    ; Get low order byte to A
-        BRA     ZOUT        ; Print A as 2 hex digits
 
+        ; fall through to ZOUT instead or BSR
+        ;BSR     ZOUT        ; Print A as 2 hex digits
+        ;RTS
+        NOP
+        NOP
         NOP
 
 ; -----------------------------------------------------
