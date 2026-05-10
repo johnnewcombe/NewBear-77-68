@@ -25,7 +25,7 @@ VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
 PRX             .equ    0xFCBB          ; print val in X as four hex digits
 
 PANEL           .equ    0xF0FF          ; LEDs and switches
-DELAY_VAL       .EQU    0x03FF          ; Delay loop count - adjust to taste (16 BIT VALUE)
+DELAY_VAL       .EQU    0x0B00          ; Delay loop count - adjust to taste (16 BIT VALUE)
 
 ; TODO put IDLE_TICS back to 45
 IDLE_TICS       .equ    5               ; ticks between idle messages (1 tic = 2 secs approx)

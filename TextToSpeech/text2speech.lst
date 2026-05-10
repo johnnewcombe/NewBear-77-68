@@ -1,5 +1,5 @@
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 1
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -30,7 +30,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                      FCBB    25 PRX             .equ    0xFCBB          ; print val in X as four hex digits
                              26 
                      F0FF    27 PANEL           .equ    0xF0FF          ; LEDs and switches
-                     03FF    28 DELAY_VAL       .EQU    0x03FF          ; Delay loop count - adjust to taste (16 BIT VALUE)
+                     0B00    28 DELAY_VAL       .EQU    0x0B00          ; Delay loop count - adjust to taste (16 BIT VALUE)
                              29 
                              30 ; TODO put IDLE_TICS back to 45
                      0005    31 IDLE_TICS       .equ    5               ; ticks between idle messages (1 tic = 2 secs approx)
@@ -59,7 +59,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    010F 7F 1B B0      [ 6]   54                 CLR     HEAVY_MSG_ID
    0112 7F 1B B1      [ 6]   55                 CLR     SHEAVY_MSG_ID
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 2
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -119,7 +119,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    018A BD 04 3B      [ 9]  101                 JSR     PR_PHRASE
    018D FE 1B A9      [ 5]  102                 LDX     T_WEIGHT        ; restore X
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 3
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -179,7 +179,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0206 27 03         [ 4]  153         BEQ     IDLE1           ; not reached the max idle time
    0208 7E 01 66      [ 3]  154         JMP     MAINLOOP             ; nothing to do yet
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 4
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -239,7 +239,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    028C 53 54 3A 20 4E 4F   203         .fcc    "ST: NORM MSG"
         52 4D 20 4D 53 47
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 5
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -299,7 +299,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    030C E6 01         [ 5]  253         LDAB    1,X             ;  get low byte of word pointed to by X
    030E B7 1B A7      [ 5]  254         STAA    TEMP
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 6
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -359,7 +359,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    035E 6E 01         [ 4]  308          JMP     1,X     ; Jump back to caller (RETURN)
                             309 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 7
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -419,7 +419,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    03AB 39            [ 5]  363 PRB_END: RTS             ; RETURN
                             364 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 8
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -479,7 +479,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0405 BD 04 14      [ 9]  418         JSR     PR_CRB
    0408 39            [ 5]  419         RTS
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 9
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -539,7 +539,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0455 FE 1B 9E      [ 5]  473         LDX     T_Y         ; restore table pointer
    0458 08            [ 4]  474         INX                 ; move to next entry
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 10
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -575,7 +575,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0495 39            [ 5]  504             RTS
                             505 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 11
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -635,7 +635,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                      0021    53 ALWAYS          .equ     33
                      0022    54 AM              .equ     34
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 12
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -695,7 +695,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                      0054   108 COUNTED         .equ     84
                             109 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 13
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -755,7 +755,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                      0085   163 FUNNY           .equ     133
                             164 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 14
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -815,7 +815,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                      00B2   218 KNOWN           .equ     178
                             219 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 15
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -875,7 +875,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                      00E1   273 OFF             .equ     225
                      00E2   274 OH              .equ     226
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 16
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -935,7 +935,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                      0110   328 SAYING          .equ     272
                      0111   329 SCIENCE         .equ     273
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 17
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -995,7 +995,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                      0145   383 TIME            .equ     325
                      0146   384 TO              .equ     326
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 18
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1055,7 +1055,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                      0174   438 YOU             .equ     372
                      0175   439 YOURE           .equ     373
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 19
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1115,7 +1115,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                             493 
                             494 ; Symbols
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 20
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1175,7 +1175,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    051E 09 79               548          .fdb    WPCALM
    0520 09 7E               549          .fdb    WPCAN
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 21
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1235,7 +1235,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0584 0B 22               603          .fdb    WPEXCITING
    0586 0B 2B               604          .fdb    WPEXIST
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 22
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1295,7 +1295,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    05E2 0C 65               658          .fdb    WPIS
    05E4 0C 68               659          .fdb    WPISS
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 23
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1355,7 +1355,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    063C 0D 7B               713          .fdb    WPNAP
    063E 0D 7F               714          .fdb    WPNEED
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 24
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1415,7 +1415,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    069A 0E BA               768          .fdb    WPREALLY
    069C 0E CF               769          .fdb    WPREFER
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 25
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1475,7 +1475,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0700 10 4B               823          .fdb    WPTALL
    0702 10 50               824          .fdb    WPTELEPRINTER
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 26
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1535,7 +1535,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0762 11 AA               878          .fdb    WPWILL
    0764 11 AF               879          .fdb    WPWISH
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 27
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1595,7 +1595,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    07C3 FF                  933                  .fcb     0xFF
                             934 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 28
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1655,7 +1655,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         65 65 6E
    083B FF                  984                  .fcb     0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 29
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1715,7 +1715,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    08C2 FF                 1029                  .fcb    0xFF
    08C3 61 73 6B 69 6E 67  1030 WPASKING:         .fcc    "asking"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 30
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1775,7 +1775,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    094C 62 72 61 63 65     1079 WPBRACE:          .fcc    "brace"
    0951 FF                 1080                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 31
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1835,7 +1835,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         6E 65 64
    09E1 FF                 1126                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 32
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1895,7 +1895,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0A83 64 6F 6E 27 74     1168 WPDONT:           .fcc    "don't"
    0A88 FF                 1169                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 33
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -1955,7 +1955,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0B22 65 78 63 69 74 69  1215 WPEXCITING:       .fcc    "exciting"
         6E 67
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 34
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2015,7 +2015,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                            1265 ; -----------------------------------------------------
    0BAB 68 61 6E 64 6C 65  1266 WPHANDLE:         .fcc    "handle"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 35
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2075,7 +2075,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0C2F 69 6E 63 6C 75 64  1317 WPINCLUDING:      .fcc    "including"
         69 6E 67
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 36
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2135,7 +2135,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0CB6 FF                 1365                  .fcb    0xFF
    0CB7 6C 65 73 73        1366 WPLESS:           .fcc    "less"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 37
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2195,7 +2195,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         65
    0D49 FF                 1414                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 38
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2255,7 +2255,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         65
    0DD6 FF                 1465                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 39
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2315,7 +2315,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0E53 70 6F 73 73 69 62  1512 WPPOSSIBLY:       .fcc    "possibly"
         6C 79
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 40
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2375,7 +2375,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0EF0 FF                 1555                  .fcb    0xFF
    0EF1 72 65 6D 6F 76 65  1556 WPREMOVE:         .fcc    "remove"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 41
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2435,7 +2435,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    0F88 FF                 1604                  .fcb    0xFF
    0F89 73 6D 61 6C 6C     1605 WPSMALL:          .fcc    "small"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 42
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2495,7 +2495,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    1031 FF                 1646                  .fcb    0xFF
    1032 73 75 72 65        1647 WPSURE:           .fcc    "sure"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 43
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2555,7 +2555,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    10C4 FF                 1695                  .fcb    0xFF
    10C5 74 6F 6F           1696 WPTOO:            .fcc    "too"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 44
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2615,7 +2615,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    1148 77 61 6E 74        1739 WPWANT:           .fcc    "want"
    114C FF                 1740                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 45
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2675,7 +2675,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         64
    11E5 FF                 1788                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 46
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2708,7 +2708,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         6C 66
    122A FF                 1813                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 47
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2768,7 +2768,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    1275 15 F8                53               .fdb     MNORM15
    1277 16 0B                54               .fdb     MNORM16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 48
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2828,7 +2828,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    12D5 1A 1D               108               .fdb     MIDLE15
    12D7 1A 34               109               .fdb     MIDLE16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 49
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2888,7 +2888,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         01 46 00 2D 00 1C
         00 16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 50
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -2948,7 +2948,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    148B FF                  165             .fcb     0xFF
    148C 00 9E 00 DE 00 18   166 MLIGHT7:     .fdb     IM,NOT,A,DOCTOR,COMMA,BUT,IM,QUITE,WORRIED,FULLSTOP
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 51
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -3008,7 +3008,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         00 A6 00 17 01 22
         00 9A 01 30 00 15
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 52
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -3068,7 +3068,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         00 16
    1669 FF                  216             .fcb     0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 53
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -3128,7 +3128,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         00 15 00 AA 01 13
         00 D0 01 6F 00 16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 54
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -3188,7 +3188,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         00 16
    1828 FF                  272             .fcb     0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 55
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -3248,7 +3248,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         01 3C 00 84 01 5F
         00 E0 00 D2 00 A4
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 56
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -3308,7 +3308,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         00 16
    1A05 FF                  317             .fcb     0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 57
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -3368,7 +3368,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
         00 9A 00 8E 01 88
         01 8B 00 16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 58
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -3399,7 +3399,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    1B64 01 8D 01 8C 01 8F   350 MERROR:      .fdb    INTERNAL, ERROR, COMMA ;,TYPICAL, EXCLAMATION
    1B6A FF                  351             .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 59
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
@@ -3426,7 +3426,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
                             528 ; --- Delay routine ---
                             529 ; Kills time so the eye can see each LED pattern
    1B82 FF 1B A4      [ 6]  530 DELAY:  STX     T_TMP
-   1B85 CE 03 FF      [ 3]  531         LDX     #DELAY_VAL  ; Load delay count
+   1B85 CE 0B 00      [ 3]  531         LDX     #DELAY_VAL  ; Load delay count
    1B88 09            [ 4]  532 DLOOP:  DEX                 ; Decrement
    1B89 26 FD         [ 4]  533         BNE     DLOOP       ; Not zero - keep counting
    1B8B FE 1B A4      [ 5]  534         LDX     T_TMP
@@ -3459,7 +3459,7 @@ Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
    1BA6                     561 RND:             .rmb     1       ; holds a random number (see RD_B
    1BA7                     562 TEMP:            .rmb     2       ; temp var (non subroutine use)
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 60
-Hexadecimal [16-Bits]                                 Sat May  9 23:17:06 2026
+Hexadecimal [16-Bits]                                 Sun May 10 16:28:19 2026
 
 
 
