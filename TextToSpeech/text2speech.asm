@@ -27,7 +27,6 @@ PRX             .equ    0xFCBB          ; print val in X as four hex digits
 PANEL           .equ    0xF0FF          ; LEDs and switches
 DELAY_VAL       .EQU    0x0B00          ; Delay loop count - adjust to taste (16 BIT VALUE)
 
-; TODO put IDLE_TICS back to 45
 IDLE_TICS       .equ   45              ; ticks between idle messages (1 tic = 2 secs approx)
 SHEAVY_WGHT     .equ    15              ; >= 15 stones
 HEAVY_WGHT      .equ    13              ; >= 13 stones

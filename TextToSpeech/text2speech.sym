@@ -1,5 +1,5 @@
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 1
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -59,7 +59,7 @@ Symbol Table
     EIGHTEEN       =   0012     |     EITHER         =   006D 
     ELEVEN         =   000B     |     EMOTIONALLY    =   006E 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 2
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -119,7 +119,7 @@ Symbol Table
     LESS           =   00B6     |     LETS           =   00B7 
     LIE            =   00B8     |     LIFE           =   00B9 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 3
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -179,7 +179,7 @@ Symbol Table
   2 MNORM17            161A R   |   2 MNORM18            162F R
   2 MNORM19            1640 R   |   2 MNORM2             1501 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 4
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -239,7 +239,7 @@ Symbol Table
   2 PR_PHRASE          043B R   |   2 PR_SPCB            0409 R
   2 PR_WEIGHT          03DB R   |   2 PR_WORD            045D R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 5
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -299,7 +299,7 @@ Symbol Table
     TIM            =   0144     |     TIME           =   0145 
     TO             =   0146     |     TODAY          =   0147 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 6
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -359,7 +359,7 @@ Symbol Table
   2 WPCAKE             0965 R   |   2 WPCALCULATE        096A R
   2 WPCALL             0974 R   |   2 WPCALM             0979 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 7
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -419,7 +419,7 @@ Symbol Table
   2 WPIMPRESSIVE       0C21 R   |   2 WPIN               0C2C R
   2 WPINCLUDING        0C2F R   |   2 WPINFLUENCE        0C39 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 8
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -479,7 +479,7 @@ Symbol Table
   2 WPREFER            0ECF R   |   2 WPREFUSE           0ED5 R
   2 WPREINFORCING      0EDC R   |   2 WPREMEMBER         0EE8 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 9
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -539,7 +539,7 @@ Symbol Table
   2 WPWHAT             1186 R   |   2 WPWHEN             118B R
   2 WPWHICH            1190 R   |   2 WPWHILE            1196 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 10
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Symbol Table
 
@@ -561,7 +561,7 @@ Symbol Table
     ZOUT           =   FCC9     |   2 Z_PRQM             039F R
 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 11
-Hexadecimal [16-Bits]                                 Sun May 10 16:29:07 2026
+Hexadecimal [16-Bits]                                 Sun May 10 20:24:13 2026
 
 Area Table
 
