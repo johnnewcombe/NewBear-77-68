@@ -28,8 +28,7 @@ PANEL           .equ    0xF0FF          ; LEDs and switches
 DELAY_VAL       .EQU    0x0B00          ; Delay loop count - adjust to taste (16 BIT VALUE)
 
 ; TODO put IDLE_TICS back to 45
-IDLE_TICS       .equ    5               ; ticks between idle messages (1 tic = 2 secs approx)
-;IDLE_TICS       .equ   45              ; ticks between idle messages (1 tic = 2 secs approx)
+IDLE_TICS       .equ   45              ; ticks between idle messages (1 tic = 2 secs approx)
 SHEAVY_WGHT     .equ    15              ; >= 15 stones
 HEAVY_WGHT      .equ    13              ; >= 13 stones
 NORM_WGHT       .equ    10              ; >= 10 stones
