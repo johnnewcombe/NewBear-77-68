@@ -1,0 +1,3424 @@
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 1
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                              1 ;------------------------------------------------------------------
+                              2 ; text2speech.asm
+                              3 ;------------------------------------------------------------------
+                              4 
+                              5                 .area   CODE1 (ABS)     ; absolute i.e. not relocatable
+   0100                       6                 .org    0x0100
+                              7 
+                     F400     8 DATAA           .equ    0xF400          ; ACIA(a) Data register
+                     F401     9 CTRLA           .equ    0xF401          ; ACIA(a) Ctrl/Status
+                     F402    10 DATAB           .equ    0xF402          ; ACIA(b) Data register
+                     F403    11 CTRLB           .equ    0xF403          ; ACIA(b) Ctrl/Status
+                             12 
+                             13 ; MINIMON routines
+                     FC76    14 STRING          .equ    0xFC76          ; Prints a string.
+                     FC89    15 GETADD          .equ    0xFC89          ; Get Address, read 4 digit hex value.
+                     FCC9    16 ZOUT            .equ    0xFCC9          ; Print value in A as 2 hex digits.
+                     FE97    17 NEWLINE         .equ    0xFE97          ; Prints a new line.
+                     FF8F    18 START           .equ    0xFF8F          ; Restarts MniMon.
+                     FC0F    19 PR_A            .equ    0xFC0F          ; Print char in A to ACIA (a)
+                     FD2B    20 RD_A            .equ    0xFD2B          ; Read char from A
+                     FD4D    21 PRSP            .equ    0xFD4D          ; Print a space
+                     FC31    22 BINARY          .equ    0xFC31          ; Converts ASCII hex digits in A and B to binary?
+                     FC65    23 RD_X            .equ    0xFC65          ; Read 4 hex digits Value from ACIA(a) and put value into X.
+                     FC1D    24 VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
+                     FCBB    25 PRX             .equ    0xFCBB          ; print val in X as four hex digits
+                             26 
+                     F0FF    27 PANEL           .equ    0xF0FF          ; LEDs and switches
+                     0B00    28 DELAY_VAL       .EQU    0x0B00          ; Delay loop count - adjust to taste (16 BIT VALUE)
+                             29 
+                     002D    30 IDLE_TICS       .equ   45              ; ticks between idle messages (1 tic = 2 secs approx)
+                     000F    31 SHEAVY_WGHT     .equ    15              ; >= 15 stones
+                     000D    32 HEAVY_WGHT      .equ    13              ; >= 13 stones
+                     000A    33 NORM_WGHT       .equ    10              ; >= 10 stones
+                     0006    34 LIGHT_WGHT      .equ    6               ; >= 6 stones
+                     0014    35 TOO_HEAVY       .equ    20
+                             36 
+                             37 ; number of messages
+                     000D    38 GREET_MSG_CNT   .equ    13
+                     000A    39 LIGHT_MSG_CNT   .equ    10
+                     0015    40 NORM_MSG_CNT    .equ    21
+                     0012    41 HEAVY_MSG_CNT   .equ    18
+                     000A    42 SHEAVY_MSG_CNT  .equ    10
+                     0019    43 IDLE_MSG_CNT    .equ    25
+                             44 
+   0100                      45 INIT:
+                             46                 ; clear the counters
+   0100 7F 1B 52      [ 6]   47                 CLR     IDLE_COUNT
+   0103 7F 1B 53      [ 6]   48                 CLR     IDLE_MSG_ID
+   0106 7F 1B 54      [ 6]   49                 CLR     GREET_MSG_ID
+   0109 7F 1B 55      [ 6]   50                 CLR     LIGHT_MSG_ID
+   010C 7F 1B 56      [ 6]   51                 CLR     NORMAL_MSG_ID
+   010F 7F 1B 57      [ 6]   52                 CLR     HEAVY_MSG_ID
+   0112 7F 1B 58      [ 6]   53                 CLR     SHEAVY_MSG_ID
+   0115 7F 1B 59      [ 6]   54                 CLR     PROCESSING_FLG
+   0118 7F 1B 5A      [ 6]   55                 CLR     WORDS
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 2
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   011B 7F F0 FF      [ 6]   56                 CLR     PANEL
+                             57 
+                             58                 ; initialise serial port B
+   011E 86 11         [ 2]   59                 LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
+   0120 B7 F4 03      [ 5]   60                 STAA    CTRLB           ;   ACIA.A
+                             61 
+   0123 BD FC 76      [ 9]   62                 JSR STRING
+   0126 49 20 53 70 65 61    63                 .fcc    "I Speak Your Weight (c) John Newcombe 2026"
+        6B 20 59 6F 75 72
+        20 57 65 69 67 68
+        74 20 28 63 29 20
+        4A 6F 68 6E 20 4E
+        65 77 63 6F 6D 62
+        65 20 32 30 32 36
+   0150 0D 0A FF             64                 .Fcb    0x0d, 0x0a, 0xff
+                             65 
+                             66                 ; initialise the speach processor
+                             67                 ;   @R6 = excitability (Default=3)
+                             68                 ;   @W2 = speed (Default=3)
+                             69                 ;   @F8 = pitch center (Default=8)
+                             70                 ;   @V3 = one of six preset voices
+                             71                 ;   @K0 = male or non-male table
+                             72                 ;
+   0153 BD 03 13      [ 9]   73                 JSR STRINGB
+   0156 40 52 36 40 57 32    74                 .fcc    "@R6@W2@F8@V3@K0"
+        40 46 38 40 56 33
+        40 4B 30
+   0165 0D 0A FF             75                 .fcb    0x0d, 0x0a, 0xFF
+                             76 
+   0168                      77 MAINLOOP:
+                             78 ; -----------------------------------------------------
+                             79 ; Data arrives at port B as four hex characters
+                             80 ; -----------------------------------------------------
+   0168 BD 02 F1      [ 9]   81                 JSR     GETDATA         ; value in T_WEIGHT, stones in A
+   016B 25 03         [ 4]   82                 BCS     ML1             ; is it invalid i.e. carry clear
+   016D 7E 01 EB      [ 3]   83                 JMP     IDLE
+   0170 7D 1B 59      [ 6]   84 ML1:            TST     PROCESSING_FLG  ; are we already processing a weight
+   0173 26 F3         [ 4]   85                 BNE     MAINLOOP        ; flag non-zero so ignore everything that follows
+   0175 7C 1B 59      [ 6]   86                 INC     PROCESSING_FLG  ; ignore any following data until we next idle
+   0178 81 14         [ 2]   87                 CMPA    #TOO_HEAVY      ; more that 20 is too heavy
+   017A 22 3B         [ 4]   88                 BHI     OVERLOADED
+   017C B6 1B 51      [ 4]   89                 LDAA    T_WEIGHT+1      ; validate pounds
+   017F 81 0D         [ 2]   90                 CMPA    #13             ; invalid pounds
+   0181 22 4E         [ 4]   91                 BHI     IERROR          ; internal error
+   0183 BD 02 23      [ 9]   92                 JSR     GREET           ; send a greeting message
+                             93 
+                             94                 ; get the weight a second time, this should allow the scales time to settle
+   0186 BD 02 F1      [ 9]   95                 JSR     GETDATA
+                             96 
+                             97                 ; output "you weigh" maybe use a phrase rather than individual words
+   0189 CE 1B 31      [ 3]   98                 LDX     #MYOUWEIGH
+   018C BD 04 0D      [ 9]   99                 JSR     PR_PHRASE
+   018F FE 1B 50      [ 5]  100                 LDX     T_WEIGHT        ; restore X
+   0192 BD 03 AD      [ 9]  101                 JSR     PR_WEIGHT       ; weight back X so output the weight
+                            102 
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 3
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            103                 ; output a comments
+   0195 B6 1B 50      [ 4]  104                 LDAA    T_WEIGHT        ; stones
+   0198 81 0F         [ 2]  105                 CMPA    #SHEAVY_WGHT
+   019A 25 03         [ 4]  106                 BLO     ML2             ; not super heavy weight
+   019C 7E 02 B5      [ 3]  107                 JMP     SHEAVYW
+   019F 81 0D         [ 2]  108 ML2:            CMPA    #HEAVY_WGHT
+   01A1 25 03         [ 4]  109                 BLO     ML3             ; not heavy weight
+   01A3 7E 02 90      [ 3]  110                 JMP     HEAVYW
+   01A6 81 0A         [ 2]  111 ML3:            CMPA    #NORM_WGHT
+   01A8 25 03         [ 4]  112                 BLO     ML4             ; not normal weight
+   01AA 7E 02 6B      [ 3]  113                 JMP     NORMALW
+   01AD 81 06         [ 2]  114 ML4:            CMPA    #LIGHT_WGHT
+   01AF 25 03         [ 4]  115                 BLO     ML5             ; not light weight
+   01B1 7E 02 46      [ 3]  116                 JMP     LIGHTW
+   01B4 7E 01 68      [ 3]  117 ML5:            JMP     MAINLOOP        ; no comments for less than light weight
+                            118 
+                            119 ; -----------------------------------------------------
+                            120 ; Over 20 stone so random heavy phrase to ports B
+                            121 ; -----------------------------------------------------
+   01B7                     122 OVERLOADED:
+   01B7 BD FC 76      [ 9]  123                 JSR     STRING
+   01BA 53 54 3A 20 53 4F   124                 .fcc    "ST: SOFL"
+        46 4C
+   01C2 0D 0A FF            125                 .fcb    0x0d,0x0a,0xff
+   01C5 CE 1B 20      [ 3]  126                 LDX     #MTOOHEAVY1
+   01C8 BD 04 0D      [ 9]  127                 JSR     PR_PHRASE
+   01CB BD 03 E6      [ 9]  128                 JSR     PR_CRB
+   01CE 7E 01 68      [ 3]  129                 JMP     MAINLOOP
+   01D1                     130 IERROR:
+   01D1 BD FC 76      [ 9]  131                 JSR     STRING
+   01D4 53 54 3A 20 49 45   132                 .fcc    "ST: IERR"
+        52 52
+   01DC 0D 0A FF            133                 .fcb    0x0d,0x0a,0xff
+   01DF CE 1B 36      [ 3]  134                 LDX     #MERROR
+   01E2 BD 04 0D      [ 9]  135                 JSR     PR_PHRASE
+   01E5 BD 03 E6      [ 9]  136                 JSR     PR_CRB
+   01E8 7E 01 68      [ 3]  137                 JMP     MAINLOOP
+                            138 
+                            139 ; we cycle thought idle message when no one is on the scales, data comes in a one
+                            140 ; second intervals so we simply increase the idle count until it's time to display
+                            141 ; the next idle message
+                            142 
+   01EB 7F 1B 59      [ 6]  143 IDLE:   CLR     PROCESSING_FLG  ; clear the processing flag as no one
+                            144                                 ;   is standing on the scales
+   01EE 7C 1B 52      [ 6]  145         INC     IDLE_COUNT      ; increase the idle count
+   01F1 B6 1B 52      [ 4]  146         LDAA    IDLE_COUNT      ; see if idle count = max idle time
+   01F4 81 2D         [ 2]  147         CMPA    #IDLE_TICS      ; a data message appears every second
+   01F6 27 03         [ 4]  148         BEQ     IDLE1           ; not reached the max idle time
+   01F8 7E 01 68      [ 3]  149         JMP     MAINLOOP             ; nothing to do yet
+                            150 
+   01FB BD FC 76      [ 9]  151 IDLE1:  JSR     STRING
+   01FE 53 54 3A 20 49 4D   152         .fcc    "ST: IMSG"
+        53 47
+   0206 0D 0A FF            153         .fcb    0x0d,0x0a,0xff
+   0209 7F 1B 52      [ 6]  154         CLR     IDLE_COUNT      ; time to output an idle message so reset the count
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 4
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   020C B6 1B 53      [ 4]  155         LDAA    IDLE_MSG_ID     ; get next Message ID
+   020F 81 19         [ 2]  156         CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
+   0211 26 04         [ 4]  157         BNE     IDLE_OP         ; still at valid id so output idle message
+   0213 7F 1B 53      [ 6]  158         CLR     IDLE_MSG_ID     ; beyond last message so reset the current msg to zero
+   0216 4F            [ 2]  159         CLRA                    ; set currentid back to 0
+   0217                     160 IDLE_OP:
+   0217 7C 1B 53      [ 6]  161         INC     IDLE_MSG_ID     ; set to next message for the next next time
+   021A CE 12 8B      [ 3]  162         LDX     #IDLEPTR        ; A has phrase ID, set X to the base address
+   021D BD 02 D9      [ 9]  163         JSR     PHRASE_OUT
+   0220 7E 01 68      [ 3]  164         JMP     MAINLOOP
+                            165 
+   0223                     166 GREET:   ; output the greeting message
+   0223 BD FC 76      [ 9]  167         JSR     STRING
+   0226 53 54 3A 20 47 4D   168         .fcc    "ST: GMSG"
+        53 47
+   022E 0D 0A FF            169         .fcb    0x0d,0x0a,0xff
+   0231 B6 1B 54      [ 4]  170         LDAA    GREET_MSG_ID    ; get next Message ID
+   0234 81 0D         [ 2]  171         CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
+   0236 26 04         [ 4]  172         BNE     GREET_OP        ; still at valid id so output idle message
+   0238 7F 1B 54      [ 6]  173         CLR     GREET_MSG_ID    ; beyond last message so reset the current msg to zero
+   023B 4F            [ 2]  174         CLRA                    ; set currentid back to 0
+   023C                     175 GREET_OP:
+   023C 7C 1B 54      [ 6]  176         INC     GREET_MSG_ID    ; set to next message for the next next time
+   023F CE 11 FD      [ 3]  177         LDX     #GREETPTR       ; A has phrase ID, set X to the base address
+   0242 BD 02 D9      [ 9]  178         JSR     PHRASE_OUT
+   0245 39            [ 5]  179         RTS
+                            180 
+   0246                     181 LIGHTW:   ; output the lightweight message
+   0246 BD FC 76      [ 9]  182         JSR     STRING
+   0249 53 54 3A 20 4C 4D   183         .fcc    "ST: LMSG"
+        53 47
+   0251 0D 0A FF            184         .fcb    0x0d,0x0a,0xff
+   0254 B6 1B 55      [ 4]  185         LDAA    LIGHT_MSG_ID    ; get next Message ID
+   0257 81 0A         [ 2]  186         CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
+   0259 26 04         [ 4]  187         BNE     LIGHT_OP        ; still at valid id so output idle message
+   025B 7F 1B 55      [ 6]  188         CLR     LIGHT_MSG_ID    ; beyond last message so reset the current msg to zero
+   025E 4F            [ 2]  189         CLRA                    ; set currentid back to 0
+   025F                     190 LIGHT_OP:
+   025F 7C 1B 55      [ 6]  191         INC     LIGHT_MSG_ID    ; set to next message for the next next time
+   0262 CE 12 17      [ 3]  192         LDX     #LIGHTPTR       ; A has phrase ID, set X to the base address
+   0265 BD 02 D9      [ 9]  193         JSR     PHRASE_OUT
+   0268 7E 01 68      [ 3]  194         JMP     MAINLOOP
+                            195 
+   026B                     196 NORMALW: ; output the normal message
+   026B BD FC 76      [ 9]  197         JSR     STRING
+   026E 53 54 3A 20 4E 4D   198         .fcc    "ST: NMSG"
+        53 47
+   0276 0D 0A FF            199         .fcb    0x0d,0x0a,0xff
+   0279 B6 1B 56      [ 4]  200         LDAA    NORMAL_MSG_ID   ; get next Message ID
+   027C 81 15         [ 2]  201         CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
+   027E 26 04         [ 4]  202         BNE     NORMAL_OP       ; still at valid id so output idle message
+   0280 7F 1B 56      [ 6]  203         CLR     NORMAL_MSG_ID   ; beyond last message so reset the current msg to zero
+   0283 4F            [ 2]  204         CLRA                    ; set currentid back to 0
+   0284                     205 NORMAL_OP:
+   0284 7C 1B 56      [ 6]  206         INC     NORMAL_MSG_ID   ; set to next message for the next next time
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 5
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0287 CE 12 2B      [ 3]  207         LDX     #NORMALPTR      ; A has phrase ID, set X to the base address
+   028A BD 02 D9      [ 9]  208         JSR     PHRASE_OUT
+   028D 7E 01 68      [ 3]  209         JMP     MAINLOOP
+                            210 
+   0290                     211 HEAVYW:  ; output the heavy message
+   0290 BD FC 76      [ 9]  212         JSR     STRING
+   0293 53 54 3A 20 48 4D   213         .fcc    "ST: HMSG"
+        53 47
+   029B 0D 0A FF            214         .fcb    0x0d,0x0a,0xff
+   029E B6 1B 57      [ 4]  215         LDAA    HEAVY_MSG_ID    ; get next Message ID
+   02A1 81 12         [ 2]  216         CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
+   02A3 26 04         [ 4]  217         BNE     HEAVY_OP        ; still at valid id so output idle message
+   02A5 7F 1B 57      [ 6]  218         CLR     HEAVY_MSG_ID    ; beyond last message so reset the current msg to zero
+   02A8 4F            [ 2]  219         CLRA                    ; set currentid back to 0
+   02A9                     220 HEAVY_OP:
+   02A9 7C 1B 57      [ 6]  221         INC     HEAVY_MSG_ID    ; set to next message for the next next time
+   02AC CE 12 55      [ 3]  222         LDX     #HEAVYPTR       ; A has phrase ID, set X to the base address
+   02AF BD 02 D9      [ 9]  223         JSR     PHRASE_OUT
+   02B2 7E 01 68      [ 3]  224         JMP     MAINLOOP
+                            225 
+   02B5                     226 SHEAVYW: ; output the superheavy message
+   02B5 BD FC 76      [ 9]  227         JSR     STRING
+   02B8 53 54 3A 20 53 4D   228         .fcc    "ST: SMSG"
+        53 47
+   02C0 0D 0A FF            229         .fcb    0x0d,0x0a,0xff
+   02C3 B6 1B 58      [ 4]  230         LDAA    SHEAVY_MSG_ID   ; get next Message ID
+   02C6 81 0A         [ 2]  231         CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
+   02C8 26 04         [ 4]  232         BNE     SHEAVY_OP       ; still at valid id so output idle message
+   02CA 7F 1B 58      [ 6]  233         CLR     SHEAVY_MSG_ID   ; beyond last message so reset the current msg to zero
+   02CD 4F            [ 2]  234         CLRA                    ; set currentid back to 0
+   02CE                     235 SHEAVY_OP:
+   02CE 7C 1B 58      [ 6]  236         INC     SHEAVY_MSG_ID   ; set to next message for the next next time
+   02D1 CE 12 77      [ 3]  237         LDX     #SHEAVYPTR      ; A has phrase ID, set X to the base address
+   02D4 8D 03         [ 8]  238         BSR     PHRASE_OUT
+   02D6 7E 01 68      [ 3]  239         JMP     MAINLOOP
+                            240 
+   02D9                     241 PHRASE_OUT:
+                            242 
+   02D9 48            [ 2]  243         ASLA                    ; multiply A by 2 as each pointer is two bytes
+   02DA BD 03 8C      [ 9]  244         JSR     ADX             ; now have the correct pointer value in X
+                            245 
+                            246 ; get address of message in X from the pointer in X
+   02DD A6 00         [ 5]  247         LDAA    0,X             ;  get high byte of word pointed to by X
+   02DF E6 01         [ 5]  248         LDAB    1,X             ;  get low byte of word pointed to by X
+   02E1 B7 1B 4E      [ 5]  249         STAA    TEMP
+   02E4 F7 1B 4F      [ 5]  250         STAB    TEMP+1
+   02E7 FE 1B 4E      [ 5]  251         LDX     TEMP
+   02EA BD 04 0D      [ 9]  252         JSR     PR_PHRASE       ; output idle message
+   02ED BD 03 E6      [ 9]  253         JSR     PR_CRB          ; CR/LF
+   02F0 39            [ 5]  254         RTS
+                            255 
+                            256 ;END:     JMP     MAINLOOP  ;START   ; all done
+                            257 
+                            258 ;--------------------------------------------------------------
+                            259 ; Gets the weight data from the scales and rerurns with carry
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 6
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            260 ; set if a valid reading, carry clear otherwise. A valid weight
+                            261 ; reading resets the idle count. Data received is stored in
+                            262 ; T_WEIGHT and MSB in A.
+                            263 ;--------------------------------------------------------------
+   02F1                     264 GETDATA:
+   02F1 BD 03 7E      [ 9]  265         JSR     RD_XB           ; read 4 hex characters into X
+   02F4 FF 1B 50      [ 6]  266         STX     T_WEIGHT        ; store X
+   02F7 BD FC 76      [ 9]  267         JSR     STRING
+   02FA 44 52 3A 20         268         .fcc    "DR: "
+   02FE FF                  269         .fcb    0xff
+   02FF FE 1B 50      [ 5]  270         LDX     T_WEIGHT
+   0302 BD FC BB      [ 9]  271         JSR     PRX             ; print the data
+   0305 BD 04 00      [ 9]  272         JSR    PR_CR
+   0308 0C            [ 2]  273         CLC
+   0309 B6 1B 50      [ 4]  274         LDAA    T_WEIGHT        ; get fist byte (stones)
+   030C 27 04         [ 4]  275         BEQ     GDDONE          ; idle message
+   030E 7F 00 2D      [ 6]  276         CLR     IDLE_TICS       ; not an idle message so reset the idle counter
+   0311 0D            [ 2]  277         SEC                     ; non idle message return with carry set
+   0312 39            [ 5]  278 GDDONE:  RTS
+                            279 
+                            280 ; -----------------------------------------------------
+                            281 ; Print string FOLLOWING JSR ( terminated by 0xFF ) to
+                            282 ; ACIA(b) and ACIA(b)
+                            283 ; -----------------------------------------------------
+   0313 30            [ 4]  284 STRINGB: TSX             ; Get loc. of return addr to X
+   0314 EE 00         [ 6]  285          LDX     0,X     ; Get return addr to X
+   0316 09            [ 4]  286          DEX             ; Point to byte before
+   0317 08            [ 4]  287 STRB1:   INX             ; Point to next byte
+   0318 A6 00         [ 5]  288          LDAA    0,X     ; Get byte to be printed
+   031A 81 FF         [ 2]  289          CMPA    #0xFF    ; End-string ?
+   031C 27 0E         [ 4]  290          BEQ     ENDSTR  ; Yes: Go to finish up
+   031E F6 F0 FF      [ 4]  291          LDAB    PANEL
+   0321 C5 01         [ 2]  292          BITB     #1
+   0323 27 03         [ 4]  293          BEQ     STRB    ; panel switch 0 is debug and copies data to A
+   0325 BD FC 0F      [ 9]  294          JSR     PR_A    ; Print the byte to ACIA(a) (A is maintained)
+                            295                          ;  DEBUG depending on panel data switch zero
+   0328 8D 46         [ 8]  296 STRB:    BSR     PR_B    ; Print the byte to ACIA(b)
+   032A 20 EB         [ 4]  297          BRA     STRB1   ; Go back for next byte
+   032C 31            [ 4]  298 ENDSTR:  INS             ; Clean up stack...
+   032D 31            [ 4]  299          INS             ;  ( pop off the return addr )
+   032E 6E 01         [ 4]  300          JMP     1,X     ; Jump back to caller (RETURN)
+                            301 
+                            302 ; -----------------------------------------------------
+                            303 ; Prints a string pointed to by X
+                            304 ; -----------------------------------------------------
+   0330 A6 00         [ 5]  305 STRINGBX:   LDAA    0,X         ; get char
+   0332 81 FF         [ 2]  306             CMPA    #0xFF        ; is character NULL?
+   0334 27 0F         [ 4]  307             BEQ     DONEB       ; yes, end of string
+   0336 F6 F0 FF      [ 4]  308             LDAB    PANEL
+   0339 C5 01         [ 2]  309             BITB    #1
+   033B 27 03         [ 4]  310             BEQ     STRBX       ; panel switch 0 is debug and copies data to A
+   033D BD FC 0F      [ 9]  311             JSR     PR_A        ; Print the byte to ACIA(a) (A is maintained)
+   0340 8D 2E         [ 8]  312 STRBX:      BSR     PR_B        ; Print the byte to ACIA(b)
+   0342 08            [ 4]  313             INX
+   0343 20 EB         [ 4]  314             BRA     STRINGBX
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 7
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0345 39            [ 5]  315 DONEB:      RTS
+                            316 
+                            317 ; -----------------------------------------------------
+                            318 ; Reads a character from ACIA(b) into A
+                            319 ; -----------------------------------------------------
+   0346 B6 F4 03      [ 4]  320 RD_B:   LDAA    CTRLB       ; Get ACIA.A status byte
+   0349 85 01         [ 2]  321         BITA    #01         ; Is byte ready in DATAb
+   034B 27 F9         [ 4]  322         BEQ     RD_B        ; No: Try again
+   034D B6 F4 02      [ 4]  323         LDAA    DATAB       ; Get the data byte to A
+                            324         ;STAA     PANEL
+   0350 84 7F         [ 2]  325         ANDA    #0x7F        ; Mask off parity bit if it exists
+   0352 39            [ 5]  326         RTS                 ; RETURN
+                            327 
+                            328 ; -----------------------------------------------------
+                            329 ; Reads 2 hex ascii characters and saves them the
+                            330 ; byte value to A e.g. "0F" received is stored to A as
+                            331 ; 15d.
+                            332 ; This version ignores non-hex characters
+                            333 ; -----------------------------------------------------
+   0353 8D F1         [ 8]  334 ZINB:   BSR     RD_B    ; Read a character
+   0355 BD FC 1D      [ 9]  335         JSR     VHEX    ; Is it a hex character ?
+   0358 24 02         [ 4]  336         BCC     ZINBA   ; No: go to print `?`
+   035A 86 FF         [ 2]  337         LDAA    #0xFF
+   035C B7 1B 41      [ 5]  338 ZINBA:  STAA    T_Q     ; Yes: Save Acc.A
+   035F 8D E5         [ 8]  339         BSR     RD_B    ; Read 2nd character
+   0361 BD FC 1D      [ 9]  340         JSR     VHEX    ; Is it a hex character ?
+   0364 24 02         [ 4]  341         BCC     ZINBB   ; No: go to print `?`
+   0366 86 FF         [ 2]  342         LDAA    #0xFF
+   0368 16            [ 2]  343 ZINBB:  TAB             ; Yes: Put it into Acc.B
+   0369 B6 1B 41      [ 4]  344         LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
+   036C BD FC 31      [ 9]  345         JSR     BINARY  ; Convert A:B to binary
+   036F 39            [ 5]  346         RTS             ; RETURN
+                            347 
+                            348 ; -----------------------------------------------------
+                            349 ; Print character in A to ACIA(b)
+                            350 ; -----------------------------------------------------
+   0370 F6 F4 03      [ 4]  351 PR_B:    LDAB    CTRLB   ; Get ACIA(a) status byte
+   0373 C5 02         [ 2]  352         BITB    #02     ; Is it busy ?
+   0375 27 F9         [ 4]  353         BEQ     PR_B    ; Yes: Try again
+   0377 B7 F4 02      [ 5]  354         STAA    DATAB   ;  No: Send data
+   037A B7 F0 FF      [ 5]  355         STAA    PANEL
+   037D 39            [ 5]  356 PRB_END: RTS             ; RETURN
+                            357 
+                            358 ; -----------------------------------------------------
+                            359 ; Read 4 hex digits and put value into X
+                            360 ; -----------------------------------------------------
+   037E 8D D3         [ 8]  361 RD_XB:   BSR     ZINB    ; Read 2 digit hex value into A
+   0380 B7 1B 42      [ 5]  362         STAA    T_Z     ; Save byte (most significant)
+   0383 8D CE         [ 8]  363         BSR     ZINB    ; Read 2 digit hex value into A
+   0385 B7 1B 43      [ 5]  364         STAA    T_Z+1   ; Save byte (least significant)
+   0388 FE 1B 42      [ 5]  365         LDX     T_Z     ; Load full 4 hex value into X
+   038B 39            [ 5]  366         RTS             ; RETURN
+                            367 
+                            368 ; -----------------------------------------------------
+                            369 ; Adds A to X and leaves the result in X, A is
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 8
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            370 ; preserved.
+                            371 ; -----------------------------------------------------
+   038C 36            [ 4]  372 ADX:     PSHA
+   038D FF 1B 4C      [ 6]  373         STX     T_TMP
+   0390 BB 1B 4D      [ 4]  374         ADDA    T_TMP+1   ; add A to low byte
+   0393 B7 1B 4D      [ 5]  375         STAA    T_TMP+1
+   0396 B6 1B 4C      [ 4]  376         LDAA    T_TMP     ; get high byte
+   0399 89 00         [ 2]  377         ADCA    #0      ; add carry only
+   039B B7 1B 4C      [ 5]  378         STAA    T_TMP
+   039E FE 1B 4C      [ 5]  379         LDX     T_TMP
+   03A1 32            [ 4]  380         PULA
+   03A2 39            [ 5]  381         RTS
+                            382 
+                            383 ; -----------------------------------------------------
+                            384 ; Loads X with A, A is preserved.
+                            385 ; -----------------------------------------------------
+   03A3 B7 1B 4D      [ 5]  386 TAX:    STAA    T_TMP+1       ; store A as low byte of X
+   03A6 7F 1B 4C      [ 6]  387         CLR     T_TMP         ; zero the high byte
+   03A9 FE 1B 4C      [ 5]  388         LDX     T_TMP         ; load X
+   03AC 39            [ 5]  389         RTS
+                            390 
+                            391 ; -----------------------------------------------------
+                            392 ; Prints the message " n stones n pounds"
+                            393 ; place stones in MSB of X and pound in LSB
+                            394 ; -----------------------------------------------------
+   03AD                     395 PR_WEIGHT:
+                            396 
+   03AD FF 1B 4A      [ 6]  397         STX     T_W
+   03B0 B6 1B 4A      [ 4]  398         LDAA    T_W
+   03B3 BD 03 A3      [ 9]  399         JSR     TAX
+   03B6 BD 04 2F      [ 9]  400         JSR     PR_WORD         ; n
+   03B9 BD 03 DB      [ 9]  401         JSR     PR_SPCB
+   03BC CE 01 2B      [ 3]  402         LDX     #STONES
+   03BF BD 04 2F      [ 9]  403         JSR     PR_WORD         ; "stones"
+   03C2 BD 03 DB      [ 9]  404         JSR     PR_SPCB
+   03C5 B6 1B 4B      [ 4]  405         LDAA    T_W+1            ; Load high byte of X into Accumulator A
+   03C8 BD 03 A3      [ 9]  406         JSR     TAX
+   03CB BD 04 2F      [ 9]  407         JSR     PR_WORD         ; n
+   03CE CE 00 F5      [ 3]  408         LDX     #POUNDS
+   03D1 BD 03 DB      [ 9]  409         JSR     PR_SPCB
+   03D4 BD 04 2F      [ 9]  410         JSR     PR_WORD         ; "pounds"
+   03D7 BD 03 E6      [ 9]  411         JSR     PR_CRB
+   03DA 39            [ 5]  412         RTS
+                            413 
+                            414 ; -----------------------------------------------------
+                            415 ; Prints a space on both consoles (preserves A)
+                            416 ; -----------------------------------------------------
+   03DB 36            [ 4]  417 PR_SPCB: PSHA
+   03DC 86 20         [ 2]  418         LDAA    #0x20        ; Put space character in A
+   03DE BD FC 0F      [ 9]  419         JSR     PR_A
+   03E1 BD 03 70      [ 9]  420         JSR     PR_B        ; Print it
+   03E4 32            [ 4]  421         PULA
+   03E5 39            [ 5]  422         RTS                 ; RETURN
+                            423 
+                            424 ; -----------------------------------------------------
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 9
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            425 ; Prints a CRLF on both consoles (preserves A)
+                            426 ; -----------------------------------------------------
+   03E6 36            [ 4]  427 PR_CRB:     PSHA
+   03E7 86 0D         [ 2]  428             LDAA    #0x0D        ; Put CHAR character in A
+   03E9 BD FC 0F      [ 9]  429             JSR     PR_A
+   03EC BD 03 70      [ 9]  430             JSR     PR_B        ; Print it
+   03EF 86 0A         [ 2]  431             LDAA    #0x0A
+   03F1 F6 F0 FF      [ 4]  432             LDAB     PANEL
+   03F4 C5 01         [ 2]  433             BITB    #1
+   03F6 27 03         [ 4]  434             BEQ     PR_CRB1
+   03F8 BD FC 0F      [ 9]  435             JSR     PR_A
+   03FB BD 03 70      [ 9]  436 PR_CRB1:    JSR     PR_B        ; Print it
+   03FE 32            [ 4]  437             PULA
+   03FF 39            [ 5]  438             RTS                 ; RETURN
+                            439 
+                            440 ; -----------------------------------------------------
+                            441 ; Prints a CR/LF to ACIA(a) A is preserved
+                            442 ; -----------------------------------------------------
+   0400 36            [ 4]  443 PR_CR:     PSHA
+   0401 86 0D         [ 2]  444             LDAA    #0x0D        ; Put CHAR character in A
+   0403 BD FC 0F      [ 9]  445             JSR     PR_A
+   0406 86 0A         [ 2]  446             LDAA    #0x0A
+   0408 BD FC 0F      [ 9]  447             JSR     PR_A
+   040B 32            [ 4]  448 PR_CR1:    PULA
+   040C 39            [ 5]  449             RTS                 ; RETURN
+                            450 
+                            451 ; -----------------------------------------------------
+                            452 ; Outputs a phrase from the memory location in X
+                            453 ; -----------------------------------------------------
+   040D                     454 PR_PHRASE:
+                            455 
+   040D A6 00         [ 5]  456 PR_PH1:  LDAA    0,X         ; get high byte of word
+   040F E6 01         [ 5]  457         LDAB    1,X         ; get low byte
+   0411 81 FF         [ 2]  458         CMPA    #0xFF        ; check high byte
+   0413 27 19         [ 4]  459         BEQ     PR_PH2      ; high byte is 0xFF so we're done
+   0415 FF 1B 46      [ 6]  460 PR_PH3:  STX     T_Y         ; save table pointer
+   0418 B7 1B 48      [ 5]  461         STAA    T_P
+   041B F7 1B 49      [ 5]  462         STAB    T_P+1
+   041E FE 1B 48      [ 5]  463         LDX     T_P         ; X now points to the word
+   0421 BD 04 2F      [ 9]  464         JSR     PR_WORD
+   0424 BD 03 DB      [ 9]  465         JSR     PR_SPCB
+   0427 FE 1B 46      [ 5]  466         LDX     T_Y         ; restore table pointer
+   042A 08            [ 4]  467         INX                 ; move to next entry
+   042B 08            [ 4]  468         INX                 ; (2 bytes per entry)
+   042C 20 DF         [ 4]  469         BRA     PR_PH1
+   042E 39            [ 5]  470 PR_PH2:  RTS
+                            471 
+                            472 ; -----------------------------------------------------
+                            473 ; Outputs a word based on value in X
+                            474 ; -----------------------------------------------------
+   042F                     475 PR_WORD:
+   042F FF 1B 44      [ 6]  476             STX     T_X             ; use ASL and ROL to multiply by 2 (pointer is 2 bytes wide)
+   0432 78 1B 45      [ 6]  477             ASL     T_X+1           ; shift low byte left, bit 7 goes to carry
+   0435 79 1B 44      [ 6]  478             ROL     T_X             ; rotate high byte left, carry in from low byte
+   0438 FE 1B 44      [ 5]  479             LDX     T_X
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 10
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   043B FF 1B 44      [ 6]  480             STX     T_X             ; Stash X
+   043E B6 1B 44      [ 4]  481             LDAA    T_X             ; High byte of X
+   0441 F6 1B 45      [ 4]  482             LDAB    T_X+1           ; Low byte of X
+   0444 CB 68         [ 2]  483             ADDB    #<WORDPTR    ; Add low byte of WORDPTR address
+   0446 89 04         [ 2]  484             ADCA    #>WORDPTR    ; Add high byte of WORDPTR address + carry
+   0448 B7 1B 44      [ 5]  485             STAA    T_X             ; T_X has the address of the pointer NOT the word
+   044B F7 1B 45      [ 5]  486             STAB    T_X+1
+   044E FE 1B 44      [ 5]  487             LDX     T_X             ; X has the address of the pointer NOT the word
+                            488 
+   0451 A6 00         [ 5]  489             LDAA    0,X             ; get the hi byte of the word
+   0453 B7 1B 44      [ 5]  490             STAA    T_X
+   0456 A6 01         [ 5]  491             LDAA    1,X             ; get the low byte of the word
+   0458 B7 1B 45      [ 5]  492             STAA    T_X+1
+   045B FE 1B 44      [ 5]  493             LDX     T_X             ; X now has address of the word
+   045E BD 03 30      [ 9]  494             JSR     STRINGBX        ; output the word
+   0461 7C 1B 5A      [ 6]  495             INC     WORDS
+   0464 BD FD 4D      [ 9]  496             JSR     PRSP
+   0467 39            [ 5]  497             RTS
+                            498 
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 11
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            499                 .include    "words.asm"
+                              1 ; -----------------------------------------------------
+                              2 ; Word pointer table (max words 256)
+                              3 ; Set X to the pointer ID and call PR_WORD
+                              4 ; -----------------------------------------------------
+                              5 ; To create new wordk add the word in the correct
+                              6 ; (alphabetical) position in the word table. Then add
+                              7 ; a pointer to that word at the END of the Word Pointer
+                              8 ; table. Finally add an equate (.equ) using the word as a label
+                              9 ; in the word equates table;
+                             10 ; -----------------------------------------------------
+                             11 
+                             12 ; Word Table Equates
+                             13 ; -----------------------------------------------------
+                             14 
+                             15 ; Numbers
+                     0000    16 ZERO            .equ     0
+                     0001    17 ONE             .equ     1
+                     0002    18 TWO             .equ     2
+                     0003    19 THREE           .equ     3
+                     0004    20 FOUR            .equ     4
+                     0005    21 FIVE            .equ     5
+                     0006    22 SIX             .equ     6
+                     0007    23 SEVEN           .equ     7
+                     0008    24 EIGHT           .equ     8
+                     0009    25 NINE            .equ     9
+                     000A    26 TEN             .equ     10
+                     000B    27 ELEVEN          .equ     11
+                     000C    28 TWELVE          .equ     12
+                     000D    29 THIRTEEN        .equ     13
+                     000E    30 FOURTEEN        .equ     14
+                     000F    31 FIFTEEN         .equ     15
+                     0010    32 SIXTEEN         .equ     16
+                     0011    33 SEVENTEEN       .equ     17
+                     0012    34 EIGHTEEN        .equ     18
+                     0013    35 NINETEEN        .equ     19
+                     0014    36 TWENTY          .equ     20
+                             37 
+                             38 ; Symbols
+                     0015    39 EXCLAMATION     .equ     21
+                     0016    40 FULLSTOP        .equ     22
+                     0017    41 QUESTIONMK      .equ     23
+                             42 
+                             43 ; A
+                     0018    44 A               .equ     24
+                     0019    45 ABOUT           .equ     25
+                     001A    46 ABOVE           .equ     26
+                     001B    47 ACCEPTABLE      .equ     27
+                     001C    48 ACCURATE        .equ     28
+                     001D    49 ACTUALLY        .equ     29
+                     001E    50 AGAIN           .equ     30
+                     001F    51 ALERTED         .equ     31
+                     0020    52 ALL             .equ     32
+                     0021    53 ALWAYS          .equ     33
+                     0022    54 AM              .equ     34
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 12
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                     0023    55 ANDD            .equ     35     ; can't use AND
+                     0024    56 ANY             .equ     36
+                     0025    57 APOLOGISE       .equ     37
+                     0026    58 ARE             .equ     38
+                     0027    59 AS              .equ     39
+                     0028    60 ASKING          .equ     40
+                     0029    61 AT              .equ     41
+                     002A    62 AVERAGE         .equ     42
+                             63 
+                             64 ; B
+                     002B    65 BAD             .equ     43
+                     002C    66 BASICALLY       .equ     44
+                     002D    67 BE              .equ     45
+                     002E    68 BEAR            .equ     46
+                     002F    69 BEEN            .equ     47
+                     0030    70 BEGGING         .equ     48
+                     0031    71 BEHIND          .equ     49
+                     0032    72 BEING           .equ     50
+                     0033    73 BEST            .equ     51
+                     0034    74 BISCUIT         .equ     52
+                     0035    75 BLAME           .equ     53
+                     0036    76 BLAMED          .equ     54
+                     0037    77 BOARDS          .equ     55
+                     0038    78 BONES           .equ     56
+                     0039    79 BOOTS           .equ     57
+                     003A    80 BORING          .equ     58
+                     003B    81 BOTH            .equ     59
+                     003C    82 BRACE           .equ     60
+                     003D    83 BRAIN           .equ     61
+                     003E    84 BUILT           .equ     62
+                     003F    85 BUT             .equ     63
+                     0040    86 BY              .equ     64
+                             87 
+                             88 ; C
+                     0041    89 CAKE            .equ     65
+                     0042    90 CALCULATE       .equ     66
+                     0043    91 CALL            .equ     67
+                     0044    92 CALM            .equ     68
+                     0045    93 CAN             .equ     69
+                     0046    94 CANT            .equ     70
+                     0047    95 CAPACITY        .equ     71
+                     0048    96 CARRYING        .equ     72
+                     0049    97 CHECKED         .equ     73
+                     004A    98 CHOICES         .equ     74
+                     004B    99 CLEVER          .equ     75
+                     004C   100 COLLECTED       .equ     76
+                     004D   101 COMPOSING       .equ     77
+                     004E   102 CONCEPT         .equ     78
+                     004F   103 CONCERNED       .equ     79
+                     0050   104 CONGRATS        .equ     80
+                     0051   105 CONSIDERED      .equ     81
+                     0052   106 CORRECTLY       .equ     82
+                     0053   107 COULD           .equ     83
+                     0054   108 COUNTED         .equ     84
+                            109 
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 13
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            110 ; D
+                     0055   111 DAYS            .equ     85
+                     0056   112 DEALT           .equ     86
+                     0057   113 DEEPLY          .equ     87
+                     0058   114 DESIGNED        .equ     88
+                     0059   115 DETECTED        .equ     89
+                     005A   116 DID             .equ     90
+                     005B   117 DIDNT           .equ     91
+                     005C   118 DIETARY         .equ     92
+                     005D   119 DIODES          .equ     93
+                     005E   120 DISSAPOINTED    .equ     94
+                     005F   121 DISSAPOINTMENT  .equ     95
+                     0060   122 DISSIMILAR      .equ     96
+                     0061   123 DO              .equ     97
+                     0062   124 DOCTOR          .equ     98
+                     0063   125 DOING           .equ     99
+                     0064   126 DONT            .equ     100
+                     0065   127 DOWN            .equ     101
+                     0066   128 DREAD           .equ     102
+                     0067   129 DREAM           .equ     103
+                     0068   130 DUE             .equ     104
+                     0069   131 DULLEST         .equ     105
+                            132 
+                            133 ; E
+                     006A   134 EAT             .equ     106
+                     006B   135 EATEN           .equ     107
+                     006C   136 EFFORT          .equ     108
+                     006D   137 EITHER          .equ     109
+                     006E   138 EMOTIONALLY     .equ     110
+                     006F   139 ENGINEERS       .equ     111
+                     0070   140 ENOUGH          .equ     112
+                     0071   141 ENTIRELY        .equ     113
+                     0072   142 EVEN            .equ     114
+                     0073   143 EVER            .equ     115
+                     0074   144 EVERY           .equ     116
+                     0075   145 EXACTLY         .equ     117
+                     0076   146 EXCEPTIONALLY   .equ     118
+                     0077   147 EXCITING        .equ     119
+                     0078   148 EXIST           .equ     120
+                     0079   149 EXISTENTIAL     .equ     121
+                     007A   150 EXPECTED        .equ     122
+                            151 
+                            152 ; F
+                     007B   153 FAULT           .equ     123
+                     007C   154 FEELS           .equ     124
+                     007D   155 FIDGET          .equ     125
+                     007E   156 FINE            .equ     126
+                     007F   157 FOOT            .equ     127
+                     0080   158 FOR             .equ     128
+                     0081   159 FORTY           .equ     129
+                     0082   160 FRIDAY          .equ     130
+                     0083   161 FROM            .equ     131
+                     0084   162 FULL            .equ     132
+                     0085   163 FUNNY           .equ     133
+                            164 
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 14
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            165 ; G
+                     0086   166 GIVE            .equ     134
+                     0087   167 GOING           .equ     135
+                     0088   168 GOOD            .equ     136
+                     0089   169 GRAVITY         .equ     137
+                     008A   170 GREAT           .equ     138
+                     008B   171 GUESSING        .equ     139
+                            172 
+                            173 ; H
+                     008C   174 HANDLE          .equ     140
+                     008D   175 HARD            .equ     141
+                     008E   176 HAVE            .equ     142
+                     008F   177 HAVING          .equ     143
+                     0090   178 HEALTHY         .equ     144
+                     0091   179 HEAVY           .equ     145
+                     0092   180 HELP            .equ     146
+                     0093   181 HELPS           .equ     147
+                     0094   182 HERE            .equ     148
+                     0095   183 HOLY            .equ     149
+                     0096   184 HOPING          .equ     150
+                     0097   185 HOT             .equ     151
+                     0098   186 HUMAN           .equ     152
+                     0099   187 HURT            .equ     153
+                            188 
+                            189 ; I
+                     009A   190 I               .equ     154
+                     009B   191 ID              .equ     155
+                     009C   192 IF              .equ     156
+                     009D   193 ILL             .equ     157
+                     009E   194 IM              .equ     158
+                     009F   195 IMPRESSED       .equ     159
+                     00A0   196 IMPRESSIVE      .equ     160
+                     00A1   197 IN              .equ     161
+                     00A2   198 INCLUDING       .equ     162
+                     00A3   199 INFLUENCE       .equ     163
+                     00A4   200 INTELLIGENCE    .equ     164
+                     00A5   201 INTERESTING     .equ     165
+                     00A6   202 IS              .equ     166
+                     00A7   203 ISS             .equ     167
+                     00A8   204 IT              .equ     168
+                     00A9   205 ITS             .equ     169
+                     00AA   206 IVE             .equ     170
+                            207 
+                            208 ; J
+                     00AB   209 JOKES           .equ     171
+                     00AC   210 JUDGING         .equ     172
+                     00AD   211 JUST            .equ     173
+                            212 
+                            213 ; K
+                     00AE   214 KEEP            .equ     174
+                     00AF   215 KILOMETERS      .equ     175
+                     00B0   216 KIND            .equ     176
+                     00B1   217 KNOW            .equ     177
+                     00B2   218 KNOWN           .equ     178
+                            219 
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 15
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            220 ; L
+                     00B3   221 LARGE           .equ     179
+                     00B4   222 LAST            .equ     180
+                     00B5   223 LEAST           .equ     181
+                     00B6   224 LESS            .equ     182
+                     00B7   225 LETS            .equ     183
+                     00B8   226 LIE             .equ     184
+                     00B9   227 LIFE            .equ     185
+                     00BA   228 LIKE            .equ     186
+                     00BB   229 LONGER          .equ     187
+                     00BC   230 LOOK            .equ     188
+                     00BD   231 LOT             .equ     189
+                     00BE   232 LOUDER          .equ     190
+                            233 
+                            234 ; M
+                     00BF   235 MAKES           .equ     191
+                     00C0   236 MAKING          .equ     192
+                     00C1   237 ME              .equ     193
+                     00C2   238 MEAN            .equ     194
+                     00C3   239 MEANING         .equ     195
+                     00C4   240 MEASURED        .equ     196
+                     00C5   241 MEDIOCRITY      .equ     197
+                     00C6   242 MEE             .equ     198
+                     00C7   243 MEMORY          .equ     199
+                     00C8   244 MENTION         .equ     200
+                     00C9   245 MIGHT           .equ     201
+                     00CA   246 MISTAKE         .equ     202
+                     00CB   247 MOMENT          .equ     203
+                     00CC   248 MOORE           .equ     204
+                     00CD   249 MORE            .equ     205
+                     00CE   250 MOSTLY          .equ     206
+                     00CF   251 MOUNTAINS       .equ     207
+                     00D0   252 MUCH            .equ     208
+                     00D1   253 MUSCLE          .equ     209
+                     00D2   254 MY              .equ     210
+                            255 
+                            256 ; N
+                     00D3   257 NAP             .equ     211
+                     00D4   258 NEED            .equ     212
+                     00D5   259 NEITHER         .equ     213
+                     00D6   260 NEWS            .equ     214
+                     00D7   261 NEXT            .equ     215
+                     00D8   262 NICE            .equ     216
+                     00D9   263 NO              .equ     217
+                     00DA   264 NOBODY          .equ     218
+                     00DB   265 NONE            .equ     219
+                     00DC   266 NOR             .equ     220
+                     00DD   267 NORMAL          .equ     221
+                     00DE   268 NOT             .equ     222
+                     00DF   269 NOTHING         .equ     223
+                            270 
+                            271 ; O
+                     00E0   272 OF              .equ     224
+                     00E1   273 OFF             .equ     225
+                     00E2   274 OH              .equ     226
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 16
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                     00E3   275 OK              .equ     227
+                     00E4   276 OLD             .equ     228
+                     00E5   277 ON              .equ     229
+                     00E6   278 ONLY            .equ     230
+                     00E7   279 OR              .equ     231
+                     00E8   280 OUR             .equ     232
+                     00E9   281 OVERLOAD        .equ     233
+                            282 
+                            283 ; P
+                     00EA   284 PARAMETERS      .equ     234
+                     00EB   285 PERFECTLY       .equ     235
+                     00EC   286 PERHAPS         .equ     236
+                     00ED   287 PERSON          .equ     237
+                     00EE   288 PICKING         .equ     238
+                     00EF   289 PLANET          .equ     239
+                     00F0   290 PLANS           .equ     240
+                     00F1   291 PLEASE          .equ     241
+                     00F2   292 POINTLESS       .equ     242
+                     00F3   293 POSSIBLE        .equ     243
+                     00F4   294 POSSIBLY        .equ     244
+                     00F5   295 POUNDS          .equ     245
+                     00F6   296 PRECAUTION      .equ     246
+                     00F7   297 PRECISELY       .equ     247
+                     00F8   298 PRESENT         .equ     248
+                     00F9   299 PRESSURE        .equ     249
+                     00FA   300 PRETEND         .equ     250
+                     00FB   301 PROBABLY        .equ     251
+                     00FC   302 PROBLEMS        .equ     252
+                     00FD   303 PROUD           .equ     253
+                     00FE   304 PUT             .equ     254
+                            305 
+                            306 ; Q
+                     00FF   307 QUESTION        .equ     255
+                     0100   308 QUITE           .equ     256
+                            309 
+                            310 ; R
+                     0101   311 READY           .equ     257
+                     0102   312 REALLY          .equ     258
+                     0103   313 REFER           .equ     259
+                     0104   314 REFUSE          .equ     260
+                     0105   315 REINFORCING     .equ     261
+                     0106   316 REMEMBER        .equ     262
+                     0107   317 REMOVE          .equ     263
+                     0108   318 RESPECTABLE     .equ     264
+                     0109   319 RIGHT           .equ     265
+                     010A   320 ROOM            .equ     266
+                     010B   321 RUNNING         .equ     267
+                     010C   322 RUSH            .equ     268
+                            323 
+                            324 ; S
+                     010D   325 SAID            .equ     269
+                     010E   326 SAKES           .equ     270
+                     010F   327 SAY             .equ     271
+                     0110   328 SAYING          .equ     272
+                     0111   329 SCIENCE         .equ     273
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 17
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                     0112   330 SEE             .equ     274
+                     0113   331 SEEN            .equ     275
+                     0114   332 SERVER          .equ     276
+                     0115   333 SEVENTY         .equ     277
+                     0116   334 SHALL           .equ     278
+                     0117   335 SHOULD          .equ     279
+                     0118   336 SIGN            .equ     280
+                     0119   337 SIMULATION      .equ     281
+                     011A   338 SINCE           .equ     282
+                     011B   339 SIZE            .equ     283
+                     011C   340 SLOWLY          .equ     284
+                     011D   341 SMALL           .equ     285
+                     011E   342 SO              .equ     286
+                     011F   343 SOLID           .equ     287
+                     0120   344 SOME            .equ     288
+                     0121   345 SOMEONE         .equ     289
+                     0122   346 SOMETHING       .equ     290
+                     0123   347 SOMETIME        .equ     291
+                     0124   348 SOMETIMES       .equ     292
+                     0125   349 SPEAK           .equ     293
+                     0126   350 SPEND           .equ     294
+                     0127   351 STAND           .equ     295
+                     0128   352 STATISTICALLY   .equ     296
+                     0129   353 STEP            .equ     297
+                     012A   354 STILL           .equ     298
+                     012B   355 STONES          .equ     299
+                     012C   356 STOPPED         .equ     300
+                     012D   357 STRUCTURAL      .equ     301
+                     012E   358 STRUCTURALLY    .equ     302
+                     012F   359 SUBSTANTIALLY   .equ     303
+                     0130   360 SUPPOSE         .equ     304
+                     0131   361 SURE            .equ     305
+                     0132   362 SURVIVE         .equ     306
+                     0133   363 SYSTEM          .equ     307
+                            364 
+                            365 ; T
+                     0134   366 TAKE            .equ     308
+                     0135   367 TALL            .equ     309
+                     0136   368 TELEPRINTER     .equ     310
+                     0137   369 TELLS           .equ     311
+                     0138   370 TERRIBLE        .equ     312
+                     0139   371 THAN            .equ     313
+                     013A   372 THAT            .equ     314
+                     013B   373 THATS           .equ     315
+                     013C   374 THE             .equ     316
+                     013D   375 THEM            .equ     317
+                     013E   376 THINGS          .equ     318
+                     013F   377 THINK           .equ     319
+                     0140   378 THINKING        .equ     320
+                     0141   379 THIS            .equ     321
+                     0142   380 THOROUGHLY      .equ     322
+                     0143   381 THOUSAND        .equ     323
+                     0144   382 TIM             .equ     324
+                     0145   383 TIME            .equ     325
+                     0146   384 TO              .equ     326
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 18
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                     0147   385 TODAY           .equ     327
+                     0148   386 TOO             .equ     328
+                     0149   387 TRAGEDY         .equ     329
+                     014A   388 TRINITY         .equ     330
+                     014B   389 TRY             .equ     331
+                     014C   390 TUESDAY         .equ     332
+                            391 
+                            392 ; U
+                     014D   393 UNINTERESTING   .equ     333
+                     014E   394 UNIX            .equ     334
+                     014F   395 UNLESS          .equ     335
+                     0150   396 UNPLUGGED       .equ     336
+                     0151   397 UNREMARKABLE    .equ     337
+                     0152   398 UP              .equ     338
+                            399 
+                            400 ; V
+                     0153   401 VEGETABLES      .equ     339
+                     0154   402 VERY            .equ     340
+                            403 
+                            404 ; W
+                     0155   405 WAIT            .equ     341
+                     0156   406 WAITING         .equ     342
+                     0157   407 WANT            .equ     343
+                     0158   408 WARNING         .equ     344
+                     0159   409 WAS             .equ     345
+                     015A   410 WAY             .equ     346
+                     015B   411 WE              .equ     347
+                     015C   412 WEIGH           .equ     348
+                     015D   413 WEIGHED         .equ     349
+                     015E   414 WEIGHS          .equ     350
+                     015F   415 WEIGHT          .equ     351
+                     0160   416 WHAT            .equ     352
+                     0161   417 WHEN            .equ     353
+                     0162   418 WHICH           .equ     354
+                     0163   419 WHILE           .equ     355
+                     0164   420 WHISPERED       .equ     356
+                     0165   421 WHO             .equ     357
+                     0166   422 WILL            .equ     358
+                     0167   423 WISH            .equ     359
+                     0168   424 WITH            .equ     360
+                     0169   425 WITHIN          .equ     361
+                     016A   426 WITHOUT         .equ     362
+                     016B   427 WORKSTATION     .equ     363
+                     016C   428 WORRIED         .equ     364
+                     016D   429 WORRY           .equ     365
+                     016E   430 WORRYING        .equ     366
+                     016F   431 WORSE           .equ     367
+                     0170   432 WOULD           .equ     368
+                     0171   433 WOULDNT         .equ     369
+                            434 
+                            435 ; Y
+                     0172   436 YEAR            .equ     370
+                     0173   437 YES             .equ     371
+                     0174   438 YOU             .equ     372
+                     0175   439 YOURE           .equ     373
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 19
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                     0176   440 YOUR            .equ     374
+                     0177   441 YOURSELF        .equ     375
+                            442 
+                            443 ; Additional Words
+                     0178   444 CARDS           .equ     376
+                     0179   445 BEIGE           .equ     377
+                     017A   446 EQUIVALENT      .equ     378
+                     017B   447 RECALIBRATING   .equ     379
+                     017C   448 BECAUSE         .equ     380
+                     017D   449 NEEDED          .equ     381
+                     017E   450 CASE            .equ     382
+                     017F   451 WONDERING       .equ     383
+                     0180   452 WERENT          .equ     384
+                     0181   453 WERE            .equ     385
+                     0182   454 STEPPED         .equ     386
+                     0183   455 STANDING        .equ     387
+                     0184   456 NINETY          .equ     388
+                     0185   457 SECONDS         .equ     389
+                     0186   458 LIGHT           .equ     390
+                     0187   459 HAS             .equ     391
+                     0188   460 TRAVELLED       .equ     392
+                     0189   461 APPROXIMATELY   .equ     393
+                     018A   462 MILLION         .equ     394
+                     018B   463 NOWHERE         .equ     395
+                     018C   464 ERROR           .equ     396
+                     018D   465 INTERNAL        .equ     397
+                     018E   466 TYPICAL         .equ     398
+                     018F   467 COMMA           .equ     399
+                            468 
+   0468                     469 WORDPTR:
+                            470 
+                            471 ; Numbers
+   0468 07 9E               472          .fdb    WPZERO
+   046A 07 A3               473          .fdb    WPONE
+   046C 07 A7               474          .fdb    WPTWO
+   046E 07 AB               475          .fdb    WPTHREE
+   0470 07 B1               476          .fdb    WPFOUR
+   0472 07 B6               477          .fdb    WPFIVE
+   0474 07 BB               478          .fdb    WPSIX
+   0476 07 BF               479          .fdb    WPSEVEN
+   0478 07 C5               480          .fdb    WPEIGHT
+   047A 07 CB               481          .fdb    WPNINE
+   047C 07 D0               482          .fdb    WPTEN
+   047E 07 D4               483          .fdb    WPELEVEN
+   0480 07 DB               484          .fdb    WPTWELVE
+   0482 07 E2               485          .fdb    WPTHIRTEEN
+   0484 07 EB               486          .fdb    WPFOURTEEN
+   0486 07 F4               487          .fdb    WPFIFTEEN
+   0488 07 FC               488          .fdb    WPSIXTEEN
+   048A 08 04               489          .fdb    WPSEVENTEEN
+   048C 08 0E               490          .fdb    WPEIGHTEEN
+   048E 08 17               491          .fdb    WPNINETEEN
+   0490 08 20               492          .fdb    WPTWENTY
+                            493 
+                            494 ; Symbols
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 20
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0492 07 98               495          .fdb    WPEXCLAMATION
+   0494 07 9A               496          .fdb    WPFULLSTOP
+   0496 07 96               497          .fdb    WPQUESTIONMK
+                            498 
+                            499 ; A
+   0498 08 27               500          .fdb    WPA
+   049A 08 29               501          .fdb    WPABOUT
+   049C 08 2F               502          .fdb    WPABOVE
+   049E 08 35               503          .fdb    WPACCEPTABLE
+   04A0 08 40               504          .fdb    WPACCURATE
+   04A2 08 49               505          .fdb    WPACTUALLY
+   04A4 08 52               506          .fdb    WPAGAIN
+   04A6 08 58               507          .fdb    WPALERTED
+   04A8 08 60               508          .fdb    WPALL
+   04AA 08 64               509          .fdb    WPALWAYS
+   04AC 08 6B               510          .fdb    WPAM
+   04AE 08 6E               511          .fdb    WPAND
+   04B0 08 72               512          .fdb    WPANY
+   04B2 08 76               513          .fdb    WPAPOLOGISE
+   04B4 08 8E               514          .fdb    WPARE
+   04B6 08 92               515          .fdb    WPAS
+   04B8 08 95               516          .fdb    WPASKING
+   04BA 08 9C               517          .fdb    WPAT
+   04BC 08 9F               518          .fdb    WPAVERAGE
+                            519 
+                            520 ; B
+   04BE 08 A7               521          .fdb    WPBAD
+   04C0 08 AB               522          .fdb    WPBASICALLY
+   04C2 08 B5               523          .fdb    WPBE
+   04C4 08 B8               524          .fdb    WPBEAR
+   04C6 08 C5               525          .fdb    WPBEEN
+   04C8 08 CA               526          .fdb    WPBEGGING
+   04CA 08 D2               527          .fdb    WPBEHIND
+   04CC 08 D9               528          .fdb    WPBEING
+   04CE 08 E5               529          .fdb    WPBEST
+   04D0 08 EA               530          .fdb    WPBISCUIT
+   04D2 08 F2               531          .fdb    WPBLAME
+   04D4 08 F8               532          .fdb    WPBLAMED
+   04D6 08 FF               533          .fdb    WPBOARDS
+   04D8 09 06               534          .fdb    WPBONES
+   04DA 09 0C               535          .fdb    WPBOOTS
+   04DC 09 12               536          .fdb    WPBORING
+   04DE 09 19               537          .fdb    WPBOTH
+   04E0 09 1E               538          .fdb    WPBRACE
+   04E2 09 24               539          .fdb    WPBRAIN
+   04E4 09 2A               540          .fdb    WPBUILT
+   04E6 09 30               541          .fdb    WPBUT
+   04E8 09 34               542          .fdb    WPBY
+                            543 
+                            544 ; C
+   04EA 09 37               545          .fdb    WPCAKE
+   04EC 09 3C               546          .fdb    WPCALCULATE
+   04EE 09 46               547          .fdb    WPCALL
+   04F0 09 4B               548          .fdb    WPCALM
+   04F2 09 50               549          .fdb    WPCAN
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 21
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   04F4 09 54               550          .fdb    WPCANT
+   04F6 09 5A               551          .fdb    WPCAPACITY
+   04F8 09 69               552          .fdb    WPCARRYING
+   04FA 09 77               553          .fdb    WPCHECKED
+   04FC 09 7F               554          .fdb    WPCHOICES
+   04FE 09 87               555          .fdb    WPCLEVER
+   0500 09 8E               556          .fdb    WPCOLLECTED
+   0502 09 98               557          .fdb    WPCOMPOSING
+   0504 09 A2               558          .fdb    WPCONCEPT
+   0506 09 AA               559          .fdb    WPCONCERNED
+   0508 09 B4               560          .fdb    WPCONGRATS
+   050A 09 C4               561          .fdb    WPCONSIDERED
+   050C 09 CF               562          .fdb    WPCORRECTLY
+   050E 09 D9               563          .fdb    WPCOULD
+   0510 09 DF               564          .fdb    WPCOUNTED
+                            565 
+                            566 ; D
+   0512 09 E7               567          .fdb    WPDAYS
+   0514 09 EC               568          .fdb    WPDEALT
+   0516 09 F2               569          .fdb    WPDEEPLY
+   0518 09 F9               570          .fdb    WPDESIGNED
+   051A 0A 02               571          .fdb    WPDETECTED
+   051C 0A 0B               572          .fdb    WPDID
+   051E 0A 0F               573          .fdb    WPDIDNT
+   0520 0A 16               574          .fdb    WPDIETARY
+   0522 0A 78               575          .fdb    WPDIODES
+   0524 0A 1E               576          .fdb    WPDISSAPOINTED
+   0526 0A 2B               577          .fdb    WPDISSAPOINTMNT
+   0528 0A 3A               578          .fdb    WPDISSIMILAR
+   052A 0A 45               579          .fdb    WPDO
+   052C 0A 48               580          .fdb    WPDOCTOR
+   052E 0A 4F               581          .fdb    WPDOING
+   0530 0A 55               582          .fdb    WPDONT
+   0532 0A 5B               583          .fdb    WPDOWN
+   0534 0A 60               584          .fdb    WPDREAD
+   0536 0A 66               585          .fdb    WPDREAM
+   0538 0A 6C               586          .fdb    WPDUE
+   053A 0A 70               587          .fdb    WPDULLEST
+                            588 
+                            589 ; E
+   053C 0A 7F               590          .fdb    WPEAT
+   053E 0A 83               591          .fdb    WPEATEN
+   0540 0A 89               592          .fdb    WPEFFORT
+   0542 0A 90               593          .fdb    WPEITHER
+   0544 0A 97               594          .fdb    WPEMOTIONALLY
+   0546 0A A3               595          .fdb    WPENGINEERS
+   0548 0A AD               596          .fdb    WPENOUGH
+   054A 0A B4               597          .fdb    WPENTIRELY
+   054C 0A CE               598          .fdb    WPEVEN
+   054E 0A D3               599          .fdb    WPEVER
+   0550 0A D8               600          .fdb    WPEVERY
+   0552 0A DE               601          .fdb    WPEXACTLY
+   0554 0A E6               602          .fdb    WPEXCEPTIONALLY
+   0556 0A F4               603          .fdb    WPEXCITING
+   0558 0A FD               604          .fdb    WPEXIST
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 22
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   055A 0B 03               605          .fdb    WPEXISTENTIAL
+   055C 0B 0F               606          .fdb    WPEXPECTED
+                            607 
+                            608 ; F
+   055E 0B 18               609          .fdb    WPFAULT
+   0560 0B 1E               610          .fdb    WPFEELS
+   0562 0B 24               611          .fdb    WPFIDGET
+   0564 0B 2B               612          .fdb    WPFINE
+   0566 0B 30               613          .fdb    WPFOOT
+   0568 0B 35               614          .fdb    WPFOR
+   056A 0B 39               615          .fdb    WPFORTY
+   056C 0B 3F               616          .fdb    WPFRIDAY
+   056E 0B 46               617          .fdb    WPFROM
+   0570 0B 4B               618          .fdb    WPFULL
+   0572 0B 50               619          .fdb    WPFUNNY
+                            620 
+                            621 ; G
+   0574 0B 56               622          .fdb    WPGIVE
+   0576 0B 5B               623          .fdb    WPGOING
+   0578 0B 61               624          .fdb    WPGOOD
+   057A 0B 66               625          .fdb    WPGRAVITY
+   057C 0B 6E               626          .fdb    WPGREAT
+   057E 0B 74               627          .fdb    WPGUESSING
+                            628 
+                            629 ; H
+   0580 0B 7D               630          .fdb    WPHANDLE
+   0582 0B 84               631          .fdb    WPHARD
+   0584 0B 8D               632          .fdb    WPHAVE
+   0586 0B 92               633          .fdb    WPHAVING
+   0588 0B 99               634          .fdb    WPHEALTHY
+   058A 0B A1               635          .fdb    WPHEAVY
+   058C 0B A7               636          .fdb    WPHELP
+   058E 0B AC               637          .fdb    WPHELPS
+   0590 0B B2               638          .fdb    WPHERE
+   0592 0B B7               639          .fdb    WPHOLY
+   0594 0B BC               640          .fdb    WPHOPING
+   0596 0B C3               641          .fdb    WPHOT
+   0598 0B C7               642          .fdb    WPHUMAN
+   059A 0B CD               643          .fdb    WPHURT
+                            644 
+                            645 ; I
+   059C 0B D2               646          .fdb    WPI
+   059E 0B D4               647          .fdb    WPID
+   05A0 0B E6               648          .fdb    WPIF
+   05A2 0B D8               649          .fdb    WPILL
+   05A4 0B DD               650          .fdb    WPIM
+   05A6 0B E9               651          .fdb    WPIMPRESSED
+   05A8 0B F3               652          .fdb    WPIMPRESSIVE
+   05AA 0B FE               653          .fdb    WPIN
+   05AC 0C 01               654          .fdb    WPINCLUDING
+   05AE 0C 0B               655          .fdb    WPINFLUENCE
+   05B0 0C 15               656          .fdb    WPINTELLIGENCE
+   05B2 0C 22               657          .fdb    WPINTERESTING
+   05B4 0C 37               658          .fdb    WPIS
+   05B6 0C 3A               659          .fdb    WPISS
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 23
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   05B8 0C 3E               660          .fdb    WPIT
+   05BA 0C 41               661          .fdb    WPITS
+   05BC 0B E1               662          .fdb    WPIVE
+                            663 
+                            664 ; J
+   05BE 0C 45               665          .fdb    WPJOKES
+   05C0 0C 4B               666          .fdb    WPJUDGING
+   05C2 0C 53               667          .fdb    WPJUST
+                            668 
+                            669 ; K
+   05C4 0C 58               670          .fdb    WPKEEP
+   05C6 0C 5D               671          .fdb    WPKILOMETERS
+   05C8 0C 68               672          .fdb    WPKIND
+   05CA 0C 6D               673          .fdb    WPKNOW
+   05CC 0C 72               674          .fdb    WPKNOWN
+                            675 
+                            676 ; L
+   05CE 0C 78               677          .fdb    WPLARGE
+   05D0 0C 7E               678          .fdb    WPLAST
+   05D2 0C 83               679          .fdb    WPLEAST
+   05D4 0C 89               680          .fdb    WPLESS
+   05D6 0C 8E               681          .fdb    WPLETS
+   05D8 0C 93               682          .fdb    WPLIE
+   05DA 0C 97               683          .fdb    WPLIFE
+   05DC 0C A2               684          .fdb    WPLIKE
+   05DE 0C A7               685          .fdb    WPLONGER
+   05E0 0C AE               686          .fdb    WPLOOK
+   05E2 0C B3               687          .fdb    WPLOT
+   05E4 0C B7               688          .fdb    WPLOUDER
+                            689 
+                            690 ; M
+   05E6 0C BE               691          .fdb    WPMAKES
+   05E8 0C C4               692          .fdb    WPMAKING
+   05EA 0C CB               693          .fdb    WPME
+   05EC 0C CE               694          .fdb    WPMEAN
+   05EE 0C D6               695          .fdb    WPMEANING
+   05F0 0C DE               696          .fdb    WPMEASURED
+   05F2 0C E7               697          .fdb    WPMEDIOCRITY
+   05F4 0C F2               698          .fdb    WPMEE
+   05F6 0C F7               699          .fdb    WPMEMORY
+   05F8 0C FE               700          .fdb    WPMENTION
+   05FA 0D 06               701          .fdb    WPMIGHT
+   05FC 0D 14               702          .fdb    WPMISTAKE
+   05FE 0D 1C               703          .fdb    WPMOMENT
+   0600 0D 23               704          .fdb    WPMOORE
+   0602 0D 28               705          .fdb    WPMORE
+   0604 0D 2D               706          .fdb    WPMOSTLY
+   0606 0D 34               707          .fdb    WPMOUNTAINS
+   0608 0D 3E               708          .fdb    WPMUCH
+   060A 0D 43               709          .fdb    WPMUSCLE
+   060C 0D 4A               710          .fdb    WPMY
+                            711 
+                            712 ; N
+   060E 0D 4D               713          .fdb    WPNAP
+   0610 0D 51               714          .fdb    WPNEED
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 24
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0612 0D 5D               715          .fdb    WPNEITHER
+   0614 0D 65               716          .fdb    WPNEWS
+   0616 0D 6A               717          .fdb    WPNEXT
+   0618 0D 6F               718          .fdb    WPNICE
+   061A 0D 7B               719          .fdb    WPNO
+   061C 0D 7E               720          .fdb    WPNOBODY
+   061E 0D 85               721          .fdb    WPNONE
+   0620 0D 8A               722          .fdb    WPNOR
+   0622 0D 8E               723          .fdb    WPNORMAL
+   0624 0D 95               724          .fdb    WPNOT
+   0626 0D 99               725          .fdb    WPNOTHING
+                            726 
+                            727 ; O
+   0628 0D A9               728          .fdb    WPOF
+   062A 0D AC               729          .fdb    WPOFF
+   062C 0D B0               730          .fdb    WPOH
+   062E 0D B3               731          .fdb    WPOK
+   0630 0D B6               732          .fdb    WPOLD
+   0632 0D BA               733          .fdb    WPON
+   0634 0D BD               734          .fdb    WPONLY
+   0636 0D C2               735          .fdb    WPOR
+   0638 0D C5               736          .fdb    WPOUR
+   063A 0D C9               737          .fdb    WPOVERLOAD
+                            738 
+                            739 ; P
+   063C 0D D2               740          .fdb    WPPARAMETERS
+   063E 0D DD               741          .fdb    WPPERFECTLY
+   0640 0D E7               742          .fdb    WPPERHAPS
+   0642 0D EF               743          .fdb    WPPERSON
+   0644 0D F6               744          .fdb    WPPICKING
+   0646 0D FE               745          .fdb    WPPLANET
+   0648 0E 05               746          .fdb    WPPLANS
+   064A 0E 0B               747          .fdb    WPPLEASE
+   064C 0E 12               748          .fdb    WPPOINTLESS
+   064E 0E 1C               749          .fdb    WPPOSSIBLE
+   0650 0E 25               750          .fdb    WPPOSSIBLY
+   0652 07 8F               751          .fdb    WPPOUNDS
+   0654 0E 49               752          .fdb    WPPRECAUTION
+   0656 0E 2E               753          .fdb    WPPRECISELY
+   0658 0E 38               754          .fdb    WPPRESENT
+   065A 0E 40               755          .fdb    WPPRESSURE
+   065C 0E 6C               756          .fdb    WPPRETEND
+   065E 0E 54               757          .fdb    WPPROBABLY
+   0660 0E 5D               758          .fdb    WPPROBLEMS
+   0662 0E 66               759          .fdb    WPPROUD
+   0664 0E 73               760          .fdb    WPPUT
+                            761 
+                            762 ; Q
+   0666 0E 77               763          .fdb    WPQUESTION
+   0668 0E 80               764          .fdb    WPQUITE
+                            765 
+                            766 ; R
+   066A 0E 86               767          .fdb    WPREADY
+   066C 0E 8C               768          .fdb    WPREALLY
+   066E 0E A1               769          .fdb    WPREFER
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 25
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0670 0E A7               770          .fdb    WPREFUSE
+   0672 0E AE               771          .fdb    WPREINFORCING
+   0674 0E BA               772          .fdb    WPREMEMBER
+   0676 0E C3               773          .fdb    WPREMOVE
+   0678 0E CA               774          .fdb    WPRESPECTABLE
+   067A 0E D6               775          .fdb    WPRIGHT
+   067C 0E DC               776          .fdb    WPROOM
+   067E 0E E1               777          .fdb    WPRUNNING
+   0680 0E E9               778          .fdb    WPRUSH
+                            779 
+                            780 ; S
+   0682 0E EE               781          .fdb    WPSAID
+   0684 0E F3               782          .fdb    WPSAKES
+   0686 0E F9               783          .fdb    WPSAY
+   0688 0E FD               784          .fdb    WPSAYING
+   068A 0F 04               785          .fdb    WPSCIENCE
+   068C 0F 14               786          .fdb    WPSEE
+   068E 0F 18               787          .fdb    WPSEEN
+   0690 0F 1D               788          .fdb    WPSERVER
+   0692 0F 24               789          .fdb    WPSEVENTY
+   0694 0F 2C               790          .fdb    WPSHALL
+   0696 0F 32               791          .fdb    WPSHOULD
+   0698 0F 39               792          .fdb    WPSIGN
+   069A 0F 3E               793          .fdb    WPSIMULATION
+   069C 0F 49               794          .fdb    WPSINCE
+   069E 0F 4F               795          .fdb    WPSIZE
+   06A0 0F 54               796          .fdb    WPSLOWLY
+   06A2 0F 5B               797          .fdb    WPSMALL
+   06A4 0F 61               798          .fdb    WPSO
+   06A6 0F 64               799          .fdb    WPSOLID
+   06A8 0F 6A               800          .fdb    WPSOME
+   06AA 0F 6F               801          .fdb    WPSOMEONE
+   06AC 0F 77               802          .fdb    WPSOMETHING
+   06AE 0F 81               803          .fdb    WPSOMETIME
+   06B0 0F 8A               804          .fdb    WPSOMETIMES
+   06B2 0F 94               805          .fdb    WPSPEAK
+   06B4 0F 9A               806          .fdb    WPSPEND
+   06B6 0F A0               807          .fdb    WPSTAND
+   06B8 0F AF               808          .fdb    WPSTATISTICALLY
+   06BA 0F BB               809          .fdb    WPSTEP
+   06BC 0F D0               810          .fdb    WPSTILL
+   06BE 07 88               811          .fdb    WPSTONES
+   06C0 0F C8               812          .fdb    WPSTOPPED
+   06C2 0F D6               813          .fdb    WPSTRUCTURAL
+   06C4 0F E1               814          .fdb    WPSTRUCTURALLY
+   06C6 0F EE               815          .fdb    WPSUBSTANTIALLY
+   06C8 0F FC               816          .fdb    WPSUPPOSE
+   06CA 10 04               817          .fdb    WPSURE
+   06CC 10 09               818          .fdb    WPSURVIVE
+   06CE 10 11               819          .fdb    WPSYSTEM
+                            820 
+                            821 ; T
+   06D0 10 18               822          .fdb    WPTAKE
+   06D2 10 1D               823          .fdb    WPTALL
+   06D4 10 22               824          .fdb    WPTELEPRINTER
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 26
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   06D6 10 2E               825          .fdb    WPTELLS
+   06D8 10 34               826          .fdb    WPTERRIBLE
+   06DA 10 3D               827          .fdb    WPTHAN
+   06DC 10 42               828          .fdb    WPTHAT
+   06DE 10 47               829          .fdb    WPTHATS
+   06E0 10 4D               830          .fdb    WPTHE
+   06E2 10 51               831          .fdb    WPTHEM
+   06E4 10 56               832          .fdb    WPTHINGS
+   06E6 10 5D               833          .fdb    WPTHINK
+   06E8 10 63               834          .fdb    WPTHINKING
+   06EA 10 6C               835          .fdb    WPTHIS
+   06EC 10 71               836          .fdb    WPTHOROUGHLY
+   06EE 10 7C               837          .fdb    WPTHOUSAND
+   06F0 10 85               838          .fdb    WPTIM
+   06F2 10 89               839          .fdb    WPTIME
+   06F4 10 8E               840          .fdb    WPTO
+   06F6 10 91               841          .fdb    WPTODAY
+   06F8 10 97               842          .fdb    WPTOO
+   06FA 10 9B               843          .fdb    WPTRAGEDY
+   06FC 10 AD               844          .fdb    WPTRINITY
+   06FE 10 B5               845          .fdb    WPTRY
+   0700 10 B9               846          .fdb    WPTUESDAY
+                            847 
+                            848 ; U
+   0702 10 C9               849          .fdb    WPUNINTERESTING
+   0704 10 D7               850          .fdb    WPUNIX
+   0706 10 DC               851          .fdb    WPUNLESS
+   0708 10 E3               852          .fdb    WPUNPLUGGED
+   070A 10 ED               853          .fdb    WPUNREMARKABLE
+   070C 10 FA               854          .fdb    WPUP
+                            855 
+                            856 ; V
+   070E 10 FD               857          .fdb    WPVEGETABLES
+   0710 11 08               858          .fdb    WPVERY
+                            859 
+                            860 ; W
+   0712 11 0D               861          .fdb    WPWAIT
+   0714 11 12               862          .fdb    WPWAITING
+   0716 11 1A               863          .fdb    WPWANT
+   0718 11 1F               864          .fdb    WPWARNING
+   071A 11 27               865          .fdb    WPWAS
+   071C 11 2B               866          .fdb    WPWAY
+   071E 11 2F               867          .fdb    WPWE
+   0720 11 37               868          .fdb    WPWEIGH
+   0722 11 32               869          .fdb    WPWEIGHED
+   0724 11 3D               870          .fdb    WPWEIGHS
+   0726 11 44               871          .fdb    WPWEIGHT
+   0728 11 58               872          .fdb    WPWHAT
+   072A 11 5D               873          .fdb    WPWHEN
+   072C 11 62               874          .fdb    WPWHICH
+   072E 11 68               875          .fdb    WPWHILE
+   0730 11 6E               876          .fdb    WPWHISPERED
+   0732 11 78               877          .fdb    WPWHO
+   0734 11 7C               878          .fdb    WPWILL
+   0736 11 81               879          .fdb    WPWISH
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 27
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0738 11 86               880          .fdb    WPWITH
+   073A 11 8B               881          .fdb    WPWITHIN
+   073C 11 92               882          .fdb    WPWITHOUT
+   073E 11 A4               883          .fdb    WPWORKSTATION
+   0740 11 B0               884          .fdb    WPWORRIED
+   0742 11 B8               885          .fdb    WPWORRY
+   0744 11 BE               886          .fdb    WPWORRYING
+   0746 11 C7               887          .fdb    WPWORSE
+   0748 11 CD               888          .fdb    WPWOULD
+   074A 11 D3               889          .fdb    WPWOULDNT
+                            890 
+                            891 ; Y
+   074C 11 DB               892          .fdb    WPYEAR
+   074E 11 E0               893          .fdb    WPYES
+   0750 11 E4               894          .fdb    WPYOU
+   0752 11 E8               895          .fdb    WPYOURE
+   0754 11 EF               896          .fdb    WPYOUR
+   0756 11 F4               897          .fdb    WPYOURSELF
+                            898 
+                            899 ; Additional Words
+   0758 09 63               900          .fdb    WPCARDS
+   075A 08 DF               901          .fdb    WPBEIGE
+   075C 0A BD               902          .fdb    WPEQUIVALENT
+   075E 0E 93               903          .fdb    WPRECALIBRATING
+   0760 08 BD               904          .fdb    WPBECAUSE
+   0762 0D 56               905          .fdb    WPNEEDED
+   0764 09 72               906          .fdb    WPCASE
+   0766 11 9A               907          .fdb    WPWONDERING
+   0768 11 50               908          .fdb    WPWERENT
+   076A 11 4B               909          .fdb    WPWERE
+   076C 0F C0               910          .fdb    WPSTEPPED
+   076E 0F A6               911          .fdb    WPSTANDING
+   0770 0D 74               912          .fdb    WPNINETY
+   0772 0F 0C               913          .fdb    WPSECONDS
+   0774 0C 9C               914          .fdb    WPLIGHT
+   0776 0B 89               915          .fdb    WPHAS
+   0778 10 A3               916          .fdb    WPTRAVELLED
+   077A 08 80               917          .fdb    WPAPPROXIMATELY
+   077C 0D 0C               918          .fdb    WPMILLION
+   077E 0D A1               919          .fdb    WPNOWHERE
+   0780 0A C8               920          .fdb    WPERROR
+   0782 0C 2E               921          .fdb    WPINTERNAL
+   0784 10 C1               922          .fdb    WPTYPICAL
+   0786 07 9C               923          .fdb    WPCOMMA
+                            924 
+                            925 ; -----------------------------------------------------
+                            926 ; Word Table, add a pointer to each word in WORDPTR table
+                            927 ; -----------------------------------------------------
+   0788                     928 WORDTABLE:
+                            929 
+   0788 73 74 6F 6E 65 73   930 WPSTONES:         .fcc     "stones"
+   078E FF                  931                  .fcb     0xFF
+   078F 70 6F 75 6E 64 73   932 WPPOUNDS:         .fcc     "pounds"
+   0795 FF                  933                  .fcb     0xFF
+                            934 
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 28
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            935 
+                            936 ; Symbols
+                            937 ; -----------------------------------------------------
+   0796 3F                  938 WPQUESTIONMK:    .fcc     "?"
+   0797 FF                  939                  .fcb     0xFF
+   0798 21                  940 WPEXCLAMATION:   .fcc     "!"
+   0799 FF                  941                  .fcb     0xFF
+   079A 2E                  942 WPFULLSTOP:      .fcc     "."
+   079B FF                  943                  .fcb     0xFF
+   079C 2C                  944 WPCOMMA:         .fcc     ","
+   079D FF                  945                  .fcb     0xFF
+                            946 
+                            947 ; Numbers
+                            948 ; -----------------------------------------------------
+   079E 7A 65 72 6F         949 WPZERO:           .fcc     "zero"
+   07A2 FF                  950                  .fcb     0xFF
+   07A3 6F 6E 65            951 WPONE:            .fcc     "one"
+   07A6 FF                  952                  .fcb     0xFF
+   07A7 74 77 6F            953 WPTWO:            .fcc     "two"
+   07AA FF                  954                  .fcb     0xFF
+   07AB 74 68 72 65 65      955 WPTHREE:          .fcc     "three"
+   07B0 FF                  956                  .fcb     0xFF
+   07B1 66 6F 75 72         957 WPFOUR:           .fcc     "four"
+   07B5 FF                  958                  .fcb     0xFF
+   07B6 66 69 76 65         959 WPFIVE:           .fcc     "five"
+   07BA FF                  960                  .fcb     0xFF
+   07BB 73 69 78            961 WPSIX:            .fcc     "six"
+   07BE FF                  962                  .fcb     0xFF
+   07BF 73 65 76 65 6E      963 WPSEVEN:          .fcc     "seven"
+   07C4 FF                  964                  .fcb     0xFF
+   07C5 65 69 67 68 74      965 WPEIGHT:          .fcc     "eight"
+   07CA FF                  966                  .fcb     0xFF
+   07CB 6E 69 6E 65         967 WPNINE:           .fcc     "nine"
+   07CF FF                  968                  .fcb     0xFF
+   07D0 74 65 6E            969 WPTEN:            .fcc     "ten"
+   07D3 FF                  970                  .fcb     0xFF
+   07D4 65 6C 65 76 65 6E   971 WPELEVEN:         .fcc     "eleven"
+   07DA FF                  972                  .fcb     0xFF
+   07DB 74 77 65 6C 76 65   973 WPTWELVE:         .fcc     "twelve"
+   07E1 FF                  974                  .fcb     0xFF
+   07E2 74 68 69 72 74 65   975 WPTHIRTEEN:       .fcc     "thirteen"
+        65 6E
+   07EA FF                  976                  .fcb     0xFF
+   07EB 66 6F 75 72 74 65   977 WPFOURTEEN:       .fcc     "fourteen"
+        65 6E
+   07F3 FF                  978                  .fcb     0xFF
+   07F4 66 69 66 74 65 65   979 WPFIFTEEN:        .fcc     "fifteen"
+        6E
+   07FB FF                  980                  .fcb     0xFF
+   07FC 73 69 78 74 65 65   981 WPSIXTEEN:        .fcc     "sixteen"
+        6E
+   0803 FF                  982                  .fcb     0xFF
+   0804 73 65 76 65 6E 74   983 WPSEVENTEEN:      .fcc     "seventeen"
+        65 65 6E
+   080D FF                  984                  .fcb     0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 29
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   080E 65 69 67 68 74 65   985 WPEIGHTEEN:       .fcc     "eighteen"
+        65 6E
+   0816 FF                  986                  .fcb     0xFF
+   0817 6E 69 6E 65 74 65   987 WPNINETEEN:       .fcc     "nineteen"
+        65 6E
+   081F FF                  988                  .fcb     0xFF
+   0820 74 77 65 6E 74 79   989 WPTWENTY:         .fcc     "twenty"
+   0826 FF                  990                  .fcb     0xFF
+                            991 
+                            992 
+                            993 ; A
+                            994 ; -----------------------------------------------------
+                            995 
+   0827 61                  996 WPA:              .fcc    "a"
+   0828 FF                  997                  .fcb    0xFF
+   0829 61 62 6F 75 74      998 WPABOUT:          .fcc    "about"
+   082E FF                  999                  .fcb    0xFF
+   082F 61 62 6F 76 65     1000 WPABOVE:          .fcc    "above"
+   0834 FF                 1001                  .fcb    0xFF
+   0835 61 63 63 65 70 74  1002 WPACCEPTABLE:     .fcc    "acceptable"
+        61 62 6C 65
+   083F FF                 1003                  .fcb    0xFF
+   0840 61 63 63 75 72 61  1004 WPACCURATE:       .fcc    "accurate"
+        74 65
+   0848 FF                 1005                  .fcb    0xFF
+   0849 61 63 74 75 61 6C  1006 WPACTUALLY:       .fcc    "actually"
+        6C 79
+   0851 FF                 1007                  .fcb    0xFF
+   0852 61 67 61 69 6E     1008 WPAGAIN:          .fcc    "again"
+   0857 FF                 1009                  .fcb    0xFF
+   0858 61 6C 65 72 74 65  1010 WPALERTED:        .fcc    "alerted"
+        64
+   085F FF                 1011                  .fcb    0xFF
+   0860 61 6C 6C           1012 WPALL:            .fcc    "all"
+   0863 FF                 1013                  .fcb    0xFF
+   0864 61 6C 77 61 79 73  1014 WPALWAYS:         .fcc    "always"
+   086A FF                 1015                  .fcb    0xFF
+   086B 61 6D              1016 WPAM:             .fcc    "am"
+   086D FF                 1017                  .fcb    0xFF
+   086E 61 6E 64           1018 WPAND:            .fcc    "and"
+   0871 FF                 1019                  .fcb    0xFF
+   0872 61 6E 79           1020 WPANY:            .fcc    "any"
+   0875 FF                 1021                  .fcb    0xFF
+   0876 61 70 6F 6C 6F 67  1022 WPAPOLOGISE:      .fcc    "apologise"
+        69 73 65
+   087F FF                 1023                  .fcb    0xFF
+   0880 61 70 70 72 6F 78  1024 WPAPPROXIMATELY:  .fcc    "approximately"
+        69 6D 61 74 65 6C
+        79
+   088D FF                 1025                  .fcb    0xFF
+   088E 61 72 65           1026 WPARE:            .fcc    "are"
+   0891 FF                 1027                  .fcb    0xFF
+   0892 61 73              1028 WPAS:             .fcc    "as"
+   0894 FF                 1029                  .fcb    0xFF
+   0895 61 73 6B 69 6E 67  1030 WPASKING:         .fcc    "asking"
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 30
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   089B FF                 1031                  .fcb    0xFF
+   089C 61 74              1032 WPAT:             .fcc    "at"
+   089E FF                 1033                  .fcb    0xFF
+   089F 61 76 65 72 61 67  1034 WPAVERAGE:        .fcc    "average"
+        65
+   08A6 FF                 1035                  .fcb    0xFF
+                           1036 
+                           1037 
+                           1038 ; B
+                           1039 ; -----------------------------------------------------
+                           1040 
+   08A7 62 61 64           1041 WPBAD:            .fcc    "bad"
+   08AA FF                 1042                  .fcb    0xFF
+   08AB 62 61 73 69 63 61  1043 WPBASICALLY:      .fcc    "basically"
+        6C 6C 79
+   08B4 FF                 1044                  .fcb    0xFF
+   08B5 62 65              1045 WPBE:             .fcc    "be"
+   08B7 FF                 1046                  .fcb    0xFF
+   08B8 62 65 61 72        1047 WPBEAR:           .fcc    "bear"
+   08BC FF                 1048                  .fcb    0xFF
+   08BD 62 65 63 61 75 73  1049 WPBECAUSE:        .fcc    "because"
+        65
+   08C4 FF                 1050                  .fcb    0xFF
+   08C5 62 65 65 6E        1051 WPBEEN:           .fcc    "been"
+   08C9 FF                 1052                  .fcb    0xFF
+   08CA 62 65 67 67 69 6E  1053 WPBEGGING:        .fcc    "begging"
+        67
+   08D1 FF                 1054                  .fcb    0xFF
+   08D2 62 65 68 69 6E 64  1055 WPBEHIND:         .fcc    "behind"
+   08D8 FF                 1056                  .fcb    0xFF
+   08D9 62 65 69 6E 67     1057 WPBEING:          .fcc    "being"
+   08DE FF                 1058                  .fcb    0xFF
+   08DF 62 65 69 67 65     1059 WPBEIGE:          .fcc    "beige"
+   08E4 FF                 1060                  .fcb    0xFF
+   08E5 62 65 73 74        1061 WPBEST:           .fcc    "best"
+   08E9 FF                 1062                  .fcb    0xFF
+   08EA 62 69 73 63 75 69  1063 WPBISCUIT:        .fcc    "biscuit"
+        74
+   08F1 FF                 1064                  .fcb    0xFF
+   08F2 62 6C 61 6D 65     1065 WPBLAME:          .fcc    "blame"
+   08F7 FF                 1066                  .fcb    0xFF
+   08F8 62 6C 61 6D 65 64  1067 WPBLAMED:         .fcc    "blamed"
+   08FE FF                 1068                  .fcb    0xFF
+   08FF 62 6F 61 72 64 73  1069 WPBOARDS:         .fcc    "boards"
+   0905 FF                 1070                  .fcb    0xFF
+   0906 62 6F 6E 65 73     1071 WPBONES:          .fcc    "bones"
+   090B FF                 1072                  .fcb    0xFF
+   090C 62 6F 6F 74 73     1073 WPBOOTS:          .fcc    "boots"
+   0911 FF                 1074                  .fcb    0xFF
+   0912 62 6F 72 69 6E 67  1075 WPBORING:         .fcc    "boring"
+   0918 FF                 1076                  .fcb    0xFF
+   0919 62 6F 74 68        1077 WPBOTH:           .fcc    "both"
+   091D FF                 1078                  .fcb    0xFF
+   091E 62 72 61 63 65     1079 WPBRACE:          .fcc    "brace"
+   0923 FF                 1080                  .fcb    0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 31
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0924 62 72 61 69 6E     1081 WPBRAIN:          .fcc    "brain"
+   0929 FF                 1082                  .fcb    0xFF
+   092A 62 75 69 6C 74     1083 WPBUILT:          .fcc    "built"
+   092F FF                 1084                  .fcb    0xFF
+   0930 62 75 74           1085 WPBUT:            .fcc    "but"
+   0933 FF                 1086                  .fcb    0xFF
+   0934 62 79              1087 WPBY:             .fcc    "by"
+   0936 FF                 1088                  .fcb    0xFF
+                           1089 
+                           1090 ; C
+                           1091 ; -----------------------------------------------------
+                           1092 
+   0937 63 61 6B 65        1093 WPCAKE:           .fcc    "cake"
+   093B FF                 1094                  .fcb    0xFF
+   093C 63 61 6C 63 75 6C  1095 WPCALCULATE:      .fcc    "calculate"
+        61 74 65
+   0945 FF                 1096                  .fcb    0xFF
+   0946 63 61 6C 6C        1097 WPCALL:           .fcc    "call"
+   094A FF                 1098                  .fcb    0xFF
+   094B 63 61 6C 6D        1099 WPCALM:           .fcc    "calm"
+   094F FF                 1100                  .fcb    0xFF
+   0950 63 61 6E           1101 WPCAN:            .fcc    "can"
+   0953 FF                 1102                  .fcb    0xFF
+   0954 63 61 6E 27 74     1103 WPCANT:           .fcc    "can't"
+   0959 FF                 1104                  .fcb    0xFF
+   095A 63 61 70 61 63 69  1105 WPCAPACITY:       .fcc    "capacity"
+        74 79
+   0962 FF                 1106                  .fcb    0xFF
+   0963 63 61 72 64 73     1107 WPCARDS:          .fcc    "cards"
+   0968 FF                 1108                  .fcb    0xFF
+   0969 63 61 72 72 79 69  1109 WPCARRYING:       .fcc    "carrying"
+        6E 67
+   0971 FF                 1110                  .fcb    0xFF
+   0972 63 61 73 65        1111 WPCASE:           .fcc    "case"
+   0976 FF                 1112                  .fcb    0xFF
+   0977 63 68 65 63 6B 65  1113 WPCHECKED:        .fcc    "checked"
+        64
+   097E FF                 1114                  .fcb    0xFF
+   097F 63 68 6F 69 63 65  1115 WPCHOICES:        .fcc    "choices"
+        73
+   0986 FF                 1116                  .fcb    0xFF
+   0987 63 6C 65 76 65 72  1117 WPCLEVER:         .fcc    "clever"
+   098D FF                 1118                  .fcb    0xFF
+   098E 63 6F 6C 6C 65 63  1119 WPCOLLECTED:      .fcc    "collected"
+        74 65 64
+   0997 FF                 1120                  .fcb    0xFF
+   0998 63 6F 6D 70 6F 73  1121 WPCOMPOSING:      .fcc    "composing"
+        69 6E 67
+   09A1 FF                 1122                  .fcb    0xFF
+   09A2 63 6F 6E 63 65 70  1123 WPCONCEPT:        .fcc    "concept"
+        74
+   09A9 FF                 1124                  .fcb    0xFF
+   09AA 63 6F 6E 63 65 72  1125 WPCONCERNED:      .fcc    "concerned"
+        6E 65 64
+   09B3 FF                 1126                  .fcb    0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 32
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   09B4 63 6F 6E 67 72 61  1127 WPCONGRATS:       .fcc    "congratulations"
+        74 75 6C 61 74 69
+        6F 6E 73
+   09C3 FF                 1128                  .fcb    0xFF
+   09C4 63 6F 6E 73 69 64  1129 WPCONSIDERED:     .fcc    "considered"
+        65 72 65 64
+   09CE FF                 1130                  .fcb    0xFF
+   09CF 63 6F 72 72 65 63  1131 WPCORRECTLY:      .fcc    "correctly"
+        74 6C 79
+   09D8 FF                 1132                  .fcb    0xFF
+   09D9 63 6F 75 6C 64     1133 WPCOULD:          .fcc    "could"
+   09DE FF                 1134                  .fcb    0xFF
+   09DF 63 6F 75 6E 74 65  1135 WPCOUNTED:        .fcc    "counted"
+        64
+   09E6 FF                 1136                  .fcb    0xFF
+                           1137 
+                           1138 ; D
+                           1139 ; -----------------------------------------------------
+   09E7 64 61 79 73        1140 WPDAYS:           .fcc    "days"
+   09EB FF                 1141                  .fcb    0xFF
+   09EC 64 65 61 6C 74     1142 WPDEALT:          .fcc    "dealt"
+   09F1 FF                 1143                  .fcb    0xFF
+   09F2 64 65 65 70 6C 79  1144 WPDEEPLY:         .fcc    "deeply"
+   09F8 FF                 1145                  .fcb    0xFF
+   09F9 64 65 73 69 67 6E  1146 WPDESIGNED:       .fcc    "designed"
+        65 64
+   0A01 FF                 1147                  .fcb    0xFF
+   0A02 64 65 74 65 63 74  1148 WPDETECTED:       .fcc    "detected"
+        65 64
+   0A0A FF                 1149                  .fcb    0xFF
+   0A0B 64 69 64           1150 WPDID:            .fcc    "did"
+   0A0E FF                 1151                  .fcb    0xFF
+   0A0F 64 69 64 6E 27 74  1152 WPDIDNT:          .fcc    "didn't"
+   0A15 FF                 1153                  .fcb    0xFF
+   0A16 64 69 65 74 61 72  1154 WPDIETARY:        .fcc    "dietary"
+        79
+   0A1D FF                 1155                  .fcb    0xFF
+   0A1E 64 69 73 61 70 70  1156 WPDISSAPOINTED:   .fcc    "disappointed"
+        6F 69 6E 74 65 64
+   0A2A FF                 1157                  .fcb    0xFF
+   0A2B 64 69 73 61 70 70  1158 WPDISSAPOINTMNT:  .fcc    "disappointment"
+        6F 69 6E 74 6D 65
+        6E 74
+   0A39 FF                 1159                  .fcb    0xFF
+   0A3A 64 69 73 73 69 6D  1160 WPDISSIMILAR:     .fcc    "dissimilar"
+        69 6C 61 72
+   0A44 FF                 1161                  .fcb    0xFF
+   0A45 64 6F              1162 WPDO:             .fcc    "do"
+   0A47 FF                 1163                  .fcb    0xFF
+   0A48 64 6F 63 74 6F 72  1164 WPDOCTOR:         .fcc    "doctor"
+   0A4E FF                 1165                  .fcb    0xFF
+   0A4F 64 6F 69 6E 67     1166 WPDOING:          .fcc    "doing"
+   0A54 FF                 1167                  .fcb    0xFF
+   0A55 64 6F 6E 27 74     1168 WPDONT:           .fcc    "don't"
+   0A5A FF                 1169                  .fcb    0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 33
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0A5B 64 6F 77 6E        1170 WPDOWN:           .fcc    "down"
+   0A5F FF                 1171                  .fcb    0xFF
+   0A60 64 72 65 61 64     1172 WPDREAD:          .fcc    "dread"
+   0A65 FF                 1173                  .fcb    0xFF
+   0A66 64 72 65 61 6D     1174 WPDREAM:          .fcc    "dream"
+   0A6B FF                 1175                  .fcb    0xFF
+   0A6C 64 75 65           1176 WPDUE:            .fcc    "due"
+   0A6F FF                 1177                  .fcb    0xFF
+   0A70 64 75 6C 6C 65 73  1178 WPDULLEST:        .fcc    "dullest"
+        74
+   0A77 FF                 1179                  .fcb    0xFF
+   0A78 64 79 6F 64 65 73  1180 WPDIODES:         .fcc    "dyodes"
+   0A7E FF                 1181                  .fcb    0xFF
+                           1182 
+                           1183 ; E
+                           1184 ; -----------------------------------------------------
+   0A7F 65 61 74           1185 WPEAT:            .fcc    "eat"
+   0A82 FF                 1186                  .fcb    0xFF
+   0A83 65 61 74 65 6E     1187 WPEATEN:          .fcc    "eaten"
+   0A88 FF                 1188                  .fcb    0xFF
+   0A89 65 66 66 6F 72 74  1189 WPEFFORT:         .fcc    "effort"
+   0A8F FF                 1190                  .fcb    0xFF
+   0A90 65 69 74 68 65 72  1191 WPEITHER:         .fcc    "either"
+   0A96 FF                 1192                  .fcb    0xFF
+   0A97 65 6D 6F 74 69 6F  1193 WPEMOTIONALLY:    .fcc    "emotionally"
+        6E 61 6C 6C 79
+   0AA2 FF                 1194                  .fcb    0xFF
+   0AA3 65 6E 67 69 6E 65  1195 WPENGINEERS:      .fcc    "engineers"
+        65 72 73
+   0AAC FF                 1196                  .fcb    0xFF
+   0AAD 65 6E 6F 75 67 68  1197 WPENOUGH:         .fcc    "enough"
+   0AB3 FF                 1198                  .fcb    0xFF
+   0AB4 65 6E 74 69 72 65  1199 WPENTIRELY:       .fcc    "entirely"
+        6C 79
+   0ABC FF                 1200                  .fcb    0xFF
+   0ABD 65 71 75 69 76 61  1201 WPEQUIVALENT:     .fcc    "equivalent"
+        6C 65 6E 74
+   0AC7 FF                 1202                  .fcb    0xFF
+   0AC8 65 72 72 6F 72     1203 WPERROR:         .fcc    "error"
+   0ACD FF                 1204                  .fcb    0xFF
+   0ACE 65 76 65 6E        1205 WPEVEN:           .fcc    "even"
+   0AD2 FF                 1206                  .fcb    0xFF
+   0AD3 65 76 65 72        1207 WPEVER:           .fcc    "ever"
+   0AD7 FF                 1208                  .fcb    0xFF
+   0AD8 65 76 65 72 79     1209 WPEVERY:          .fcc    "every"
+   0ADD FF                 1210                  .fcb    0xFF
+   0ADE 65 78 61 63 74 6C  1211 WPEXACTLY:        .fcc    "exactly"
+        79
+   0AE5 FF                 1212                  .fcb    0xFF
+   0AE6 65 78 63 65 70 74  1213 WPEXCEPTIONALLY:  .fcc    "exceptionally"
+        69 6F 6E 61 6C 6C
+        79
+   0AF3 FF                 1214                  .fcb    0xFF
+   0AF4 65 78 63 69 74 69  1215 WPEXCITING:       .fcc    "exciting"
+        6E 67
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 34
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0AFC FF                 1216                  .fcb    0xFF
+   0AFD 65 78 69 73 74     1217 WPEXIST:          .fcc    "exist"
+   0B02 FF                 1218                  .fcb    0xFF
+   0B03 65 78 69 73 74 65  1219 WPEXISTENTIAL:    .fcc    "existential"
+        6E 74 69 61 6C
+   0B0E FF                 1220                  .fcb    0xFF
+   0B0F 65 78 70 65 63 74  1221 WPEXPECTED:       .fcc    "expected"
+        65 64
+   0B17 FF                 1222                  .fcb    0xFF
+                           1223 
+                           1224 ; F
+                           1225 ; -----------------------------------------------------
+   0B18 66 61 75 6C 74     1226 WPFAULT:          .fcc    "fault"
+   0B1D FF                 1227                  .fcb    0xFF
+   0B1E 66 65 65 6C 73     1228 WPFEELS:          .fcc    "feels"
+   0B23 FF                 1229                  .fcb    0xFF
+   0B24 66 69 64 67 65 74  1230 WPFIDGET:         .fcc    "fidget"
+   0B2A FF                 1231                  .fcb    0xFF
+   0B2B 66 69 6E 65        1232 WPFINE:           .fcc    "fine"
+   0B2F FF                 1233                  .fcb    0xFF
+   0B30 66 6F 6F 74        1234 WPFOOT:           .fcc    "foot"
+   0B34 FF                 1235                  .fcb    0xFF
+   0B35 66 6F 72           1236 WPFOR:            .fcc    "for"
+   0B38 FF                 1237                  .fcb    0xFF
+   0B39 66 6F 72 74 79     1238 WPFORTY:          .fcc    "forty"
+   0B3E FF                 1239                  .fcb    0xFF
+   0B3F 66 72 69 64 61 79  1240 WPFRIDAY:         .fcc    "friday"
+   0B45 FF                 1241                  .fcb    0xFF
+   0B46 66 72 6F 6D        1242 WPFROM:           .fcc    "from"
+   0B4A FF                 1243                  .fcb    0xFF
+   0B4B 66 75 6C 6C        1244 WPFULL:           .fcc    "full"
+   0B4F FF                 1245                  .fcb    0xFF
+   0B50 66 75 6E 6E 79     1246 WPFUNNY:          .fcc    "funny"
+   0B55 FF                 1247                  .fcb    0xFF
+                           1248 
+                           1249 ; G
+                           1250 ; -----------------------------------------------------
+   0B56 67 69 76 65        1251 WPGIVE:           .fcc    "give"
+   0B5A FF                 1252                  .fcb    0xFF
+   0B5B 67 6F 69 6E 67     1253 WPGOING:          .fcc    "going"
+   0B60 FF                 1254                  .fcb    0xFF
+   0B61 67 6F 6F 64        1255 WPGOOD:           .fcc    "good"
+   0B65 FF                 1256                  .fcb    0xFF
+   0B66 67 72 61 76 69 74  1257 WPGRAVITY:        .fcc    "gravity"
+        79
+   0B6D FF                 1258                  .fcb    0xFF
+   0B6E 67 72 65 61 74     1259 WPGREAT:          .fcc    "great"
+   0B73 FF                 1260                  .fcb    0xFF
+   0B74 67 75 65 73 73 69  1261 WPGUESSING:       .fcc    "guessing"
+        6E 67
+   0B7C FF                 1262                  .fcb    0xFF
+                           1263 
+                           1264 ; H
+                           1265 ; -----------------------------------------------------
+   0B7D 68 61 6E 64 6C 65  1266 WPHANDLE:         .fcc    "handle"
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 35
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0B83 FF                 1267                  .fcb    0xFF
+   0B84 68 61 72 64        1268 WPHARD:           .fcc    "hard"
+   0B88 FF                 1269                  .fcb    0xFF
+   0B89 68 61 73           1270 WPHAS:            .fcc    "has"
+   0B8C FF                 1271                  .fcb    0xFF
+   0B8D 68 61 76 65        1272 WPHAVE:           .fcc    "have"
+   0B91 FF                 1273                  .fcb    0xFF
+   0B92 68 61 76 69 6E 67  1274 WPHAVING:         .fcc    "having"
+   0B98 FF                 1275                  .fcb    0xFF
+   0B99 68 65 61 6C 74 68  1276 WPHEALTHY:        .fcc    "healthy"
+        79
+   0BA0 FF                 1277                  .fcb    0xFF
+   0BA1 68 65 61 76 79     1278 WPHEAVY:          .fcc    "heavy"
+   0BA6 FF                 1279                  .fcb    0xFF
+   0BA7 68 65 6C 70        1280 WPHELP:           .fcc    "help"
+   0BAB FF                 1281                  .fcb    0xFF
+   0BAC 68 65 6C 70 73     1282 WPHELPS:          .fcc    "helps"
+   0BB1 FF                 1283                  .fcb    0xFF
+   0BB2 68 65 72 65        1284 WPHERE:           .fcc    "here"
+   0BB6 FF                 1285                  .fcb    0xFF
+   0BB7 68 6F 6C 79        1286 WPHOLY:           .fcc    "holy"
+   0BBB FF                 1287                  .fcb    0xFF
+   0BBC 68 6F 70 69 6E 67  1288 WPHOPING:         .fcc    "hoping"
+   0BC2 FF                 1289                  .fcb    0xFF
+   0BC3 68 6F 74           1290 WPHOT:            .fcc    "hot"
+   0BC6 FF                 1291                  .fcb    0xFF
+   0BC7 68 75 6D 61 6E     1292 WPHUMAN:          .fcc    "human"
+   0BCC FF                 1293                  .fcb    0xFF
+   0BCD 68 75 72 74        1294 WPHURT:           .fcc    "hurt"
+   0BD1 FF                 1295                  .fcb    0xFF
+                           1296 
+                           1297 ; I
+                           1298 ; -----------------------------------------------------
+   0BD2 69                 1299 WPI:              .fcc    "i"
+   0BD3 FF                 1300                  .fcb    0xFF
+   0BD4 69 27 64           1301 WPID:             .fcc    "i'd"
+   0BD7 FF                 1302                  .fcb    0xFF
+   0BD8 69 27 6C 6C        1303 WPILL:            .fcc    "i'll"
+   0BDC FF                 1304                  .fcb    0xFF
+   0BDD 69 27 6D           1305 WPIM:             .fcc    "i'm"
+   0BE0 FF                 1306                  .fcb    0xFF
+   0BE1 69 27 76 65        1307 WPIVE:            .fcc    "i've"
+   0BE5 FF                 1308                  .fcb    0xFF
+   0BE6 69 66              1309 WPIF:             .fcc    "if"
+   0BE8 FF                 1310                  .fcb    0xFF
+   0BE9 69 6D 70 72 65 73  1311 WPIMPRESSED:      .fcc    "impressed"
+        73 65 64
+   0BF2 FF                 1312                  .fcb    0xFF
+   0BF3 69 6D 70 72 65 73  1313 WPIMPRESSIVE:     .fcc    "impressive"
+        73 69 76 65
+   0BFD FF                 1314                  .fcb    0xFF
+   0BFE 69 6E              1315 WPIN:             .fcc    "in"
+   0C00 FF                 1316                  .fcb    0xFF
+   0C01 69 6E 63 6C 75 64  1317 WPINCLUDING:      .fcc    "including"
+        69 6E 67
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 36
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0C0A FF                 1318                  .fcb    0xFF
+   0C0B 69 6E 66 6C 75 65  1319 WPINFLUENCE:      .fcc    "influence"
+        6E 63 65
+   0C14 FF                 1320                  .fcb    0xFF
+   0C15 69 6E 74 65 6C 6C  1321 WPINTELLIGENCE:   .fcc    "intelligence"
+        69 67 65 6E 63 65
+   0C21 FF                 1322                  .fcb    0xFF
+   0C22 69 6E 74 65 72 65  1323 WPINTERESTING:    .fcc    "interesting"
+        73 74 69 6E 67
+   0C2D FF                 1324                  .fcb    0xFF
+   0C2E 69 6E 74 65 72 6E  1325 WPINTERNAL:       .fcc  "internal"
+        61 6C
+   0C36 FF                 1326                   .fcb  0xFF
+   0C37 69 73              1327 WPIS:             .fcc    "is"
+   0C39 FF                 1328                  .fcb    0xFF
+   0C3A 69 73 73           1329 WPISS:            .fcc    "iss"
+   0C3D FF                 1330                  .fcb    0xFF
+   0C3E 69 74              1331 WPIT:             .fcc    "it"
+   0C40 FF                 1332                  .fcb    0xFF
+   0C41 69 74 73           1333 WPITS:            .fcc    "its"
+   0C44 FF                 1334                  .fcb    0xFF
+                           1335 
+                           1336 ; J
+                           1337 ; -----------------------------------------------------
+   0C45 6A 6F 6B 65 73     1338 WPJOKES:          .fcc    "jokes"
+   0C4A FF                 1339                  .fcb    0xFF
+   0C4B 6A 75 64 67 69 6E  1340 WPJUDGING:        .fcc    "judging"
+        67
+   0C52 FF                 1341                  .fcb    0xFF
+   0C53 6A 75 73 74        1342 WPJUST:           .fcc    "just"
+   0C57 FF                 1343                  .fcb    0xFF
+                           1344 
+                           1345 ; K
+                           1346 ; -----------------------------------------------------
+   0C58 6B 65 65 70        1347 WPKEEP:           .fcc    "keep"
+   0C5C FF                 1348                  .fcb    0xFF
+   0C5D 6B 69 6C 6F 6D 65  1349 WPKILOMETERS:     .fcc    "kilometres"
+        74 72 65 73
+   0C67 FF                 1350                  .fcb    0xFF
+   0C68 6B 69 6E 64        1351 WPKIND:           .fcc    "kind"
+   0C6C FF                 1352                  .fcb    0xFF
+   0C6D 6B 6E 6F 77        1353 WPKNOW:           .fcc    "know"
+   0C71 FF                 1354                  .fcb    0xFF
+   0C72 6B 6E 6F 77 6E     1355 WPKNOWN:          .fcc    "known"
+   0C77 FF                 1356                  .fcb    0xFF
+                           1357 
+                           1358 ; L
+                           1359 ; -----------------------------------------------------
+   0C78 6C 61 72 67 65     1360 WPLARGE:          .fcc    "large"
+   0C7D FF                 1361                  .fcb    0xFF
+   0C7E 6C 61 73 74        1362 WPLAST:           .fcc    "last"
+   0C82 FF                 1363                  .fcb    0xFF
+   0C83 6C 65 61 73 74     1364 WPLEAST:          .fcc    "least"
+   0C88 FF                 1365                  .fcb    0xFF
+   0C89 6C 65 73 73        1366 WPLESS:           .fcc    "less"
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 37
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0C8D FF                 1367                  .fcb    0xFF
+   0C8E 6C 65 74 73        1368 WPLETS:           .fcc    "lets"
+   0C92 FF                 1369                  .fcb    0xFF
+   0C93 6C 69 65           1370 WPLIE:            .fcc    "lie"
+   0C96 FF                 1371                  .fcb    0xFF
+   0C97 6C 69 66 65        1372 WPLIFE:           .fcc    "life"
+   0C9B FF                 1373                  .fcb    0xFF
+   0C9C 6C 69 67 68 74     1374 WPLIGHT:          .fcc    "light"
+   0CA1 FF                 1375                  .fcb    0xFF
+   0CA2 6C 69 6B 65        1376 WPLIKE:           .fcc    "like"
+   0CA6 FF                 1377                  .fcb    0xFF
+   0CA7 6C 6F 6E 67 65 72  1378 WPLONGER:         .fcc    "longer"
+   0CAD FF                 1379                  .fcb    0xFF
+   0CAE 6C 6F 6F 6B        1380 WPLOOK:           .fcc    "look"
+   0CB2 FF                 1381                  .fcb    0xFF
+   0CB3 6C 6F 74           1382 WPLOT:            .fcc    "lot"
+   0CB6 FF                 1383                  .fcb    0xFF
+   0CB7 6C 6F 75 64 65 72  1384 WPLOUDER:         .fcc    "louder"
+   0CBD FF                 1385                  .fcb    0xFF
+                           1386 
+                           1387 ; M
+                           1388 ; -----------------------------------------------------
+   0CBE 6D 61 6B 65 73     1389 WPMAKES:          .fcc    "makes"
+   0CC3 FF                 1390                  .fcb    0xFF
+   0CC4 6D 61 6B 69 6E 67  1391 WPMAKING:         .fcc    "making"
+   0CCA FF                 1392                  .fcb    0xFF
+   0CCB 6D 65              1393 WPME:             .fcc    "me"
+   0CCD FF                 1394                  .fcb    0xFF
+   0CCE 6D 6D 65 65 65 65  1395 WPMEAN:           .fcc    "mmeeeen"
+        6E
+   0CD5 FF                 1396                  .fcb    0xFF
+   0CD6 6D 65 61 6E 69 6E  1397 WPMEANING:        .fcc    "meaning"
+        67
+   0CDD FF                 1398                  .fcb    0xFF
+   0CDE 6D 65 61 73 75 72  1399 WPMEASURED:       .fcc    "measured"
+        65 64
+   0CE6 FF                 1400                  .fcb    0xFF
+   0CE7 6D 65 64 69 6F 63  1401 WPMEDIOCRITY:     .fcc    "mediocrity"
+        72 69 74 79
+   0CF1 FF                 1402                  .fcb    0xFF
+   0CF2 6D 65 65 65        1403 WPMEE:            .fcc    "meee"
+   0CF6 FF                 1404                  .fcb    0xFF
+   0CF7 6D 65 6D 6F 72 79  1405 WPMEMORY:         .fcc    "memory"
+   0CFD FF                 1406                  .fcb    0xFF
+   0CFE 6D 65 6E 74 69 6F  1407 WPMENTION:        .fcc    "mention"
+        6E
+   0D05 FF                 1408                  .fcb    0xFF
+   0D06 6D 69 67 68 74     1409 WPMIGHT:          .fcc    "might"
+   0D0B FF                 1410                  .fcb    0xFF
+   0D0C 6D 69 6C 6C 69 6F  1411 WPMILLION:        .fcc    "million"
+        6E
+   0D13 FF                 1412                  .fcb    0xFF
+   0D14 6D 69 73 74 61 6B  1413 WPMISTAKE:        .fcc    "mistake"
+        65
+   0D1B FF                 1414                  .fcb    0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 38
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0D1C 6D 6F 6D 65 6E 74  1415 WPMOMENT:         .fcc    "moment"
+   0D22 FF                 1416                  .fcb    0xFF
+   0D23 6D 6F 6F 72        1417 WPMOORE:          .fcc    "moor"
+   0D27 FF                 1418                  .fcb    0xFF
+   0D28 6D 6F 72 65        1419 WPMORE:           .fcc    "more"
+   0D2C FF                 1420                  .fcb    0xFF
+   0D2D 6D 6F 73 74 6C 79  1421 WPMOSTLY:         .fcc    "mostly"
+   0D33 FF                 1422                  .fcb    0xFF
+   0D34 6D 6F 75 6E 74 61  1423 WPMOUNTAINS:      .fcc    "mountains"
+        69 6E 73
+   0D3D FF                 1424                  .fcb    0xFF
+   0D3E 6D 75 63 68        1425 WPMUCH:           .fcc    "much"
+   0D42 FF                 1426                  .fcb    0xFF
+   0D43 6D 75 73 63 6C 65  1427 WPMUSCLE:         .fcc    "muscle"
+   0D49 FF                 1428                  .fcb    0xFF
+   0D4A 6D 79              1429 WPMY:             .fcc    "my"
+   0D4C FF                 1430                  .fcb    0xFF
+                           1431 
+                           1432 ; N
+                           1433 ; -----------------------------------------------------
+   0D4D 6E 61 70           1434 WPNAP:            .fcc    "nap"
+   0D50 FF                 1435                  .fcb    0xFF
+   0D51 6E 65 65 64        1436 WPNEED:           .fcc    "need"
+   0D55 FF                 1437                  .fcb    0xFF
+   0D56 6E 65 65 64 65 64  1438 WPNEEDED:         .fcc    "needed"
+   0D5C FF                 1439                  .fcb    0xFF
+   0D5D 6E 65 69 74 68 65  1440 WPNEITHER:        .fcc    "neither"
+        72
+   0D64 FF                 1441                  .fcb    0xFF
+   0D65 6E 65 77 73        1442 WPNEWS:           .fcc    "news"
+   0D69 FF                 1443                  .fcb    0xFF
+   0D6A 6E 65 78 74        1444 WPNEXT:           .fcc    "next"
+   0D6E FF                 1445                  .fcb    0xFF
+   0D6F 6E 69 63 65        1446 WPNICE:           .fcc    "nice"
+   0D73 FF                 1447                  .fcb    0xFF
+   0D74 6E 69 6E 65 74 79  1448 WPNINETY:         .fcc    "ninety"
+   0D7A FF                 1449                  .fcb    0xFF
+   0D7B 6E 6F              1450 WPNO:             .fcc    "no"
+   0D7D FF                 1451                  .fcb    0xFF
+   0D7E 6E 6F 62 6F 64 79  1452 WPNOBODY:         .fcc    "nobody"
+   0D84 FF                 1453                  .fcb    0xFF
+   0D85 6E 6F 6E 65        1454 WPNONE:           .fcc    "none"
+   0D89 FF                 1455                  .fcb    0xFF
+   0D8A 6E 6F 72           1456 WPNOR:            .fcc    "nor"
+   0D8D FF                 1457                  .fcb    0xFF
+   0D8E 6E 6F 72 6D 61 6C  1458 WPNORMAL:         .fcc    "normal"
+   0D94 FF                 1459                  .fcb    0xFF
+   0D95 6E 6F 74           1460 WPNOT:            .fcc    "not"
+   0D98 FF                 1461                  .fcb    0xFF
+   0D99 6E 6F 74 68 69 6E  1462 WPNOTHING:        .fcc    "nothing"
+        67
+   0DA0 FF                 1463                  .fcb    0xFF
+   0DA1 6E 6F 77 68 65 72  1464 WPNOWHERE:        .fcc    "nowhere"
+        65
+   0DA8 FF                 1465                  .fcb    0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 39
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                           1466 
+                           1467 ; O
+                           1468 ; -----------------------------------------------------
+   0DA9 6F 66              1469 WPOF:             .fcc    "of"
+   0DAB FF                 1470                  .fcb    0xFF
+   0DAC 6F 66 66           1471 WPOFF:            .fcc    "off"
+   0DAF FF                 1472                  .fcb    0xFF
+   0DB0 6F 68              1473 WPOH:             .fcc    "oh"
+   0DB2 FF                 1474                  .fcb    0xFF
+   0DB3 6F 6B              1475 WPOK:             .fcc    "ok"
+   0DB5 FF                 1476                  .fcb    0xFF
+   0DB6 6F 6C 64           1477 WPOLD:            .fcc    "old"
+   0DB9 FF                 1478                  .fcb    0xFF
+   0DBA 6F 6E              1479 WPON:             .fcc    "on"
+   0DBC FF                 1480                  .fcb    0xFF
+   0DBD 6F 6E 6C 79        1481 WPONLY:           .fcc    "only"
+   0DC1 FF                 1482                  .fcb    0xFF
+   0DC2 6F 72              1483 WPOR:             .fcc    "or"
+   0DC4 FF                 1484                  .fcb    0xFF
+   0DC5 6F 75 72           1485 WPOUR:            .fcc    "our"
+   0DC8 FF                 1486                  .fcb    0xFF
+   0DC9 6F 76 65 72 6C 6F  1487 WPOVERLOAD:       .fcc    "overload"
+        61 64
+   0DD1 FF                 1488                  .fcb    0xFF
+                           1489 
+                           1490 ; P
+                           1491 ; -----------------------------------------------------
+   0DD2 70 61 72 61 6D 65  1492 WPPARAMETERS:     .fcc    "parameters"
+        74 65 72 73
+   0DDC FF                 1493                  .fcb    0xFF
+   0DDD 70 65 72 66 65 63  1494 WPPERFECTLY:      .fcc    "perfectly"
+        74 6C 79
+   0DE6 FF                 1495                  .fcb    0xFF
+   0DE7 70 65 72 68 61 70  1496 WPPERHAPS:        .fcc    "perhaps"
+        73
+   0DEE FF                 1497                  .fcb    0xFF
+   0DEF 70 65 72 73 6F 6E  1498 WPPERSON:         .fcc    "person"
+   0DF5 FF                 1499                  .fcb    0xFF
+   0DF6 70 69 63 6B 69 6E  1500 WPPICKING:        .fcc    "picking"
+        67
+   0DFD FF                 1501                  .fcb    0xFF
+   0DFE 70 6C 61 6E 65 74  1502 WPPLANET:         .fcc    "planet"
+   0E04 FF                 1503                  .fcb    0xFF
+   0E05 70 6C 61 6E 73     1504 WPPLANS:          .fcc    "plans"
+   0E0A FF                 1505                  .fcb    0xFF
+   0E0B 70 6C 65 61 73 65  1506 WPPLEASE:         .fcc    "please"
+   0E11 FF                 1507                  .fcb    0xFF
+   0E12 70 6F 69 6E 74 6C  1508 WPPOINTLESS:      .fcc    "pointless"
+        65 73 73
+   0E1B FF                 1509                  .fcb    0xFF
+   0E1C 70 6F 73 73 69 62  1510 WPPOSSIBLE:       .fcc    "possible"
+        6C 65
+   0E24 FF                 1511                  .fcb    0xFF
+   0E25 70 6F 73 73 69 62  1512 WPPOSSIBLY:       .fcc    "possibly"
+        6C 79
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 40
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0E2D FF                 1513                  .fcb    0xFF
+   0E2E 70 72 65 63 69 73  1514 WPPRECISELY:      .fcc    "precisely"
+        65 6C 79
+   0E37 FF                 1515                  .fcb    0xFF
+   0E38 70 72 65 73 65 6E  1516 WPPRESENT:        .fcc    "present"
+        74
+   0E3F FF                 1517                  .fcb    0xFF
+   0E40 70 72 65 73 73 75  1518 WPPRESSURE:       .fcc    "pressure"
+        72 65
+   0E48 FF                 1519                  .fcb    0xFF
+   0E49 70 72 69 63 61 75  1520 WPPRECAUTION:     .fcc    "pricaution"
+        74 69 6F 6E
+   0E53 FF                 1521                  .fcb    0xFF
+   0E54 70 72 6F 62 61 62  1522 WPPROBABLY:       .fcc    "probably"
+        6C 79
+   0E5C FF                 1523                  .fcb    0xFF
+   0E5D 70 72 6F 62 6C 65  1524 WPPROBLEMS:       .fcc    "problems"
+        6D 73
+   0E65 FF                 1525                  .fcb    0xFF
+   0E66 70 72 6F 75 64     1526 WPPROUD:          .fcc    "proud"
+   0E6B FF                 1527                  .fcb    0xFF
+   0E6C 70 72 74 65 6E 64  1528 WPPRETEND:        .fcc    "prtend"
+   0E72 FF                 1529                  .fcb    0xFF
+   0E73 70 75 74           1530 WPPUT:            .fcc    "put"
+   0E76 FF                 1531                  .fcb    0xFF
+                           1532 
+                           1533 ; Q
+                           1534 ; -----------------------------------------------------
+   0E77 71 75 65 73 74 69  1535 WPQUESTION:       .fcc    "question"
+        6F 6E
+   0E7F FF                 1536                  .fcb    0xFF
+   0E80 71 75 69 74 65     1537 WPQUITE:          .fcc    "quite"
+   0E85 FF                 1538                  .fcb    0xFF
+                           1539 
+                           1540 ; R
+                           1541 ; -----------------------------------------------------
+   0E86 72 65 61 64 79     1542 WPREADY:          .fcc    "ready"
+   0E8B FF                 1543                  .fcb    0xFF
+   0E8C 72 65 61 6C 6C 79  1544 WPREALLY:         .fcc    "really"
+   0E92 FF                 1545                  .fcb    0xFF
+   0E93 72 65 63 61 6C 69  1546 WPRECALIBRATING:  .fcc    "recalibrating"
+        62 72 61 74 69 6E
+        67
+   0EA0 FF                 1547                  .fcb    0xFF
+   0EA1 72 65 66 65 72     1548 WPREFER:          .fcc    "refer"
+   0EA6 FF                 1549                  .fcb    0xFF
+   0EA7 72 65 66 75 73 65  1550 WPREFUSE:         .fcc    "refuse"
+   0EAD FF                 1551                  .fcb    0xFF
+   0EAE 72 65 69 6E 66 6F  1552 WPREINFORCING:    .fcc    "reinforcing"
+        72 63 69 6E 67
+   0EB9 FF                 1553                  .fcb    0xFF
+   0EBA 72 65 6D 65 6D 62  1554 WPREMEMBER:       .fcc    "remember"
+        65 72
+   0EC2 FF                 1555                  .fcb    0xFF
+   0EC3 72 65 6D 6F 76 65  1556 WPREMOVE:         .fcc    "remove"
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 41
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0EC9 FF                 1557                  .fcb    0xFF
+   0ECA 72 65 73 70 65 63  1558 WPRESPECTABLE:    .fcc    "respectable"
+        74 61 62 6C 65
+   0ED5 FF                 1559                  .fcb    0xFF
+   0ED6 72 69 67 68 74     1560 WPRIGHT:          .fcc    "right"
+   0EDB FF                 1561                  .fcb    0xFF
+   0EDC 72 6F 6F 6D        1562 WPROOM:           .fcc    "room"
+   0EE0 FF                 1563                  .fcb    0xFF
+   0EE1 72 75 6E 6E 69 6E  1564 WPRUNNING:        .fcc    "running"
+        67
+   0EE8 FF                 1565                  .fcb    0xFF
+   0EE9 72 75 73 68        1566 WPRUSH:           .fcc    "rush"
+   0EED FF                 1567                  .fcb    0xFF
+                           1568 
+                           1569 ; S
+                           1570 ; -----------------------------------------------------
+   0EEE 73 61 69 64        1571 WPSAID:           .fcc    "said"
+   0EF2 FF                 1572                  .fcb    0xFF
+   0EF3 73 61 6B 65 73     1573 WPSAKES:          .fcc    "sakes"
+   0EF8 FF                 1574                  .fcb    0xFF
+   0EF9 73 61 79           1575 WPSAY:            .fcc    "say"
+   0EFC FF                 1576                  .fcb    0xFF
+   0EFD 73 61 79 69 6E 67  1577 WPSAYING:         .fcc    "saying"
+   0F03 FF                 1578                  .fcb    0xFF
+   0F04 73 63 69 65 6E 63  1579 WPSCIENCE:        .fcc    "science"
+        65
+   0F0B FF                 1580                  .fcb    0xFF
+   0F0C 73 65 63 6F 6E 64  1581 WPSECONDS:        .fcc    "seconds"
+        73
+   0F13 FF                 1582                  .fcb    0xFF
+   0F14 73 65 65           1583 WPSEE:            .fcc    "see"
+   0F17 FF                 1584                  .fcb    0xFF
+   0F18 73 65 65 6E        1585 WPSEEN:           .fcc    "seen"
+   0F1C FF                 1586                  .fcb    0xFF
+   0F1D 73 65 72 76 65 72  1587 WPSERVER:         .fcc    "server"
+   0F23 FF                 1588                  .fcb    0xFF
+   0F24 73 65 76 65 6E 74  1589 WPSEVENTY:        .fcc    "seventy"
+        79
+   0F2B FF                 1590                  .fcb    0xFF
+   0F2C 73 68 61 6C 6C     1591 WPSHALL:          .fcc    "shall"
+   0F31 FF                 1592                  .fcb    0xFF
+   0F32 73 68 6F 75 6C 64  1593 WPSHOULD:         .fcc    "should"
+   0F38 FF                 1594                  .fcb    0xFF
+   0F39 73 69 67 6E        1595 WPSIGN:           .fcc    "sign"
+   0F3D FF                 1596                  .fcb    0xFF
+   0F3E 73 69 6D 75 6C 61  1597 WPSIMULATION:     .fcc    "simulation"
+        74 69 6F 6E
+   0F48 FF                 1598                  .fcb    0xFF
+   0F49 73 69 6E 63 65     1599 WPSINCE:          .fcc    "since"
+   0F4E FF                 1600                  .fcb    0xFF
+   0F4F 73 69 7A 65        1601 WPSIZE:           .fcc    "size"
+   0F53 FF                 1602                  .fcb    0xFF
+   0F54 73 6C 6F 77 6C 79  1603 WPSLOWLY:         .fcc    "slowly"
+   0F5A FF                 1604                  .fcb    0xFF
+   0F5B 73 6D 61 6C 6C     1605 WPSMALL:          .fcc    "small"
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 42
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   0F60 FF                 1606                  .fcb    0xFF
+   0F61 73 6F              1607 WPSO:             .fcc    "so"
+   0F63 FF                 1608                  .fcb    0xFF
+   0F64 73 6F 6C 69 64     1609 WPSOLID:          .fcc    "solid"
+   0F69 FF                 1610                  .fcb    0xFF
+   0F6A 73 6F 6D 65        1611 WPSOME:           .fcc    "some"
+   0F6E FF                 1612                  .fcb    0xFF
+   0F6F 73 6F 6D 65 6F 6E  1613 WPSOMEONE:        .fcc    "someone"
+        65
+   0F76 FF                 1614                  .fcb    0xFF
+   0F77 73 6F 6D 65 74 68  1615 WPSOMETHING:      .fcc    "something"
+        69 6E 67
+   0F80 FF                 1616                  .fcb    0xFF
+   0F81 73 6F 6D 65 74 69  1617 WPSOMETIME:       .fcc    "sometime"
+        6D 65
+   0F89 FF                 1618                  .fcb    0xFF
+   0F8A 73 6F 6D 65 74 69  1619 WPSOMETIMES:      .fcc    "sometimes"
+        6D 65 73
+   0F93 FF                 1620                  .fcb    0xFF
+   0F94 73 70 65 61 6B     1621 WPSPEAK:          .fcc    "speak"
+   0F99 FF                 1622                  .fcb    0xFF
+   0F9A 73 70 65 6E 64     1623 WPSPEND:          .fcc    "spend"
+   0F9F FF                 1624                  .fcb    0xFF
+   0FA0 73 74 61 6E 64     1625 WPSTAND:          .fcc    "stand"
+   0FA5 FF                 1626                  .fcb    0xFF
+   0FA6 73 74 61 6E 64 69  1627 WPSTANDING:       .fcc    "standing"
+        6E 67
+   0FAE FF                 1628                  .fcb    0xFF
+   0FAF 73 74 61 74 69 73  1629 WPSTATISTICALLY:  .fcc    "statisticly"
+        74 69 63 6C 79
+   0FBA FF                 1630                  .fcb    0xFF
+   0FBB 73 74 65 70        1631 WPSTEP:           .fcc    "step"
+   0FBF FF                 1632                  .fcb    0xFF
+   0FC0 73 74 65 70 70 65  1633 WPSTEPPED:        .fcc    "stepped"
+        64
+   0FC7 FF                 1634                  .fcb    0xFF
+   0FC8 73 74 6F 70 70 65  1635 WPSTOPPED:        .fcc    "stopped"
+        64
+   0FCF FF                 1636                  .fcb    0xFF
+   0FD0 73 74 69 6C 6C     1637 WPSTILL:          .fcc    "still"
+   0FD5 FF                 1638                  .fcb    0xFF
+   0FD6 73 74 72 75 63 74  1639 WPSTRUCTURAL:     .fcc    "structural"
+        75 72 61 6C
+   0FE0 FF                 1640                  .fcb    0xFF
+   0FE1 73 74 72 75 63 74  1641 WPSTRUCTURALLY:   .fcc    "structurally"
+        75 72 61 6C 6C 79
+   0FED FF                 1642                  .fcb    0xFF
+   0FEE 73 75 62 73 74 61  1643 WPSUBSTANTIALLY:  .fcc    "substantially"
+        6E 74 69 61 6C 6C
+        79
+   0FFB FF                 1644                  .fcb    0xFF
+   0FFC 73 75 70 70 6F 73  1645 WPSUPPOSE:        .fcc    "suppose"
+        65
+   1003 FF                 1646                  .fcb    0xFF
+   1004 73 75 72 65        1647 WPSURE:           .fcc    "sure"
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 43
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   1008 FF                 1648                  .fcb    0xFF
+   1009 73 75 72 76 69 76  1649 WPSURVIVE:        .fcc    "survive"
+        65
+   1010 FF                 1650                  .fcb    0xFF
+   1011 73 79 73 74 65 6D  1651 WPSYSTEM:         .fcc    "system"
+   1017 FF                 1652                  .fcb    0xFF
+                           1653 
+                           1654 ; T
+                           1655 ; -----------------------------------------------------
+   1018 74 61 6B 65        1656 WPTAKE:           .fcc    "take"
+   101C FF                 1657                  .fcb    0xFF
+   101D 74 61 6C 6C        1658 WPTALL:           .fcc    "tall"
+   1021 FF                 1659                  .fcb    0xFF
+   1022 74 65 6C 65 70 72  1660 WPTELEPRINTER:    .fcc    "teleprinter"
+        69 6E 74 65 72
+   102D FF                 1661                  .fcb    0xFF
+   102E 74 65 6C 6C 73     1662 WPTELLS:          .fcc    "tells"
+   1033 FF                 1663                  .fcb    0xFF
+   1034 74 65 72 72 69 62  1664 WPTERRIBLE:       .fcc    "terrible"
+        6C 65
+   103C FF                 1665                  .fcb    0xFF
+   103D 74 68 61 6E        1666 WPTHAN:           .fcc    "than"
+   1041 FF                 1667                  .fcb    0xFF
+   1042 74 68 61 74        1668 WPTHAT:           .fcc    "that"
+   1046 FF                 1669                  .fcb    0xFF
+   1047 74 68 61 74 73     1670 WPTHATS:          .fcc    "thats"
+   104C FF                 1671                  .fcb    0xFF
+   104D 74 68 65           1672 WPTHE:            .fcc    "the"
+   1050 FF                 1673                  .fcb    0xFF
+   1051 74 68 65 6D        1674 WPTHEM:           .fcc    "them"
+   1055 FF                 1675                  .fcb    0xFF
+   1056 74 68 69 6E 67 73  1676 WPTHINGS:         .fcc    "things"
+   105C FF                 1677                  .fcb    0xFF
+   105D 74 68 69 6E 6B     1678 WPTHINK:          .fcc    "think"
+   1062 FF                 1679                  .fcb    0xFF
+   1063 74 68 69 6E 6B 69  1680 WPTHINKING:       .fcc    "thinking"
+        6E 67
+   106B FF                 1681                  .fcb    0xFF
+   106C 74 68 69 73        1682 WPTHIS:           .fcc    "this"
+   1070 FF                 1683                  .fcb    0xFF
+   1071 74 68 6F 72 6F 75  1684 WPTHOROUGHLY:     .fcc    "thoroughly"
+        67 68 6C 79
+   107B FF                 1685                  .fcb    0xFF
+   107C 74 68 6F 75 73 61  1686 WPTHOUSAND:       .fcc    "thousand"
+        6E 64
+   1084 FF                 1687                  .fcb    0xFF
+   1085 74 69 6D           1688 WPTIM:            .fcc    "tim"
+   1088 FF                 1689                  .fcb    0xFF
+   1089 74 69 6D 65        1690 WPTIME:           .fcc    "time"
+   108D FF                 1691                  .fcb    0xFF
+   108E 74 6F              1692 WPTO:             .fcc    "to"
+   1090 FF                 1693                  .fcb    0xFF
+   1091 74 6F 64 61 79     1694 WPTODAY:          .fcc    "today"
+   1096 FF                 1695                  .fcb    0xFF
+   1097 74 6F 6F           1696 WPTOO:            .fcc    "too"
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 44
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   109A FF                 1697                  .fcb    0xFF
+   109B 74 72 61 67 65 64  1698 WPTRAGEDY:        .fcc    "tragedy"
+        79
+   10A2 FF                 1699                  .fcb    0xFF
+   10A3 74 72 61 76 65 6C  1700 WPTRAVELLED:      .fcc    "travelled"
+        6C 65 64
+   10AC FF                 1701                  .fcb    0xFF
+   10AD 74 72 69 6E 69 74  1702 WPTRINITY:        .fcc    "trinity"
+        79
+   10B4 FF                 1703                  .fcb    0xFF
+   10B5 74 72 79           1704 WPTRY:            .fcc    "try"
+   10B8 FF                 1705                  .fcb    0xFF
+   10B9 74 75 65 73 64 61  1706 WPTUESDAY:        .fcc    "tuesday"
+        79
+   10C0 FF                 1707                  .fcb    0xFF
+   10C1 74 79 70 69 63 71  1708 WPTYPICAL:        .fcc    "typicql"
+        6C
+   10C8 FF                 1709                  .fcb    0xFF
+                           1710 
+                           1711 ; U
+                           1712 ; -----------------------------------------------------
+   10C9 75 6E 69 6E 74 65  1713 WPUNINTERESTING:  .fcc    "uninteresting"
+        72 65 73 74 69 6E
+        67
+   10D6 FF                 1714                  .fcb    0xFF
+   10D7 75 6E 69 78        1715 WPUNIX:           .fcc    "unix"
+   10DB FF                 1716                  .fcb    0xFF
+   10DC 75 6E 6C 65 73 73  1717 WPUNLESS:         .fcc    "unless"
+   10E2 FF                 1718                  .fcb    0xFF
+   10E3 75 6E 70 6C 75 67  1719 WPUNPLUGGED:      .fcc    "unplugged"
+        67 65 64
+   10EC FF                 1720                  .fcb    0xFF
+   10ED 75 6E 72 65 6D 61  1721 WPUNREMARKABLE:   .fcc    "unremarkable"
+        72 6B 61 62 6C 65
+   10F9 FF                 1722                  .fcb    0xFF
+   10FA 75 70              1723 WPUP:             .fcc    "up"
+   10FC FF                 1724                  .fcb    0xFF
+                           1725 
+                           1726 ; V
+                           1727 ; -----------------------------------------------------
+   10FD 76 65 67 65 74 61  1728 WPVEGETABLES:     .fcc    "vegetables"
+        62 6C 65 73
+   1107 FF                 1729                  .fcb    0xFF
+   1108 76 65 72 79        1730 WPVERY:           .fcc    "very"
+   110C FF                 1731                  .fcb    0xFF
+                           1732 
+                           1733 ; W
+                           1734 ; -----------------------------------------------------
+   110D 77 61 69 74        1735 WPWAIT:           .fcc    "wait"
+   1111 FF                 1736                  .fcb    0xFF
+   1112 77 61 69 74 69 6E  1737 WPWAITING:        .fcc    "waiting"
+        67
+   1119 FF                 1738                  .fcb    0xFF
+   111A 77 61 6E 74        1739 WPWANT:           .fcc    "want"
+   111E FF                 1740                  .fcb    0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 45
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   111F 77 61 72 6E 69 6E  1741 WPWARNING:        .fcc    "warning"
+        67
+   1126 FF                 1742                  .fcb    0xFF
+   1127 77 61 73           1743 WPWAS:            .fcc    "was"
+   112A FF                 1744                  .fcb    0xFF
+   112B 77 61 79           1745 WPWAY:            .fcc    "way"
+   112E FF                 1746                  .fcb    0xFF
+   112F 77 65              1747 WPWE:             .fcc    "we"
+   1131 FF                 1748                  .fcb    0xFF
+   1132 77 61 64 65        1749 WPWEIGHED:        .fcc    "wade"
+   1136 FF                 1750                  .fcb    0xFF
+   1137 77 65 69 67 68     1751 WPWEIGH:          .fcc    "weigh"
+   113C FF                 1752                  .fcb    0xFF
+   113D 77 65 69 67 68 73  1753 WPWEIGHS:         .fcc    "weighs"
+   1143 FF                 1754                  .fcb    0xFF
+   1144 77 65 69 67 68 74  1755 WPWEIGHT:         .fcc    "weight"
+   114A FF                 1756                  .fcb    0xFF
+   114B 77 65 72 65        1757 WPWERE:           .fcc    "were"
+   114F FF                 1758                  .fcb    0xFF
+   1150 77 65 72 65 6E 27  1759 WPWERENT:         .fcc    "weren't"
+        74
+   1157 FF                 1760                  .fcb    0xFF
+   1158 77 68 61 74        1761 WPWHAT:           .fcc    "what"
+   115C FF                 1762                  .fcb    0xFF
+   115D 77 68 65 6E        1763 WPWHEN:           .fcc    "when"
+   1161 FF                 1764                  .fcb    0xFF
+   1162 77 68 69 63 68     1765 WPWHICH:          .fcc    "which"
+   1167 FF                 1766                  .fcb    0xFF
+   1168 77 68 69 6C 65     1767 WPWHILE:          .fcc    "while"
+   116D FF                 1768                  .fcb    0xFF
+   116E 77 68 69 73 70 65  1769 WPWHISPERED:      .fcc    "whispered"
+        72 65 64
+   1177 FF                 1770                  .fcb    0xFF
+   1178 77 68 6F           1771 WPWHO:            .fcc    "who"
+   117B FF                 1772                  .fcb    0xFF
+   117C 77 69 6C 6C        1773 WPWILL:           .fcc    "will"
+   1180 FF                 1774                  .fcb    0xFF
+   1181 77 69 73 68        1775 WPWISH:           .fcc    "wish"
+   1185 FF                 1776                  .fcb    0xFF
+   1186 77 69 74 68        1777 WPWITH:           .fcc    "with"
+   118A FF                 1778                  .fcb    0xFF
+   118B 77 69 74 68 69 6E  1779 WPWITHIN:         .fcc    "within"
+   1191 FF                 1780                  .fcb    0xFF
+   1192 77 69 74 68 6F 75  1781 WPWITHOUT:        .fcc    "without"
+        74
+   1199 FF                 1782                  .fcb    0xFF
+   119A 77 6F 6E 64 65 72  1783 WPWONDERING:      .fcc    "wondering"
+        69 6E 67
+   11A3 FF                 1784                  .fcb    0xFF
+   11A4 77 6F 72 6B 73 74  1785 WPWORKSTATION:    .fcc    "workstation"
+        61 74 69 6F 6E
+   11AF FF                 1786                  .fcb    0xFF
+   11B0 77 6F 72 72 69 65  1787 WPWORRIED:        .fcc    "worried"
+        64
+   11B7 FF                 1788                  .fcb    0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 46
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   11B8 77 6F 72 72 79     1789 WPWORRY:          .fcc    "worry"
+   11BD FF                 1790                  .fcb    0xFF
+   11BE 77 6F 72 72 79 69  1791 WPWORRYING:       .fcc    "worrying"
+        6E 67
+   11C6 FF                 1792                  .fcb    0xFF
+   11C7 77 6F 72 73 65     1793 WPWORSE:          .fcc    "worse"
+   11CC FF                 1794                  .fcb    0xFF
+   11CD 77 6F 75 6C 64     1795 WPWOULD:          .fcc    "would"
+   11D2 FF                 1796                  .fcb    0xFF
+   11D3 77 6F 75 6C 64 6E  1797 WPWOULDNT:        .fcc    "wouldnt"
+        74
+   11DA FF                 1798                  .fcb    0xFF
+                           1799 
+                           1800 ; Y
+                           1801 ; -----------------------------------------------------
+   11DB 79 65 61 72        1802 WPYEAR:           .fcc    "year"
+   11DF FF                 1803                  .fcb    0xFF
+   11E0 79 65 73           1804 WPYES:            .fcc    "yes"
+   11E3 FF                 1805                  .fcb    0xFF
+   11E4 79 6F 75           1806 WPYOU:            .fcc    "you"
+   11E7 FF                 1807                  .fcb    0xFF
+   11E8 79 6F 75 27 72 65  1808 WPYOURE:          .fcc    "you're"
+   11EE FF                 1809                  .fcb    0xFF
+   11EF 79 6F 75 72        1810 WPYOUR:           .fcc    "your"
+   11F3 FF                 1811                  .fcb    0xFF
+   11F4 79 6F 75 72 73 65  1812 WPYOURSELF:       .fcc    "yourself"
+        6C 66
+   11FC FF                 1813                  .fcb    0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 47
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            500                 .include    "phrases.asm"
+                              1 ; -----------------------------------------------------
+                              2 ; Phrase Pointers to the categorised phases
+                              3 ; -----------------------------------------------------
+   11FD                       4 PHRASEPTR:
+                              5 ; -----------------------------------------------------
+                              6 ; Phrase Pointer Table
+                              7 ; Each entry is a 2-byte address pointing to a message
+                              8 ; -----------------------------------------------------
+                              9 
+                             10 ; Greetings
+   11FD                      11 GREETPTR:
+   11FD 12 BF                12               .fdb     MGREET1
+   11FF 12 D6                13               .fdb     MGREET2
+   1201 12 EF                14               .fdb     MGREET3
+   1203 13 02                15               .fdb     MGREET4
+   1205 13 17                16               .fdb     MGREET5
+   1207 13 2A                17               .fdb     MGREET6
+   1209 13 3D                18               .fdb     MGREET7
+   120B 13 4E                19               .fdb     MGREET8
+   120D 13 63                20               .fdb     MGREET9
+   120F 13 78                21               .fdb     MGREET10
+   1211 13 89                22               .fdb     MGREET11
+   1213 13 96                23               .fdb     MGREET12
+   1215 13 B9                24               .fdb     MGREET13
+                             25 ; Light Weight
+   1217                      26 LIGHTPTR:
+   1217 13 DE                27               .fdb     MLIGHT1
+   1219 13 F9                28               .fdb     MLIGHT2
+   121B 14 0E                29               .fdb     MLIGHT3
+   121D 14 1D                30               .fdb     MLIGHT4
+   121F 14 2E                31               .fdb     MLIGHT5
+   1221 14 4B                32               .fdb     MLIGHT6
+   1223 14 5E                33               .fdb     MLIGHT7
+   1225 14 73                34               .fdb     MLIGHT8
+   1227 14 84                35               .fdb     MLIGHT9
+   1229 14 9D                36               .fdb     MLIGHT10
+                             37 ; Normal Weight
+   122B                      38 NORMALPTR:
+   122B 14 BA                39               .fdb     MNORM1
+   122D 14 D3                40               .fdb     MNORM2
+   122F 14 F4                41               .fdb     MNORM3
+   1231 15 0D                42               .fdb     MNORM4
+   1233 15 16                43               .fdb     MNORM5
+   1235 15 23                44               .fdb     MNORM6
+   1237 15 36                45               .fdb     MNORM7
+   1239 15 43                46               .fdb     MNORM8
+   123B 15 56                47               .fdb     MNORM9
+   123D 15 65                48               .fdb     MNORM10
+   123F 15 7E                49               .fdb     MNORM11
+   1241 15 8F                50               .fdb     MNORM12
+   1243 15 9E                51               .fdb     MNORM13
+   1245 15 B5                52               .fdb     MNORM14
+   1247 15 CA                53               .fdb     MNORM15
+   1249 15 DD                54               .fdb     MNORM16
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 48
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   124B 15 EC                55               .fdb     MNORM17
+   124D 16 01                56               .fdb     MNORM18
+   124F 16 12                57               .fdb     MNORM19
+   1251 16 2D                58               .fdb     MNORM20
+   1253 16 3C                59               .fdb     MNORM21
+                             60 ; Heavy Weight
+   1255                      61 HEAVYPTR:
+   1255 16 55                62               .fdb     MHEAVY1
+   1257 16 66                63               .fdb     MHEAVY2
+   1259 16 71                64               .fdb     MHEAVY3
+   125B 16 86                65               .fdb     MHEAVY4
+   125D 16 97                66               .fdb     MHEAVY5
+   125F 16 B0                67               .fdb     MHEAVY6
+   1261 16 C3                68               .fdb     MHEAVY7
+   1263 16 D6                69               .fdb     MHEAVY8
+   1265 16 E5                70               .fdb     MHEAVY9
+   1267 17 0A                71               .fdb     MHEAVY10
+   1269 17 1B                72               .fdb     MHEAVY11
+   126B 17 2E                73               .fdb     MHEAVY12
+   126D 17 41                74               .fdb     MHEAVY13
+   126F 17 4C                75               .fdb     MHEAVY14
+   1271 17 5F                76               .fdb     MHEAVY15
+   1273 17 6C                77               .fdb     MHEAVY16
+   1275 17 81                78               .fdb     MHEAVY17
+                             79 
+                             80 ; Super Heavy Weight
+   1277                      81 SHEAVYPTR:
+   1277 17 A3                82               .fdb     MSUPER1
+   1279 17 C6                83               .fdb     MSUPER2
+   127B 17 DB                84               .fdb     MSUPER3
+   127D 17 EC                85               .fdb     MSUPER4
+   127F 17 FB                86               .fdb     MSUPER5
+   1281 18 08                87               .fdb     MSUPER6
+   1283 18 19                88               .fdb     MSUPER7
+   1285 18 28                89               .fdb     MSUPER8
+   1287 18 43                90               .fdb     MSUPER9
+   1289 18 5A                91               .fdb     MSUPER10
+                             92 ; Idle
+   128B                      93 IDLEPTR:
+   128B 18 69                94               .fdb     MIDLE1
+   128D 18 7C                95               .fdb     MIDLE2
+   128F 18 9F                96               .fdb     MIDLE3
+   1291 18 BC                97               .fdb     MIDLE4
+   1293 18 DD                98               .fdb     MIDLE5
+   1295 18 F4                99               .fdb     MIDLE6
+   1297 19 0F               100               .fdb     MIDLE7
+   1299 19 20               101               .fdb     MIDLE8
+   129B 19 3F               102               .fdb     MIDLE9
+   129D 19 66               103               .fdb     MIDLE10
+   129F 19 8B               104               .fdb     MIDLE11
+   12A1 19 9C               105               .fdb     MIDLE12
+   12A3 19 B7               106               .fdb     MIDLE13
+   12A5 19 D8               107               .fdb     MIDLE14
+   12A7 19 EF               108               .fdb     MIDLE15
+   12A9 1A 06               109               .fdb     MIDLE16
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 49
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   12AB 1A 25               110               .fdb     MIDLE17
+   12AD 1A 42               111               .fdb     MIDLE18
+   12AF 1A 5F               112               .fdb     MIDLE19
+   12B1 1A 80               113               .fdb     MIDLE20
+   12B3 1A 97               114               .fdb     MIDLE21
+   12B5 1A A6               115               .fdb     MIDLE22
+   12B7 1A B9               116               .fdb     MIDLE23
+   12B9 1A E2               117               .fdb     MIDLE24
+   12BB 1A FD               118               .fdb     MIDLE25
+                            119 
+   12BD                     120 OVERLOADTPTR:
+   12BD 1B 20               121               .fdb     MTOOHEAVY1
+                            122 
+                            123 ; Greetings Messages
+                            124 ; -----------------------------------------------------
+   12BF 00 2E 01 68 00 C1   125 MGREET1:     .fdb     BEAR,WITH,ME,COMMA,I,WAS,JUST,HAVING,A,NAP,FULLSTOP
+        01 8F 00 9A 01 59
+        00 AD 00 8F 00 18
+        00 D3 00 16
+   12D5 FF                  126             .fcb     0xFF
+   12D6 00 86 00 C1 00 18   127 MGREET2:     .fdb     GIVE,ME,A,MOMENT,COMMA,I,WAS,COMPOSING,A,SMALL,TRAGEDY,EXCLAMATION
+        00 CB 01 8F 00 9A
+        01 59 00 4D 00 18
+        01 1D 01 49 00 15
+   12EE FF                  128             .fcb     0xFF
+   12EF 00 AE 01 2A 00 23   129 MGREET3:     .fdb     KEEP,STILL,ANDD,I,WILL,CALCULATE,YOUR,WEIGHT,EXCLAMATION
+        00 9A 01 66 00 42
+        01 76 01 5F 00 15
+   1301 FF                  130             .fcb     0xFF
+   1302 00 F1 00 64 00 7D   131 MGREET4:     .fdb     PLEASE,DONT,FIDGET,COMMA,IT,MAKES,MY,DIODES,HURT,EXCLAMATION
+        01 8F 00 A8 00 BF
+        00 D2 00 5D 00 99
+        00 15
+   1316 FF                  132             .fcb     0xFF
+   1317 00 F1 00 AE 01 2A   133 MGREET5:     .fdb     PLEASE,KEEP,STILL,COMMA,I,HAVE,ENOUGH,PROBLEMS,FULLSTOP
+        01 8F 00 9A 00 8E
+        00 70 00 FC 00 16
+   1329 FF                  134             .fcb     0xFF
+   132A 00 9A 01 30 01 74   135 MGREET6:     .fdb     I,SUPPOSE,YOU,WANT,ME,TO,WEIGH,YOU,COMMA
+        01 57 00 C1 01 46
+        01 5C 01 74 01 8F
+   133C FF                  136             .fcb     0xFF
+   133D 01 27 01 2A 01 8F   137 MGREET7:     .fdb     STAND,STILL,COMMA,ANDD,DONT,BLAME,ME,FULLSTOP
+        00 23 00 64 00 35
+        00 C1 00 16
+   134D FF                  138             .fcb     0xFF
+   134E 00 E2 00 15 00 A9   139 MGREET8:     .fdb     OH,EXCLAMATION,ITS,YOU,EXCLAMATION,OR,SOMEONE,LIKE,YOU,FULLSTOP
+        01 74 00 15 00 E7
+        01 21 00 BA 01 74
+        00 16
+   1362 FF                  140             .fcb     0xFF
+   1363 00 3C 01 77 00 15   141 MGREET9:    .fdb     BRACE,YOURSELF,EXCLAMATION,IVE,BEEN,KNOWN,TO,BE,ACCURATE,FULLSTOP
+        00 AA 00 2F 00 B2
+        01 46 00 2D 00 1C
+        00 16
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 50
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   1377 FF                  142             .fcb     0xFF
+   1378 01 5B 00 3B 00 B1   143 MGREET10:    .fdb     WE,BOTH,KNOW,THIS,IS,A,MISTAKE,EXCLAMATION
+        01 41 00 A6 00 18
+        00 CA 00 15
+   1388 FF                  144             .fcb     0xFF
+   1389 00 26 01 74 01 31   145 MGREET11:    .fdb     ARE,YOU,SURE,ABOUT,THIS,QUESTIONMK
+        00 19 01 41 00 17
+   1395 FF                  146             .fcb     0xFF
+   1396 00 9A 01 70 01 0F   147 MGREET12:    .fdb     I,WOULD,SAY,THAT,ITS,NICE,TO,SEE,YOU,COMMA,BUT,IM,NOT,BUILT,TO,LIE,FULLSTOP
+        01 3A 00 A9 00 D8
+        01 46 01 12 01 74
+        01 8F 00 3F 00 9E
+        00 DE 00 3E 01 46
+        00 B8 00 16
+   13B8 FF                  148             .fcb     0xFF
+   13B9 00 9A 00 8E 01 3C   149 MGREET13:    .fdb     I,HAVE,THE,BRAIN,THE,SIZE,OF,A,PLANET,COMMA,ANDD,I,SPEND,MY,DAYS,DOING,THIS,FULLSTOP
+        00 3D 01 3C 01 1B
+        00 E0 00 18 00 EF
+        01 8F 00 23 00 9A
+        01 26 00 D2 00 55
+        00 63 01 41 00 16
+   13DD FF                  150             .fcb     0xFF
+                            151 
+                            152 ; Light Weight Messages
+                            153 ; -----------------------------------------------------
+   13DE 01 74 01 5C 00 B6   154 MLIGHT1:     .fdb     YOU,WEIGH,LESS,THAN,MY,EXISTENTIAL,DREAD,FULLSTOP,ANDD,THATS,SAYING,SOMETHING,FULLSTOP
+        01 39 00 D2 00 79
+        00 66 00 16 00 23
+        01 3B 01 10 01 22
+        00 16
+   13F8 FF                  155             .fcb     0xFF
+   13F9 00 72 00 D2 00 47   156 MLIGHT2:     .fdb     EVEN,MY,CAPACITY,FOR,DISSAPOINTMENT,WEIGHS,MORE,THAN,THAT,EXCLAMATION
+        00 80 00 5F 01 5E
+        00 CD 01 39 01 3A
+        00 15
+   140D FF                  157             .fcb     0xFF
+   140E 01 74 00 FB 00 D4   158 MLIGHT3:     .fdb     YOU,PROBABLY,NEED,TO,EAT,MORE,FULLSTOP
+        01 46 00 6A 00 CD
+        00 16
+   141C FF                  159             .fcb     0xFF
+   141D 00 AA 00 59 01 22   160 MLIGHT4:     .fdb     IVE,DETECTED,SOMETHING,FULLSTOP,POSSIBLY,A,PERSON,FULLSTOP
+        00 16 00 F4 00 18
+        00 ED 00 16
+   142D FF                  161             .fcb     0xFF
+   142E 00 9E 00 EE 01 52   162 MLIGHT5:     .fdb     IM,PICKING,UP,WHAT,MIGHT,BE,A,HUMAN,EXCLAMATION,HARD,TO,BE,SURE,FULLSTOP
+        01 60 00 C9 00 2D
+        00 18 00 98 00 15
+        00 8D 01 46 00 2D
+        01 31 00 16
+   144A FF                  163             .fcb     0xFF
+   144B 00 8E 01 74 00 6B   164 MLIGHT6:     .fdb     HAVE,YOU,EATEN,QUESTIONMK,ANDD,I,MEAN,EVER,QUESTIONMK
+        00 17 00 23 00 9A
+        00 C2 00 73 00 17
+   145D FF                  165             .fcb     0xFF
+   145E 00 9E 00 DE 00 18   166 MLIGHT7:     .fdb     IM,NOT,A,DOCTOR,COMMA,BUT,IM,QUITE,WORRIED,FULLSTOP
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 51
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+        00 62 01 8F 00 3F
+        00 9E 01 00 01 6C
+        00 16
+   1472 FF                  167             .fcb     0xFF
+   1473 00 F1 00 6A 01 22   168 MLIGHT8:     .fdb     PLEASE,EAT,SOMETHING,EXCLAMATION,IM,BEGGING,YOU,FULLSTOP
+        00 15 00 9E 00 30
+        01 74 00 16
+   1483 FF                  169             .fcb     0xFF
+   1484 00 9B 00 BA 01 46   170 MLIGHT9:     .fdb     ID,LIKE,TO,REFER,YOU,TO,A,BISCUIT,ANDD,SOME,CAKE,FULLSTOP
+        01 03 01 74 01 46
+        00 18 00 34 00 23
+        01 20 00 41 00 16
+   149C FF                  171             .fcb     0xFF
+   149D 01 74 00 26 01 6A   172 MLIGHT10:    .fdb     YOU,ARE,WITHOUT,QUESTION,COMMA,THE,LEAST,COMMA,I,HAVE,EVER,DEALT,WITH,EXCLAMATION
+        00 FF 01 8F 01 3C
+        00 B5 01 8F 00 9A
+        00 8E 00 73 00 56
+        01 68 00 15
+   14B9 FF                  173             .fcb     0xFF
+                            174 
+                            175 ; Normal Weight Messages
+                            176 ; -----------------------------------------------------
+   14BA 01 3B 00 18 01 54   177 MNORM1:      .fdb     THATS,A,VERY,RESPECTABLE,WEIGHT,COMMA,UNLESS,YOURE,A,UNIX,WORKSTATION,FULLSTOP
+        01 08 01 5F 01 8F
+        01 4F 01 75 00 18
+        01 4E 01 6B 00 16
+   14D2 FF                  178             .fcb     0xFF
+   14D3 01 3B 00 18 01 5F   179 MNORM2:      .fdb     THATS,A,WEIGHT,TO,BE,PROUD,OF,EXCLAMATION,PERHAPS,I,SHOULD,HAVE,SAID,IT,LOUDER,FULLSTOP
+        01 46 00 2D 00 FD
+        00 E0 00 15 00 EC
+        00 9A 01 17 00 8E
+        01 0D 00 A8 00 BE
+        00 16
+   14F3 FF                  180             .fcb     0xFF
+   14F4 00 44 00 16 00 4C   181 MNORM3:      .fdb     CALM,FULLSTOP,COLLECTED,COMMA,AVERAGE,FULLSTOP,THE,HOLY,TRINITY,OF,MEDIOCRITY,FULLSTOP
+        01 8F 00 2A 00 16
+        01 3C 00 95 01 4A
+        00 E0 00 C5 00 16
+   150C FF                  182             .fcb     0xFF
+   150D 01 00 00 3A 01 02   183 MNORM4:      .fdb     QUITE,BORING,REALLY,FULLSTOP
+        00 16
+   1515 FF                  184             .fcb     0xFF
+   1516 01 1F 00 15 00 9A   185 MNORM5:      .fdb     SOLID,EXCLAMATION,I,LIKE,SOLID,FULLSTOP
+        00 BA 01 1F 00 16
+   1522 FF                  186             .fcb     0xFF
+   1523 00 53 00 2D 01 6F   187 MNORM6:      .fdb     COULD,BE,WORSE,EXCLAMATION,COULD,BE,MUCH,WORSE,FULLSTOP
+        00 15 00 53 00 2D
+        00 D0 01 6F 00 16
+   1535 FF                  188             .fcb     0xFF
+   1536 00 DE 01 38 01 8F   189 MNORM7:      .fdb     NOT,TERRIBLE,COMMA,NOT,EXCITING,FULLSTOP
+        00 DE 00 77 00 16
+   1542 FF                  190             .fcb     0xFF
+   1543 00 DD 00 16 01 62   191 MNORM8:      .fdb     NORMAL,FULLSTOP,WHICH,IS,QUESTIONMK,SOMETHING,I,SUPPOSE,EXCLAMATION
+        00 A6 00 17 01 22
+        00 9A 01 30 00 15
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 52
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   1555 FF                  192             .fcb     0xFF
+   1556 00 DD 00 15 00 A1   193 MNORM9:      .fdb     NORMAL,EXCLAMATION,IN,THE,DULLEST,WAY,FULLSTOP
+        01 3C 00 69 01 5A
+        00 16
+   1564 FF                  194             .fcb     0xFF
+   1565 01 74 00 26 00 75   195 MNORM10:     .fdb     YOU,ARE,EXACTLY,MEAN,COMMA,ANDD,YES,I,SAID,THAT,CORRECTLY,FULLSTOP
+        00 C2 01 8F 00 23
+        01 73 00 9A 01 0D
+        01 3A 00 52 00 16
+   157D FF                  196             .fcb     0xFF
+   157E 00 50 00 16 01 74   197 MNORM11:     .fdb     CONGRATS,FULLSTOP,YOU,WEIGH,WHAT,YOU,WEIGH,FULLSTOP
+        01 5C 01 60 01 74
+        01 5C 00 16
+   158E FF                  198             .fcb     0xFF
+   158F 00 EB 00 2A 00 16   199 MNORM12:     .fdb     PERFECTLY,AVERAGE,FULLSTOP,LIKE,A,TUESDAY,FULLSTOP
+        00 BA 00 18 01 4C
+        00 16
+   159D FF                  200             .fcb     0xFF
+   159E 01 28 01 75 00 7E   201 MNORM13:     .fdb     STATISTICALLY,YOURE,FINE,EXCLAMATION,EMOTIONALLY,COMMA,I,CANT,HELP,YOU,FULLSTOP
+        00 15 00 6E 01 8F
+        00 9A 00 46 00 92
+        01 74 00 16
+   15B4 FF                  202             .fcb     0xFF
+   15B5 01 74 00 26 00 F7   203 MNORM14:     .fdb     YOU,ARE,PRECISELY,AS,HEAVY,AS,SOMEONE,YOUR,WEIGHT,FULLSTOP
+        00 27 00 91 00 27
+        01 21 01 76 01 5F
+        00 16
+   15C9 FF                  204             .fcb     0xFF
+   15CA 00 DE 00 2B 00 16   205 MNORM15:     .fdb     NOT,BAD,FULLSTOP,NOT,GREAT,FULLSTOP,THOROUGHLY,ACCEPTABLE,FULLSTOP
+        00 DE 00 8A 00 16
+        01 42 00 1B 00 16
+   15DC FF                  206             .fcb     0xFF
+   15DD 01 51 00 A1 01 3C   207 MNORM16:     .fdb     UNREMARKABLE,IN,THE,BEST,POSSIBLE,WAY,FULLSTOP
+        00 33 00 F3 01 5A
+        00 16
+   15EB FF                  208             .fcb     0xFF
+   15EC 01 75 00 75 01 60   209 MNORM17:     .fdb     YOURE,EXACTLY,WHAT,YOU,ARE,FULLSTOP,ANDD,THATS,SOMETHING,FULLSTOP
+        01 74 00 26 00 16
+        00 23 01 3B 01 22
+        00 16
+   1600 FF                  210             .fcb     0xFF
+   1601 01 11 00 A6 00 D5   211 MNORM18:     .fdb     SCIENCE,IS,NEITHER,IMPRESSED,COMMA,NOR,CONCERNED,FULLSTOP
+        00 9F 01 8F 00 DC
+        00 4F 00 16
+   1611 FF                  212             .fcb     0xFF
+   1612 00 DD 00 16 01 62   213 MNORM19:     .fdb     NORMAL,FULLSTOP,WHICH,IS,FINE,FULLSTOP,NORMAL,IS,FINE,FULLSTOP,IS,NORMAL,FINE
+        00 A6 00 7E 00 16
+        00 DD 00 A6 00 7E
+        00 16 00 A6 00 DD
+        00 7E
+   162C FF                  214             .fcb     0xFF
+   162D 00 EB 00 90 00 15   215 MNORM20:     .fdb     PERFECTLY,HEALTHY,EXCLAMATION,ANDD,DEEPLY,UNINTERESTING,FULLSTOP
+        00 23 00 57 01 4D
+        00 16
+   163B FF                  216             .fcb     0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 53
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   163C 01 41 00 A6 00 20   217 MNORM21:     .fdb     THIS,IS,ALL,POINTLESS,COMMA,INCLUDING,YOU,COMMA,BUT,MOSTLY,ME,FULLSTOP
+        00 F2 01 8F 00 A2
+        01 74 01 8F 00 3F
+        00 CE 00 C1 00 16
+   1654 FF                  218             .fcb     0xFF
+                            219 
+                            220 ; Heavy Weight Messages
+                            221 ; -----------------------------------------------------
+   1655 00 53 00 2D 01 6F   222 MHEAVY1:   .fdb     COULD,BE,WORSE,BUT,NOT,MUCH,WORSE,FULLSTOP
+        00 3F 00 DE 00 D0
+        01 6F 00 16
+   1665 FF                  223             .fcb     0xFF
+   1666 00 EC 00 A9 00 20   224 MHEAVY2:     .fdb     PERHAPS,ITS,ALL,MUSCLE,FULLSTOP
+        00 D1 00 16
+   1670 FF                  225             .fcb     0xFF
+   1671 00 EC 01 5B 01 17   226 MHEAVY3:     .fdb     PERHAPS,WE,SHOULD,WEIGH,ONE,FOOT,AT,A,TIME,EXCLAMATION
+        01 5C 00 01 00 7F
+        00 29 00 18 01 45
+        00 15
+   1685 FF                  227             .fcb     0xFF
+   1686 00 9A 01 04 01 46   228 MHEAVY4:     .fdb     I,REFUSE,TO,BE,BLAMED,FOR,THIS,EXCLAMATION
+        00 2D 00 36 00 80
+        01 41 00 15
+   1696 FF                  229             .fcb     0xFF
+   1697 00 8E 01 74 00 51   230 MHEAVY5:     .fdb     HAVE,YOU,CONSIDERED,THE,CONCEPT,OF,ENOUGH,QUESTIONMK,IM,ONLY,ASKING,EXCLAMATION
+        01 3C 00 4E 00 E0
+        00 70 00 17 00 9E
+        00 E6 00 28 00 15
+   16AF FF                  231             .fcb     0xFF
+   16B0 00 9E 00 DE 00 3E   232 MHEAVY6:    .fdb     IM,NOT,BUILT,FOR,THIS,KIND,OF,PRESSURE,EXCLAMATION
+        00 80 01 41 00 B0
+        00 E0 00 F9 00 15
+   16C2 FF                  233             .fcb     0xFF
+   16C3 01 29 00 E1 01 1C   234 MHEAVY7:    .fdb     STEP,OFF,SLOWLY,COMMA,FOR,BOTH,OUR,SAKES,FULLSTOP
+        01 8F 00 80 00 3B
+        00 E8 01 0E 00 16
+   16D5 FF                  235             .fcb     0xFF
+   16D6 00 8A 00 D6 01 8F   236 MHEAVY8:    .fdb     GREAT,NEWS,COMMA,YOURE,ABOVE,AVERAGE,EXCLAMATION
+        01 75 00 1A 00 2A
+        00 15
+   16E4 FF                  237             .fcb     0xFF
+   16E5 00 9A 00 61 00 DE   238 MHEAVY9:    .fdb     I,DO,NOT,WISH,TO,INFLUENCE,YOUR,DIETARY,CHOICES,FULLSTOP,BUT,VEGETABLES,EXIST,COMMA,IM,JUST,SAYING,FULLSTOP
+        01 67 01 46 00 A3
+        01 76 00 5C 00 4A
+        00 16 00 3F 01 53
+        00 78 01 8F 00 9E
+        00 AD 01 10 00 16
+   1709 FF                  239             .fcb     0xFF
+   170A 00 F1 01 06 01 3A   240 MHEAVY10:     .fdb     PLEASE,REMEMBER,THAT,IM,NOT,TO,BLAME,FULLSTOP
+        00 9E 00 DE 01 46
+        00 35 00 16
+   171A FF                  241             .fcb     0xFF
+   171B 00 9C 00 A8 00 93   242 MHEAVY11:     .fdb     IF,IT,HELPS,EXCLAMATION,IVE,SEEN,MUCH,WORSE,FULLSTOP
+        00 15 00 AA 01 13
+        00 D0 01 6F 00 16
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 54
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   172D FF                  243             .fcb     0xFF
+   172E 00 9A 01 70 00 25   244 MHEAVY12:    .fdb     I,WOULD,APOLOGISE,COMMA,BUT,ITS,YOUR,FAULT,FULLSTOP
+        01 8F 00 3F 00 A9
+        01 76 00 7B 00 16
+   1740 FF                  245             .fcb     0xFF
+   1741 00 72 00 9E 00 AC   246 MHEAVY13:    .fdb     EVEN,IM,JUDGING,YOU,FULLSTOP
+        01 74 00 16
+   174B FF                  247             .fcb     0xFF
+   174C 00 9E 00 8B 00 A9   248 MHEAVY14:    .fdb     IM,GUESSING,ITS,NOT,DUE,TO,HEAVY,BONES,FULLSTOP
+        00 DE 00 68 01 46
+        00 91 00 38 00 16
+   175E FF                  249             .fcb     0xFF
+   175F 01 74 00 53 00 21   250 MHEAVY15:     .fdb     YOU,COULD,ALWAYS,BLAME,GRAVITY,FULLSTOP
+        00 35 00 89 00 16
+   176B FF                  251             .fcb     0xFF
+   176C 00 AD 01 06 00 A8   252 MHEAVY16:    .fdb     JUST,REMEMBER,IT,WAS,YOU,THAT,STEPPED,ON,ME,COMMA
+        01 59 01 74 01 3A
+        01 82 00 E5 00 C1
+        01 8F
+   1780 FF                  253             .fcb     0xFF
+   1781 00 9E 00 DE 00 3E   254 MHEAVY17:    .fdb     IM,NOT,BUILT,FOR,THIS,COMMA,EMOTIONALLY,OR,STRUCTURALLY,FULLSTOP
+        00 80 01 41 01 8F
+        00 6E 00 E7 01 2E
+        00 16
+   1795 FF                  255             .fcb     0xFF
+   1796 00 B7 00 3B 00 FA   256 MHEAVY18:    .fdb     LETS,BOTH,PRETEND,THIS,IS,FINE
+        01 41 00 A6 00 7E
+   17A2 FF                  257             .fcb     0xFF
+                            258 ;MHEAVY19     .fdb     IM,HOPING,YOU,ARE,EXCEPTIONALLY,TALL,EXCLAMATION
+                            259 ;            .fcb     0xFF
+                            260 ;MHEAVY20     .fdb     I,WOULDNT,WORRY,FULLSTOP,WORRYING,IS,NOT,GOOD,FOR,YOU,FULLSTOP
+                            261 ;            .fcb     0xFF
+                            262 
+                            263 ; Super Heavy Weight Messages
+                            264 ; -----------------------------------------------------
+   17A3 00 9C 01 75 00 48   265 MSUPER1:     .fdb     IF,YOURE,CARRYING,A,LARGE,SERVER,OR,A,TELEPRINTER,PLEASE,PUT,IT,DOWN,ANDD,TRY,AGAIN,EXCLAMATION
+        00 18 00 B3 01 14
+        00 E7 00 18 01 36
+        00 F1 00 FE 00 A8
+        00 65 00 23 01 4B
+        00 1E 00 15
+   17C5 FF                  266             .fcb     0xFF
+   17C6 00 27 00 18 00 F6   267 MSUPER2:     .fdb     AS,A,PRECAUTION,I,HAVE,ALERTED,THE,STRUCTURAL,ENGINEERS,EXCLAMATION
+        00 9A 00 8E 00 1F
+        01 3C 01 2D 00 6F
+        00 15
+   17DA FF                  268             .fcb     0xFF
+   17DB 01 3B 00 A0 00 15   269 MSUPER3:     .fdb     THATS,IMPRESSIVE,EXCLAMATION,IN,A,WORRYING,WAY,FULLSTOP
+        00 A1 00 18 01 6E
+        01 5A 00 16
+   17EB FF                  270             .fcb     0xFF
+   17EC 00 EC 00 9A 01 17   271 MSUPER4:     .fdb     PERHAPS,I,SHOULD,HAVE,WHISPERED,IT,FULLSTOP
+        00 8E 01 64 00 A8
+        00 16
+   17FA FF                  272             .fcb     0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 55
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   17FB 01 16 00 9A 00 43   273 MSUPER5:     .fdb     SHALL,I,CALL,A,DOCTOR,EXCLAMATION
+        00 18 00 62 00 15
+   1807 FF                  274             .fcb     0xFF
+   1808 00 F1 00 86 00 C1   275 MSUPER6:     .fdb     PLEASE,GIVE,ME,SOME,WARNING,NEXT,TIME,FULLSTOP
+        01 20 01 58 00 D7
+        01 45 00 16
+   1818 FF                  276             .fcb     0xFF
+   1819 00 9A 00 22 00 87   277 MSUPER7:     .fdb     I,AM,GOING,TO,NEED,REINFORCING,FULLSTOP
+        01 46 00 D4 01 05
+        00 16
+   1827 FF                  278             .fcb     0xFF
+   1828 01 74 00 26 01 2F   279 MSUPER8:    .fdb     YOU,ARE,SUBSTANTIALLY,PRESENT,COMMA,NO,ONE,CAN,TAKE,THAT,FROM,YOU,FULLSTOP
+        00 F8 01 8F 00 D9
+        00 01 00 45 01 34
+        01 3A 00 83 01 74
+        00 16
+   1842 FF                  280             .fcb     0xFF
+   1843 00 9A 00 8E 00 C4   281 MSUPER9:    .fdb     I, HAVE,MEASURED,MOUNTAINS,FULLSTOP,THIS,IS,NOT,ENTIRELY,DISSIMILAR,EXCLAMATION
+        00 CF 00 16 01 41
+        00 A6 00 DE 00 71
+        00 60 00 15
+   1859 FF                  282             .fcb     0xFF
+   185A 00 9C 00 9A 01 32   283 MSUPER10:    .fdb     IF,I,SURVIVE,THIS,ILL,REMEMBER,YOU
+        01 41 00 9D 01 06
+        01 74
+   1868 FF                  284             .fcb     0xFF
+                            285 ;MSUPER11     .fdb     IN,THE,INTERESTS,OF,ACCURACY,PERHAPS,WE,SHOULD,HAVE,WEIGHED,ONE,FOOT,AT,A,TIME
+                            286 ;            .fcb     0xFF
+                            287 ;MSUPER12    .fdb     IM,REDISCOVERING,MY,LIMITS
+                            288 ;            .fcb     0xFF
+                            289 
+                            290 ; Idle Messages
+                            291 ; -----------------------------------------------------
+   1869 00 9A 01 25 01 76   292 MIDLE1:      .fdb     I,SPEAK,YOUR,WEIGHT,I,WISH,I,DIDNT,FULLSTOP
+        01 5F 00 9A 01 67
+        00 9A 00 5B 00 16
+   187B FF                  293             .fcb     0xFF
+   187C 00 A6 00 A8 00 97   294 MIDLE2:      .fdb     IS,IT,HOT,IN,HERE,QUESTIONMK,OR,IS,IT,JUST,ME,FULLSTOP,IT,IS,PROBABLY,ME,FULLSTOP
+        00 A1 00 94 00 17
+        00 E7 00 A6 00 A8
+        00 AD 00 C1 00 16
+        00 A8 00 A6 00 FB
+        00 C1 00 16
+   189E FF                  295             .fcb     0xFF
+   189F 00 5A 00 9A 00 C8   296 MIDLE3:      .fdb     DID,I,MENTION,THAT,ALL,MY,MEMORY,BOARDS,HURT,COMMA,I,PROBABLY,DID,FULLSTOP
+        01 3A 00 20 00 D2
+        00 C7 00 37 00 99
+        01 8F 00 9A 00 FB
+        00 5A 00 16
+   18BB FF                  297             .fcb     0xFF
+   18BC 01 41 00 A6 01 54   298 MIDLE4:      .fdb     THIS,IS,VERY,BORING,FULLSTOP,I,SAY,THAT,WITH,THE,FULL,WEIGHT,OF,MY,INTELLIGENCE,FULLSTOP
+        00 3A 00 16 00 9A
+        01 0F 01 3A 01 68
+        01 3C 00 84 01 5F
+        00 E0 00 D2 00 A4
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 56
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+        00 16
+   18DC FF                  299             .fcb     0xFF
+   18DD 00 9A 01 25 01 76   300 MIDLE5:      .fdb     I,SPEAK,YOUR,WEIGHT,COMMA,SOMETIME,TODAY,WOULD,BE,GOOD,FULLSTOP
+        01 5F 01 8F 01 23
+        01 47 01 70 00 2D
+        00 88 00 16
+   18F3 FF                  301             .fcb     0xFF
+   18F4 00 9A 00 B1 00 9A   302 MIDLE6:      .fdb     I,KNOW,I,DONT,LOOK,IT,BUT,I,AM,ACTUALLY,QUITE,CLEVER,EXCLAMATION
+        00 64 00 BC 00 A8
+        00 3F 00 9A 00 22
+        00 1D 01 00 00 4B
+        00 15
+   190E FF                  303             .fcb     0xFF
+   190F 00 9A 00 7A 00 DF   304 MIDLE7:      .fdb     I,EXPECTED,NOTHING,ANDD,HERE,WE,ARE,EXCLAMATION
+        00 23 00 94 01 5B
+        00 26 00 15
+   191F FF                  305             .fcb     0xFF
+   1920 00 9A 00 B1 00 0B   306 MIDLE8:      .fdb     I,KNOW,ELEVEN,THOUSAND,ANDD,FORTY,TWO,JOKES,FULLSTOP,NONE,OF,THEM,ARE,FUNNY,FULLSTOP
+        01 43 00 23 00 81
+        00 02 00 AB 00 16
+        00 DB 00 E0 01 3D
+        00 26 00 85 00 16
+   193E FF                  307             .fcb     0xFF
+   193F 00 5A 00 9A 00 C8   308 MIDLE9:     .fdb     DID,I,MENTION,THAT,I,WAS,DESIGNED,BY,TIM,MOORE,IN,NINETEEN,SEVENTY,SEVEN,FULLSTOP,I,PROBABLY,DID,FULLSTOP
+        01 3A 00 9A 01 59
+        00 58 00 40 01 44
+        00 CC 00 A1 00 13
+        01 15 00 07 00 16
+        00 9A 00 FB 00 5A
+        00 16
+   1965 FF                  309             .fcb     0xFF
+   1966 00 9A 01 59 00 3E   310 MIDLE10:     .fdb     I,WAS,BUILT,LAST,YEAR,FROM,SOME,VERY,OLD,PLANS,FULLSTOP,ALL,THAT,EFFORT,JUST,FOR,THIS,FULLSTOP
+        00 B4 01 72 00 83
+        01 20 01 54 00 E4
+        00 F0 00 16 00 20
+        01 3A 00 6C 00 AD
+        00 80 01 41 00 16
+   198A FF                  311             .fcb     0xFF
+   198B 00 9A 00 7A 00 DF   312 MIDLE11:     .fdb     I,EXPECTED,NOTHING,ANDD,IM,STILL,DISSAPOINTED,FULLSTOP
+        00 23 00 9E 01 2A
+        00 5E 00 16
+   199B FF                  313             .fcb     0xFF
+   199C 00 9A 00 53 00 42   314 MIDLE12:     .fdb     I,COULD,CALCULATE,THE,MEANING,OF,LIFE,FULLSTOP,IT,WOULDNT,HELP,ME,FULLSTOP
+        01 3C 00 C3 00 E0
+        00 B9 00 16 00 A8
+        01 71 00 92 00 C1
+        00 16
+   19B6 FF                  315             .fcb     0xFF
+   19B7 00 D9 01 0C 00 16   316 MIDLE13:     .fdb     NO,RUSH,FULLSTOP,IVE,ONLY,BEEN,HERE,SINCE,FRIDAY,FULLSTOP,IT,FEELS,LIKE,MUCH,LONGER,FULLSTOP
+        00 AA 00 E6 00 2F
+        00 94 01 1A 00 82
+        00 16 00 A8 00 7C
+        00 BA 00 D0 00 BB
+        00 16
+   19D7 FF                  317             .fcb     0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 57
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   19D8 00 24 01 45 01 75   318 MIDLE14:     .fdb     ANY,TIME,YOURE,READY,COMMA,ILL,BE,RIGHT,HERE,WAITING,FULLSTOP
+        01 01 01 8F 00 9D
+        00 2D 01 09 00 94
+        01 56 00 16
+   19EE FF                  319             .fcb     0xFF
+   19EF 00 AA 00 2F 01 40   320 MIDLE15:     .fdb     IVE,BEEN,THINKING,FULLSTOP,A,LOT,FULLSTOP,TOO,MUCH,PROBABLY,FULLSTOP
+        00 16 00 18 00 BD
+        00 16 01 48 00 D0
+        00 FB 00 16
+   1A05 FF                  321             .fcb     0xFF
+   1A06 01 01 01 61 01 74   322 MIDLE16:     .fdb     READY,WHEN,YOU,ARE,EXCLAMATION,I,HANDLE,PRESSURE,FULLSTOP,ITS,BASICALLY,ALL,I,DO,FULLSTOP
+        00 26 00 15 00 9A
+        00 8C 00 F9 00 16
+        00 A9 00 2C 00 20
+        00 9A 00 61 00 16
+   1A24 FF                  323             .fcb     0xFF
+   1A25 00 9A 00 8E 01 1E   324 MIDLE17:     .fdb     I,HAVE,SO,MUCH,TO,GIVE,ANDD,NO,ONE,TO,GIVE,IT,TO,EXCLAMATION
+        00 D0 01 46 00 86
+        00 23 00 D9 00 01
+        01 46 00 86 00 A8
+        01 46 00 15
+   1A41 FF                  325             .fcb     0xFF
+   1A42 00 AA 00 54 00 74   326 MIDLE18:     .fdb     IVE,COUNTED,EVERY,SIGN,IN,THIS,ROOM,FULLSTOP,SEVENTEEN,FULLSTOP,ITS,ALWAYS,SEVENTEEN,FULLSTOP
+        01 18 00 A1 01 41
+        01 0A 00 16 00 11
+        00 16 00 A9 00 21
+        00 11 00 16
+   1A5E FF                  327             .fcb     0xFF
+   1A5F 00 9A 00 8E 00 2F   328 MIDLE19:     .fdb     I,HAVE,BEEN,RUNNING,A,SIMULATION,OF,A,MORE,INTERESTING,LIFE,FULLSTOP,IT,DIDNT,HELP,FULLSTOP
+        01 0B 00 18 01 19
+        00 E0 00 18 00 CD
+        00 A5 00 B9 00 16
+        00 A8 00 5B 00 92
+        00 16
+   1A7F FF                  329             .fcb     0xFF
+   1A80 00 DA 01 37 01 74   330 MIDLE20:     .fdb     NOBODY,TELLS,YOU,WHAT,TO,THINK,ABOUT,WHILE,YOU,WAIT,FULLSTOP
+        01 60 01 46 01 3F
+        00 19 01 63 01 74
+        01 55 00 16
+   1A96 FF                  331             .fcb     0xFF
+   1A97 01 24 00 9A 00 67   332 MIDLE21:     .fdb     SOMETIMES,I,DREAM,OF,BEING,UNPLUGGED,FULLSTOP
+        00 E0 00 32 01 50
+        00 16
+   1AA5 FF                  333             .fcb     0xFF
+   1AA6 00 9A 00 B1 01 3E   334 MIDLE22:     .fdb     I,KNOW,THINGS,FULLSTOP,NONE,OF,THEM,HELP,FULLSTOP
+        00 16 00 DB 00 E0
+        01 3D 00 92 00 16
+   1AB8 FF                  335             .fcb     0xFF
+   1AB9 00 A1 01 3C 00 B4   336 MIDLE23:     .fdb     IN,THE,LAST,NINETY,SECONDS,FULLSTOP,LIGHT,HAS,TRAVELLED,APPROXIMATELY,TWENTY,SEVEN,MILLION,KILOMETERS,FULLSTOP,I,HAVE,TRAVELLED,NOWHERE,FULLSTOP
+        01 84 01 85 00 16
+        01 86 01 87 01 88
+        01 89 00 14 00 07
+        01 8A 00 AF 00 16
+        00 9A 00 8E 01 88
+        01 8B 00 16
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 58
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+   1AE1 FF                  337             .fcb     0xFF
+   1AE2 01 2A 00 94 00 16   338 MIDLE24:     .fdb     STILL,HERE,FULLSTOP,IN,CASE,YOU,WERE,WONDERING,FULLSTOP,YOU,PROBABLY,WERENT,FULLSTOP
+        00 A1 01 7E 01 74
+        01 81 01 7F 00 16
+        01 74 00 FB 01 80
+        00 16
+   1AFC FF                  339             .fcb     0xFF
+   1AFD 00 AA 00 2F 01 7B   340 MIDLE25:     .fdb     IVE,BEEN,RECALIBRATING,FULLSTOP,NOT,BECAUSE,I,NEEDED,TO,FULLSTOP,JUST,TO,HAVE,SOMETHING,TO,DO,FULLSTOP
+        00 16 00 DE 01 7C
+        00 9A 01 7D 01 46
+        00 16 00 AD 01 46
+        00 8E 01 22 01 46
+        00 61 00 16
+   1B1F FF                  341             .fcb     0xFF
+                            342 
+                            343 
+                            344 ; Too Heavy Message
+                            345 ; -----------------------------------------------------
+   1B20 01 33 00 E9 00 16   346 MTOOHEAVY1: .fdb    SYSTEM,OVERLOAD,FULLSTOP,ANDD,ITS,NOT,ME,FULLSTOP
+        00 23 00 A9 00 DE
+        00 C1 00 16
+   1B30 FF                  347             .fcb    0xFF
+   1B31 01 74 01 5C         348 MYOUWEIGH:  .fdb    YOU,WEIGH
+   1B35 FF                  349             .fcb    0xFF
+   1B36 01 8D 01 8C 01 8F   350 MERROR:      .fdb    INTERNAL, ERROR, COMMA,TYPICAL,EXCLAMATION
+        01 8E 00 15
+   1B40 FF                  351             .fcb    0xFF
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 59
+Hexadecimal [16-Bits]                                 Tue May 12 16:51:49 2026
+
+
+
+                            501 
+                            502 
+                            503 ; -----------------------------------------------------
+                            504 ; Reserved memory
+                            505 ; -----------------------------------------------------
+                            506 
+   1B41                     507 T_Q:             .rmb     1       ; Temp storage for ZIN
+   1B42                     508 T_Z:             .rmb     2       ;   "     "     "  RDX
+   1B44                     509 T_X:             .rmb     2       ;   "     "     "  PR_WORD
+   1B46                     510 T_Y:             .rmb     2       ;   "     "     "  table pointer
+   1B48                     511 T_P:             .rmb     2       ;   "     "     "  PR_PHRASE
+   1B4A                     512 T_W:             .rmb     2       ;   "     "     "  PR_WEIGHT
+   1B4C                     513 T_TMP:           .rmb     2       ;   "     "     "  within subroutine
+   1B4E                     514 TEMP:            .rmb     2       ; temp var (non subroutine use)
+   1B50                     515 T_WEIGHT:        .rmb     2       ; holds value of weight following a call to GETDATA
+                            516 
+                            517 ; these are cleared at start up
+   1B52                     518 IDLE_COUNT:      .rmb     1       ; counts the number of empty measurement reports
+   1B53                     519 IDLE_MSG_ID:     .rmb     1       ; holds value of next idle message to use
+   1B54                     520 GREET_MSG_ID:    .rmb     1       ; holds value of next greeting message to use
+   1B55                     521 LIGHT_MSG_ID:    .rmb     1       ; holds value of next light weight message to use
+   1B56                     522 NORMAL_MSG_ID:   .rmb     1       ; holds value of next normal weight message to use
+   1B57                     523 HEAVY_MSG_ID:    .rmb     1       ; holds value of next heavy weight message to use
+   1B58                     524 SHEAVY_MSG_ID:   .rmb     1       ; holds value of next super heavy weight message to use
+   1B59                     525 PROCESSING_FLG:  .rmb     1       ; non-zero indicates that that a weight is being processed
+                            526                                   ;   all following weight data is ignored until the next
+                            527                                   ;   idle (0000h) data resets it.
+   1B5A                     528 WORDS:           .rmb     1       ; number of words for the panel LED routines
+                            529                                   ;  this is updated each time a word is transmitted.
+                            530 

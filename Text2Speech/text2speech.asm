@@ -52,7 +52,7 @@ INIT:
                 CLR     HEAVY_MSG_ID
                 CLR     SHEAVY_MSG_ID
                 CLR     PROCESSING_FLG
-                CLR     SYLLABLES
+                CLR     WORDS
                 CLR     PANEL
 
                 ; initialise serial port B
@@ -60,7 +60,7 @@ INIT:
                 STAA    CTRLB           ;   ACIA.A
 
                 JSR STRING
-                .fcc    "Speak Your Weight (c) John Newcombe 2026"
+                .fcc    "I Speak Your Weight (c) John Newcombe 2026"
                 .Fcb    0x0d, 0x0a, 0xff
 
                 ; initialise the speach processor
@@ -99,7 +99,6 @@ ML1:            TST     PROCESSING_FLG  ; are we already processing a weight
                 JSR     PR_PHRASE
                 LDX     T_WEIGHT        ; restore X
                 JSR     PR_WEIGHT       ; weight back X so output the weight
-                JSR     PANEL_DISP
 
                 ; output a comments
                 LDAA    T_WEIGHT        ; stones
@@ -122,21 +121,19 @@ ML5:            JMP     MAINLOOP        ; no comments for less than light weight
 ; -----------------------------------------------------
 OVERLOADED:
                 JSR     STRING
-                .fcc    "ST: OVERLOAD"
+                .fcc    "ST: SOFL"
                 .fcb    0x0d,0x0a,0xff
                 LDX     #MTOOHEAVY1
                 JSR     PR_PHRASE
                 JSR     PR_CRB
-                JSR     PANEL_DISP
                 JMP     MAINLOOP
 IERROR:
                 JSR     STRING
-                .fcc    "ST: INT ERROR"
+                .fcc    "ST: IERR"
                 .fcb    0x0d,0x0a,0xff
                 LDX     #MERROR
                 JSR     PR_PHRASE
                 JSR     PR_CRB
-                JSR     PANEL_DISP
                 JMP     MAINLOOP
 
 ; we cycle thought idle message when no one is on the scales, data comes in a one
@@ -152,7 +149,7 @@ IDLE:   CLR     PROCESSING_FLG  ; clear the processing flag as no one
         JMP     MAINLOOP             ; nothing to do yet
 
 IDLE1:  JSR     STRING
-        .fcc    "ST: IDLE MSG"
+        .fcc    "ST: IMSG"
         .fcb    0x0d,0x0a,0xff
         CLR     IDLE_COUNT      ; time to output an idle message so reset the count
         LDAA    IDLE_MSG_ID     ; get next Message ID
@@ -168,7 +165,7 @@ IDLE_OP:
 
 GREET:   ; output the greeting message
         JSR     STRING
-        .fcc    "ST: GREET MSG"
+        .fcc    "ST: GMSG"
         .fcb    0x0d,0x0a,0xff
         LDAA    GREET_MSG_ID    ; get next Message ID
         CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
@@ -183,7 +180,7 @@ GREET_OP:
 
 LIGHTW:   ; output the lightweight message
         JSR     STRING
-        .fcc    "ST: LIGHT MSG"
+        .fcc    "ST: LMSG"
         .fcb    0x0d,0x0a,0xff
         LDAA    LIGHT_MSG_ID    ; get next Message ID
         CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
@@ -198,7 +195,7 @@ LIGHT_OP:
 
 NORMALW: ; output the normal message
         JSR     STRING
-        .fcc    "ST: NORM MSG"
+        .fcc    "ST: NMSG"
         .fcb    0x0d,0x0a,0xff
         LDAA    NORMAL_MSG_ID   ; get next Message ID
         CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
@@ -213,7 +210,7 @@ NORMAL_OP:
 
 HEAVYW:  ; output the heavy message
         JSR     STRING
-        .fcc    "ST: HEAVY MSG"
+        .fcc    "ST: HMSG"
         .fcb    0x0d,0x0a,0xff
         LDAA    HEAVY_MSG_ID    ; get next Message ID
         CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
@@ -228,7 +225,7 @@ HEAVY_OP:
 
 SHEAVYW: ; output the superheavy message
         JSR     STRING
-        .fcc    "ST: SHEAVY MSG"
+        .fcc    "ST: SMSG"
         .fcb    0x0d,0x0a,0xff
         LDAA    SHEAVY_MSG_ID   ; get next Message ID
         CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
@@ -254,9 +251,6 @@ PHRASE_OUT:
         LDX     TEMP
         JSR     PR_PHRASE       ; output idle message
         JSR     PR_CRB          ; CR/LF
-
-        JSR     PANEL_DISP
-
         RTS
 
 ;END:     JMP     MAINLOOP  ;START   ; all done
@@ -311,7 +305,6 @@ ENDSTR:  INS             ; Clean up stack...
 STRINGBX:   LDAA    0,X         ; get char
             CMPA    #0xFF        ; is character NULL?
             BEQ     DONEB       ; yes, end of string
-            ;STAA   PANEL     ; REMOVED, too much activity
             LDAB    PANEL
             BITB    #1
             BEQ     STRBX       ; panel switch 0 is debug and copies data to A
@@ -324,32 +317,33 @@ DONEB:      RTS
 ; -----------------------------------------------------
 ; Reads a character from ACIA(b) into A
 ; -----------------------------------------------------
-RD_B:    INC     RND         ; simple way to get a random number
-        LDAA    CTRLB       ; Get ACIA.A status byte
+RD_B:   LDAA    CTRLB       ; Get ACIA.A status byte
         BITA    #01         ; Is byte ready in DATAb
         BEQ     RD_B        ; No: Try again
         LDAA    DATAB       ; Get the data byte to A
+        ;STAA     PANEL
         ANDA    #0x7F        ; Mask off parity bit if it exists
         RTS                 ; RETURN
 
 ; -----------------------------------------------------
-;
+; Reads 2 hex ascii characters and saves them the
+; byte value to A e.g. "0F" received is stored to A as
+; 15d.
+; This version ignores non-hex characters
 ; -----------------------------------------------------
-ZINB:    BSR     RD_B    ; Read a character
+ZINB:   BSR     RD_B    ; Read a character
         JSR     VHEX    ; Is it a hex character ?
-        BCS     Z_PRQM  ; No: go to print `?`
-        STAA    T_Q     ; Yes: Save Acc.A
+        BCC     ZINBA   ; No: go to print `?`
+        LDAA    #0xFF
+ZINBA:  STAA    T_Q     ; Yes: Save Acc.A
         BSR     RD_B    ; Read 2nd character
         JSR     VHEX    ; Is it a hex character ?
-        BCS     Z_PRQM  ; No: go to print `?`
-        TAB             ; Yes: Put it into Acc.B
+        BCC     ZINBB   ; No: go to print `?`
+        LDAA    #0xFF
+ZINBB:  TAB             ; Yes: Put it into Acc.B
         LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
         JSR     BINARY  ; Convert A:B to binary
         RTS             ; RETURN
-Z_PRQM:  ;LDAA    #'?     ; Load `?` into A
-        ;BSR     PR_B    ; Print it
-        BRA     ZINB    ; Go back to start of hex input
-
 
 ; -----------------------------------------------------
 ; Print character in A to ACIA(b)
@@ -358,6 +352,7 @@ PR_B:    LDAB    CTRLB   ; Get ACIA(a) status byte
         BITB    #02     ; Is it busy ?
         BEQ     PR_B    ; Yes: Try again
         STAA    DATAB   ;  No: Send data
+        STAA    PANEL
 PRB_END: RTS             ; RETURN
 
 ; -----------------------------------------------------
@@ -497,53 +492,13 @@ PR_WORD:
             STAA    T_X+1
             LDX     T_X             ; X now has address of the word
             JSR     STRINGBX        ; output the word
-            INC     SYLLABLES
+            INC     WORDS
             JSR     PRSP
             RTS
 
                 .include    "words.asm"
                 .include    "phrases.asm"
 
-; -----------------------------------------------
-; LED Pattern Display - MC6800
-; -----------------------------------------------
-PANEL_DISP:
-
-; --- Main loop ---
-PSTART: LDX     #PTABLE     ; Point X at start of table
-NXTVAL: LDAA    ,X          ; Load pattern value from table
-        STAA    PANEL       ; Send to LED port
-        ;JSR     ZOUT        ; X not affected
-        BSR     DELAY       ; Delay so we can see it
-        INX                 ; Advance to next entry
-        CPX     #PTEND      ; Reached end of table?
-        BNE     NXTVAL      ; No - go again
-        DEC     SYLLABLES   ; decrement the syllables to mimic
-                            ;  this doesn't affect carry
-        BEQ     PDONE       ; head to nearest RTS
-        BRA     PSTART      ; Yes - loop back to beginning
-
-; --- Delay routine ---
-; Kills time so the eye can see each LED pattern
-DELAY:  STX     T_TMP
-        LDX     #DELAY_VAL  ; Load delay count
-DLOOP:  DEX                 ; Decrement
-        BNE     DLOOP       ; Not zero - keep counting
-        LDX     T_TMP
-PDONE:  RTS                 ; Done
-
-; --- Pattern table ---
-PTABLE: .FCB     0xFF         ; 1111 1111
-        .FCB     0xE7         ; 1110 0111
-        .FCB     0xC3         ; 1100 0011
-        .FCB     0x81         ; 1000 0001
-        .FCB     0x00         ; 0000 0000
-        .FCB     0x81         ; 1000 0001
-        .FCB     0xC3         ; 1100 0011
-        .FCB     0xE7         ; 1110 0111
-        .FCB     0xFF         ; 1111 1111
-        .fcb     0X00         ; 0000 0000
-PTEND:                        ; Address just past end of table
 
 ; -----------------------------------------------------
 ; Reserved memory
@@ -556,7 +511,6 @@ T_Y:             .rmb     2       ;   "     "     "  table pointer
 T_P:             .rmb     2       ;   "     "     "  PR_PHRASE
 T_W:             .rmb     2       ;   "     "     "  PR_WEIGHT
 T_TMP:           .rmb     2       ;   "     "     "  within subroutine
-RND:             .rmb     1       ; holds a random number (see RD_B
 TEMP:            .rmb     2       ; temp var (non subroutine use)
 T_WEIGHT:        .rmb     2       ; holds value of weight following a call to GETDATA
 
@@ -571,8 +525,6 @@ SHEAVY_MSG_ID:   .rmb     1       ; holds value of next super heavy weight messa
 PROCESSING_FLG:  .rmb     1       ; non-zero indicates that that a weight is being processed
                                   ;   all following weight data is ignored until the next
                                   ;   idle (0000h) data resets it.
-SYLLABLES:       .rmb     1       ; number of phrase syllables for the panel LED routines
-                                  ;  this is updated each time a word is transmitted and
-                                  ;  when PANELDISP is called, usually after acall to PR_PHRASE
-                                  ;  the lights are manipulated.
+WORDS:           .rmb     1       ; number of words for the panel LED routines
+                                  ;  this is updated each time a word is transmitted.
 
