@@ -3,8 +3,10 @@
 ;------------------------------------------------------------------
 
                 .area   CODE1 (ABS)     ; absolute i.e. not relocatable
-                .org    0x0100
 
+                .org    0x0200
+
+STACK           .equ    0x01FF
 DATAA           .equ    0xF400          ; ACIA(a) Data register
 CTRLA           .equ    0xF401          ; ACIA(a) Ctrl/Status
 DATAB           .equ    0xF402          ; ACIA(b) Data register
@@ -43,6 +45,9 @@ SHEAVY_MSG_CNT  .equ    10
 IDLE_MSG_CNT    .equ    25
 
 INIT:
+                ; set the stack
+                LDS     #STACK
+
                 ; clear the counters
                 CLR     IDLE_COUNT
                 CLR     IDLE_MSG_ID

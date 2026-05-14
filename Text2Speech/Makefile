@@ -1,7 +1,7 @@
 NAME=text2speech
 #ASSEMBLER=../Tools/as6800
 CCS19 = ../Tools/ccs19
-VERSION = 1.0.5
+VERSION = 1.0.6
 
 # consider using one of the cross compilers located in
 #  /home/john/Dropbox/Repositories/asxv5p50p5/asxv5pxx/asxmak/linux/exe
