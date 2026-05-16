@@ -1,5 +1,5 @@
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 1
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
@@ -8,7 +8,7 @@ Symbol Table
     A              =   0018     |     ABOUT          =   0019 
     ABOVE          =   001A     |     ACCEPTABLE     =   001B 
     ACCURATE       =   001C     |     ACTUALLY       =   001D 
-  2 ADX                048F R   |     AGAIN          =   001E 
+  2 ADX                0486 R   |     AGAIN          =   001E 
     ALERTED        =   001F     |     ALL            =   0020 
     ALWAYS         =   0021     |     AM             =   0022 
     ANDD           =   0023     |     ANY            =   0024 
@@ -49,7 +49,7 @@ Symbol Table
     DIODES         =   005D     |     DISSAPOINTED   =   005E 
     DISSAPOINTMENT =   005F     |     DISSIMILAR     =   0060 
     DO             =   0061     |     DOCTOR         =   0062 
-    DOING          =   0063     |   2 DONEB              0448 R
+    DOING          =   0063     |   2 DONEB              043F R
     DONT           =   0064     |     DOWN           =   0065 
     DREAD          =   0066     |     DREAM          =   0067 
     DUE            =   0068     |     DULLEST        =   0069 
@@ -57,9 +57,9 @@ Symbol Table
     EFFORT         =   006C     |     EIGHT          =   0008 
     EIGHTEEN       =   0012     |     EITHER         =   006D 
     ELEVEN         =   000B     |     EMOTIONALLY    =   006E 
-  2 ENDSTR             042F R   |     ENGINEERS      =   006F 
+  2 ENDSTR             0426 R   |     ENGINEERS      =   006F 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 2
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
@@ -78,29 +78,29 @@ Symbol Table
     FOURTEEN       =   000E     |     FRIDAY         =   0082 
     FROM           =   0083     |     FULL           =   0084 
     FULLSTOP       =   0016     |     FUNNY          =   0085 
-  2 GDDONE             0415 R   |     GETADD         =   FC89 
-  2 GETDATA            03F4 R   |     GIVE           =   0086 
+  2 GDDONE             040C R   |     GETADD         =   FC89 
+  2 GETDATA            03EC R   |     GIVE           =   0086 
     GOING          =   0087     |     GOOD           =   0088 
     GRAVITY        =   0089     |     GREAT          =   008A 
-  2 GREET              0326 R   |   2 GREETPTR           1300 R
-    GREET_MSG_CNT  =   000D     |   2 GREET_MSG_ID       1C57 R
-  2 GREET_OP           033F R   |     GUESSING       =   008B 
+  2 GREET              0323 R   |   2 GREETPTR           12E7 R
+    GREET_MSG_CNT  =   000D     |   2 GREET_MSG_ID       0013 R
+  2 GREET_OP           033B R   |     GUESSING       =   008B 
     HANDLE         =   008C     |     HARD           =   008D 
     HAS            =   0187     |     HAVE           =   008E 
     HAVING         =   008F     |     HEALTHY        =   0090 
-    HEAVY          =   0091     |   2 HEAVYPTR           1358 R
-  2 HEAVYW             0393 R   |     HEAVY_MSG_CNT  =   0012 
-  2 HEAVY_MSG_ID       1C5A R   |   2 HEAVY_OP           03AC R
+    HEAVY          =   0091     |   2 HEAVYPTR           133F R
+  2 HEAVYW             038D R   |     HEAVY_MSG_CNT  =   0012 
+  2 HEAVY_MSG_ID       0016 R   |   2 HEAVY_OP           03A5 R
     HEAVY_WGHT     =   000D     |     HELP           =   0092 
     HELPS          =   0093     |     HERE           =   0094 
     HOLY           =   0095     |     HOPING         =   0096 
     HOT            =   0097     |     HUMAN          =   0098 
     HURT           =   0099     |     I              =   009A 
-    ID             =   009B     |   2 IDLE               02EE R
-  2 IDLE1              02FE R   |   2 IDLEPTR            138E R
-  2 IDLE_COUNT         1C55 R   |     IDLE_MSG_CNT   =   0019 
-  2 IDLE_MSG_ID        1C56 R   |   2 IDLE_OP            031A R
-    IDLE_TICS      =   002D     |   2 IERROR             02D4 R
+    ID             =   009B     |   2 IDLE               02EC R
+  2 IDLE1              02FC R   |   2 IDLEPTR            1375 R
+  2 IDLE_COUNT         0011 R   |     IDLE_MSG_CNT   =   0019 
+  2 IDLE_MSG_ID        0012 R   |   2 IDLE_OP            0317 R
+    IDLE_TICS      =   002D     |   2 IERROR             02D3 R
     IF             =   009C     |     ILL            =   009D 
     IM             =   009E     |     IMPRESSED      =   009F 
     IMPRESSIVE     =   00A0     |     IN             =   00A1 
@@ -117,14 +117,14 @@ Symbol Table
     LAST           =   00B4     |     LEAST          =   00B5 
     LESS           =   00B6     |     LETS           =   00B7 
     LIE            =   00B8     |     LIFE           =   00B9 
-    LIGHT          =   0186     |   2 LIGHTPTR           131A R
+    LIGHT          =   0186     |   2 LIGHTPTR           1301 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 3
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
-  2 LIGHTW             0349 R   |     LIGHT_MSG_CNT  =   000A 
-  2 LIGHT_MSG_ID       1C58 R   |   2 LIGHT_OP           0362 R
+  2 LIGHTW             0345 R   |     LIGHT_MSG_CNT  =   000A 
+  2 LIGHT_MSG_ID       0014 R   |   2 LIGHT_OP           035D R
     LIGHT_WGHT     =   0006     |     LIKE           =   00BA 
     LONGER         =   00BB     |     LOOK           =   00BC 
     LOT            =   00BD     |     LOUDER         =   00BE 
@@ -133,70 +133,70 @@ Symbol Table
     MEAN           =   00C2     |     MEANING        =   00C3 
     MEASURED       =   00C4     |     MEDIOCRITY     =   00C5 
     MEE            =   00C6     |     MEMORY         =   00C7 
-    MENTION        =   00C8     |   2 MERROR             1C39 R
-  2 MGREET1            13C2 R   |   2 MGREET10           147B R
-  2 MGREET11           148C R   |   2 MGREET12           1499 R
-  2 MGREET13           14BC R   |   2 MGREET2            13D9 R
-  2 MGREET3            13F2 R   |   2 MGREET4            1405 R
-  2 MGREET5            141A R   |   2 MGREET6            142D R
-  2 MGREET7            1440 R   |   2 MGREET8            1451 R
-  2 MGREET9            1466 R   |   2 MHEAVY1            1758 R
-  2 MHEAVY10           180D R   |   2 MHEAVY11           181E R
-  2 MHEAVY12           1831 R   |   2 MHEAVY13           1844 R
-  2 MHEAVY14           184F R   |   2 MHEAVY15           1862 R
-  2 MHEAVY16           186F R   |   2 MHEAVY17           1884 R
-  2 MHEAVY18           1899 R   |   2 MHEAVY2            1769 R
-  2 MHEAVY3            1774 R   |   2 MHEAVY4            1789 R
-  2 MHEAVY5            179A R   |   2 MHEAVY6            17B3 R
-  2 MHEAVY7            17C6 R   |   2 MHEAVY8            17D9 R
-  2 MHEAVY9            17E8 R   |   2 MIDLE1             196C R
-  2 MIDLE10            1A69 R   |   2 MIDLE11            1A8E R
-  2 MIDLE12            1A9F R   |   2 MIDLE13            1ABA R
-  2 MIDLE14            1ADB R   |   2 MIDLE15            1AF2 R
-  2 MIDLE16            1B09 R   |   2 MIDLE17            1B28 R
-  2 MIDLE18            1B45 R   |   2 MIDLE19            1B62 R
-  2 MIDLE2             197F R   |   2 MIDLE20            1B83 R
-  2 MIDLE21            1B9A R   |   2 MIDLE22            1BA9 R
-  2 MIDLE23            1BBC R   |   2 MIDLE24            1BE5 R
-  2 MIDLE25            1C00 R   |   2 MIDLE3             19A2 R
-  2 MIDLE4             19BF R   |   2 MIDLE5             19E0 R
-  2 MIDLE6             19F7 R   |   2 MIDLE7             1A12 R
-  2 MIDLE8             1A23 R   |   2 MIDLE9             1A42 R
+    MENTION        =   00C8     |   2 MERROR             1C20 R
+  2 MGREET1            13A9 R   |   2 MGREET10           1462 R
+  2 MGREET11           1473 R   |   2 MGREET12           1480 R
+  2 MGREET13           14A3 R   |   2 MGREET2            13C0 R
+  2 MGREET3            13D9 R   |   2 MGREET4            13EC R
+  2 MGREET5            1401 R   |   2 MGREET6            1414 R
+  2 MGREET7            1427 R   |   2 MGREET8            1438 R
+  2 MGREET9            144D R   |   2 MHEAVY1            173F R
+  2 MHEAVY10           17F4 R   |   2 MHEAVY11           1805 R
+  2 MHEAVY12           1818 R   |   2 MHEAVY13           182B R
+  2 MHEAVY14           1836 R   |   2 MHEAVY15           1849 R
+  2 MHEAVY16           1856 R   |   2 MHEAVY17           186B R
+  2 MHEAVY18           1880 R   |   2 MHEAVY2            1750 R
+  2 MHEAVY3            175B R   |   2 MHEAVY4            1770 R
+  2 MHEAVY5            1781 R   |   2 MHEAVY6            179A R
+  2 MHEAVY7            17AD R   |   2 MHEAVY8            17C0 R
+  2 MHEAVY9            17CF R   |   2 MIDLE1             1953 R
+  2 MIDLE10            1A50 R   |   2 MIDLE11            1A75 R
+  2 MIDLE12            1A86 R   |   2 MIDLE13            1AA1 R
+  2 MIDLE14            1AC2 R   |   2 MIDLE15            1AD9 R
+  2 MIDLE16            1AF0 R   |   2 MIDLE17            1B0F R
+  2 MIDLE18            1B2C R   |   2 MIDLE19            1B49 R
+  2 MIDLE2             1966 R   |   2 MIDLE20            1B6A R
+  2 MIDLE21            1B81 R   |   2 MIDLE22            1B90 R
+  2 MIDLE23            1BA3 R   |   2 MIDLE24            1BCC R
+  2 MIDLE25            1BE7 R   |   2 MIDLE3             1989 R
+  2 MIDLE4             19A6 R   |   2 MIDLE5             19C7 R
+  2 MIDLE6             19DE R   |   2 MIDLE7             19F9 R
+  2 MIDLE8             1A0A R   |   2 MIDLE9             1A29 R
     MIGHT          =   00C9     |     MILLION        =   018A 
     MISTAKE        =   00CA     |   2 ML1                0273 R
   2 ML2                02A2 R   |   2 ML3                02A9 R
   2 ML4                02B0 R   |   2 ML5                02B7 R
-  2 MLIGHT1            14E1 R   |   2 MLIGHT10           15A0 R
-  2 MLIGHT2            14FC R   |   2 MLIGHT3            1511 R
-  2 MLIGHT4            1520 R   |   2 MLIGHT5            1531 R
-  2 MLIGHT6            154E R   |   2 MLIGHT7            1561 R
-  2 MLIGHT8            1576 R   |   2 MLIGHT9            1587 R
-  2 MNORM1             15BD R   |   2 MNORM10            1668 R
-  2 MNORM11            1681 R   |   2 MNORM12            1692 R
-  2 MNORM13            16A1 R   |   2 MNORM14            16B8 R
-  2 MNORM15            16CD R   |   2 MNORM16            16E0 R
-  2 MNORM17            16EF R   |   2 MNORM18            1704 R
-  2 MNORM19            1715 R   |   2 MNORM2             15D6 R
-  2 MNORM20            1730 R   |   2 MNORM21            173F R
+  2 MLIGHT1            14C8 R   |   2 MLIGHT10           1587 R
+  2 MLIGHT2            14E3 R   |   2 MLIGHT3            14F8 R
+  2 MLIGHT4            1507 R   |   2 MLIGHT5            1518 R
+  2 MLIGHT6            1535 R   |   2 MLIGHT7            1548 R
+  2 MLIGHT8            155D R   |   2 MLIGHT9            156E R
+  2 MNORM1             15A4 R   |   2 MNORM10            164F R
+  2 MNORM11            1668 R   |   2 MNORM12            1679 R
+  2 MNORM13            1688 R   |   2 MNORM14            169F R
+  2 MNORM15            16B4 R   |   2 MNORM16            16C7 R
+  2 MNORM17            16D6 R   |   2 MNORM18            16EB R
+  2 MNORM19            16FC R   |   2 MNORM2             15BD R
+  2 MNORM20            1717 R   |   2 MNORM21            1726 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 4
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
-  2 MNORM3             15F7 R   |   2 MNORM4             1610 R
-  2 MNORM5             1619 R   |   2 MNORM6             1626 R
-  2 MNORM7             1639 R   |   2 MNORM8             1646 R
-  2 MNORM9             1659 R   |     MOMENT         =   00CB 
+  2 MNORM3             15DE R   |   2 MNORM4             15F7 R
+  2 MNORM5             1600 R   |   2 MNORM6             160D R
+  2 MNORM7             1620 R   |   2 MNORM8             162D R
+  2 MNORM9             1640 R   |     MOMENT         =   00CB 
     MOORE          =   00CC     |     MORE           =   00CD 
     MOSTLY         =   00CE     |     MOUNTAINS      =   00CF 
-  2 MSUPER1            18A6 R   |   2 MSUPER10           195D R
-  2 MSUPER2            18C9 R   |   2 MSUPER3            18DE R
-  2 MSUPER4            18EF R   |   2 MSUPER5            18FE R
-  2 MSUPER6            190B R   |   2 MSUPER7            191C R
-  2 MSUPER8            192B R   |   2 MSUPER9            1946 R
-  2 MTOOHEAVY1         1C23 R   |     MUCH           =   00D0 
+  2 MSUPER1            188D R   |   2 MSUPER10           1944 R
+  2 MSUPER2            18B0 R   |   2 MSUPER3            18C5 R
+  2 MSUPER4            18D6 R   |   2 MSUPER5            18E5 R
+  2 MSUPER6            18F2 R   |   2 MSUPER7            1903 R
+  2 MSUPER8            1912 R   |   2 MSUPER9            192D R
+  2 MTOOHEAVY1         1C0A R   |     MUCH           =   00D0 
     MUSCLE         =   00D1     |     MY             =   00D2 
-  2 MYOUWEIGH          1C34 R   |     NAP            =   00D3 
+  2 MYOUWEIGH          1C1B R   |     NAP            =   00D3 
     NEED           =   00D4     |     NEEDED         =   017D 
     NEITHER        =   00D5     |     NEWLINE        =   FE97 
     NEWS           =   00D6     |     NEXT           =   00D7 
@@ -204,9 +204,9 @@ Symbol Table
     NINETEEN       =   0013     |     NINETY         =   0184 
     NO             =   00D9     |     NOBODY         =   00DA 
     NONE           =   00DB     |     NOR            =   00DC 
-    NORMAL         =   00DD     |   2 NORMALPTR          132E R
-  2 NORMALW            036E R   |   2 NORMAL_MSG_ID      1C59 R
-  2 NORMAL_OP          0387 R   |     NORM_MSG_CNT   =   0015 
+    NORMAL         =   00DD     |   2 NORMALPTR          1315 R
+  2 NORMALW            0369 R   |   2 NORMAL_MSG_ID      0015 R
+  2 NORMAL_OP          0381 R   |     NORM_MSG_CNT   =   0015 
     NORM_WGHT      =   000A     |     NOT            =   00DE 
     NOTHING        =   00DF     |     NOWHERE        =   018B 
     OF             =   00E0     |     OFF            =   00E1 
@@ -215,36 +215,35 @@ Symbol Table
     ONE            =   0001     |     ONLY           =   00E6 
     OR             =   00E7     |     OUR            =   00E8 
     OVERLOAD       =   00E9     |   2 OVERLOADED         02BA R
-  2 OVERLOADTPTR       13C0 R   |     PANEL          =   F0FF 
+  2 OVERLOADTPTR       13A7 R   |     PANEL          =   F0FF 
     PARAMETERS     =   00EA     |     PERFECTLY      =   00EB 
     PERHAPS        =   00EC     |     PERSON         =   00ED 
-  2 PHRASEPTR          1300 R   |   2 PHRASE_OUT         03DC R
+  2 PHRASEPTR          12E7 R   |   2 PHRASE_OUT         03D4 R
     PICKING        =   00EE     |     PLANET         =   00EF 
     PLANS          =   00F0     |     PLEASE         =   00F1 
     POINTLESS      =   00F2     |     POSSIBLE       =   00F3 
     POSSIBLY       =   00F4     |     POUNDS         =   00F5 
-  2 PRB_END            0480 R   |     PRECAUTION     =   00F6 
+  2 PRB_END            0477 R   |     PRECAUTION     =   00F6 
     PRECISELY      =   00F7     |     PRESENT        =   00F8 
     PRESSURE       =   00F9     |     PRETEND        =   00FA 
     PROBABLY       =   00FB     |     PROBLEMS       =   00FC 
-  2 PROCESSING_FLG     1C5C R   |     PROUD          =   00FD 
+  2 PROCESSING_FLG     0018 R   |     PROUD          =   00FD 
     PRSP           =   FD4D     |     PRX            =   FCBB 
-    PR_A           =   FC0F     |   2 PR_B               0473 R
-  2 PR_CR              0503 R   |   2 PR_CR1             050E R
-  2 PR_CRB             04E9 R   |   2 PR_CRB1            04FE R
-  2 PR_PH1             0510 R   |   2 PR_PH2             0531 R
-  2 PR_PH3             0518 R   |   2 PR_PHRASE          0510 R
-  2 PR_SPCB            04DE R   |   2 PR_WEIGHT          04B0 R
-  2 PR_WORD            0532 R   |     PUT            =   00FE 
+    PR_A           =   FC0F     |   2 PR_B               046A R
+  2 PR_CRB             04DD R   |   2 PR_CRB1            04F2 R
+  2 PR_PH1             04F7 R   |   2 PR_PH2             0518 R
+  2 PR_PH3             04FF R   |   2 PR_PHRASE          04F7 R
+  2 PR_SPCB            04D5 R   |   2 PR_WEIGHT          04A7 R
+  2 PR_WORD            0519 R   |     PUT            =   00FE 
     QUESTION       =   00FF     |     QUESTIONMK     =   0017 
     QUITE          =   0100     |     RD_A           =   FD2B 
+  2 RD_B               0440 R   |     RD_X           =   FC65 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 5
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
-  2 RD_B               0449 R   |     RD_X           =   FC65 
-  2 RD_XB              0481 R   |     READY          =   0101 
+  2 RD_XB              0478 R   |     READY          =   0101 
     REALLY         =   0102     |     RECALIBRATING  =   017B 
     REFER          =   0103     |     REFUSE         =   0104 
     REINFORCING    =   0105     |     REMEMBER       =   0106 
@@ -257,9 +256,9 @@ Symbol Table
     SEE            =   0112     |     SEEN           =   0113 
     SERVER         =   0114     |     SEVEN          =   0007 
     SEVENTEEN      =   0011     |     SEVENTY        =   0115 
-    SHALL          =   0116     |   2 SHEAVYPTR          137A R
-  2 SHEAVYW            03B8 R   |     SHEAVY_MSG_CNT =   000A 
-  2 SHEAVY_MSG_ID      1C5B R   |   2 SHEAVY_OP          03D1 R
+    SHALL          =   0116     |   2 SHEAVYPTR          1361 R
+  2 SHEAVYW            03B1 R   |     SHEAVY_MSG_CNT =   000A 
+  2 SHEAVY_MSG_ID      0017 R   |   2 SHEAVY_OP          03C9 R
     SHEAVY_WGHT    =   000F     |     SHOULD         =   0117 
     SIGN           =   0118     |     SIMULATION     =   0119 
     SINCE          =   011A     |     SIX            =   0006 
@@ -274,16 +273,16 @@ Symbol Table
     START          =   FF8F     |     STATISTICALLY  =   0128 
     STEP           =   0129     |     STEPPED        =   0182 
     STILL          =   012A     |     STONES         =   012B 
-    STOPPED        =   012C     |   2 STRB               042B R
-  2 STRB1              041A R   |   2 STRBX              0443 R
-    STRING         =   FC76     |   2 STRINGB            0416 R
-  2 STRINGBX           0433 R   |     STRUCTURAL     =   012D 
+    STOPPED        =   012C     |   2 STRB               0422 R
+  2 STRB1              0411 R   |   2 STRBX              043A R
+    STRING         =   FC76     |   2 STRINGB            040D R
+  2 STRINGBX           042A R   |     STRUCTURAL     =   012D 
     STRUCTURALLY   =   012E     |     SUBSTANTIALLY  =   012F 
     SUPPOSE        =   0130     |     SURE           =   0131 
     SURVIVE        =   0132     |     SYSTEM         =   0133 
     TAKE           =   0134     |     TALL           =   0135 
-  2 TAX                04A6 R   |     TELEPRINTER    =   0136 
-    TELLS          =   0137     |   2 TEMP               1C51 R
+  2 TAX                049D R   |     TELEPRINTER    =   0136 
+    TELLS          =   0137     |   2 TEMP               000D R
     TEN            =   000A     |     TERRIBLE       =   0138 
     THAN           =   0139     |     THAT           =   013A 
     THATS          =   013B     |     THE            =   013C 
@@ -298,16 +297,16 @@ Symbol Table
     TRAVELLED      =   0188     |     TRINITY        =   014A 
     TRY            =   014B     |     TUESDAY        =   014C 
     TWELVE         =   000C     |     TWENTY         =   0014 
+    TWO            =   0002     |     TYPICAL        =   018E 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 6
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
-    TWO            =   0002     |     TYPICAL        =   018E 
-  2 T_P                1C4B R   |   2 T_Q                1C44 R
-  2 T_TMP              1C4F R   |   2 T_W                1C4D R
-  2 T_WEIGHT           1C53 R   |   2 T_X                1C47 R
-  2 T_Y                1C49 R   |   2 T_Z                1C45 R
+  2 T_P                0007 R   |   2 T_Q                0000 R
+  2 T_TMP              000B R   |   2 T_W                0009 R
+  2 T_WEIGHT           000F R   |   2 T_X                0003 R
+  2 T_Y                0005 R   |   2 T_Z                0001 R
     UNINTERESTING  =   014D     |     UNIX           =   014E 
     UNLESS         =   014F     |     UNPLUGGED      =   0150 
     UNREMARKABLE   =   0151     |     UP             =   0152 
@@ -325,246 +324,246 @@ Symbol Table
     WILL           =   0166     |     WISH           =   0167 
     WITH           =   0168     |     WITHIN         =   0169 
     WITHOUT        =   016A     |     WONDERING      =   017F 
-  2 WORDPTR            056B R   |   2 WORDS              1C5D R
-  2 WORDTABLE          088B R   |     WORKSTATION    =   016B 
+  2 WORDPTR            0552 R   |   2 WORDS              0019 R
+  2 WORDTABLE          0872 R   |     WORKSTATION    =   016B 
     WORRIED        =   016C     |     WORRY          =   016D 
     WORRYING       =   016E     |     WORSE          =   016F 
     WOULD          =   0170     |     WOULDNT        =   0171 
-  2 WPA                092A R   |   2 WPABOUT            092C R
-  2 WPABOVE            0932 R   |   2 WPACCEPTABLE       0938 R
-  2 WPACCURATE         0943 R   |   2 WPACTUALLY         094C R
-  2 WPAGAIN            0955 R   |   2 WPALERTED          095B R
-  2 WPALL              0963 R   |   2 WPALWAYS           0967 R
-  2 WPAM               096E R   |   2 WPAND              0971 R
-  2 WPANY              0975 R   |   2 WPAPOLOGISE        0979 R
-  2 WPAPPROXIMATEL     0983 R   |   2 WPARE              0991 R
-  2 WPAS               0995 R   |   2 WPASKING           0998 R
-  2 WPAT               099F R   |   2 WPAVERAGE          09A2 R
-  2 WPBAD              09AA R   |   2 WPBASICALLY        09AE R
-  2 WPBE               09B8 R   |   2 WPBEAR             09BB R
-  2 WPBECAUSE          09C0 R   |   2 WPBEEN             09C8 R
-  2 WPBEGGING          09CD R   |   2 WPBEHIND           09D5 R
-  2 WPBEIGE            09E2 R   |   2 WPBEING            09DC R
-  2 WPBEST             09E8 R   |   2 WPBISCUIT          09ED R
-  2 WPBLAME            09F5 R   |   2 WPBLAMED           09FB R
-  2 WPBOARDS           0A02 R   |   2 WPBONES            0A09 R
-  2 WPBOOTS            0A0F R   |   2 WPBORING           0A15 R
-  2 WPBOTH             0A1C R   |   2 WPBRACE            0A21 R
-  2 WPBRAIN            0A27 R   |   2 WPBUILT            0A2D R
-  2 WPBUT              0A33 R   |   2 WPBY               0A37 R
-  2 WPCAKE             0A3A R   |   2 WPCALCULATE        0A3F R
-  2 WPCALL             0A49 R   |   2 WPCALM             0A4E R
-  2 WPCAN              0A53 R   |   2 WPCANT             0A57 R
-  2 WPCAPACITY         0A5D R   |   2 WPCARDS            0A66 R
-  2 WPCARRYING         0A6C R   |   2 WPCASE             0A75 R
-  2 WPCHECKED          0A7A R   |   2 WPCHOICES          0A82 R
+  2 WPA                0911 R   |   2 WPABOUT            0913 R
+  2 WPABOVE            0919 R   |   2 WPACCEPTABLE       091F R
+  2 WPACCURATE         092A R   |   2 WPACTUALLY         0933 R
+  2 WPAGAIN            093C R   |   2 WPALERTED          0942 R
+  2 WPALL              094A R   |   2 WPALWAYS           094E R
+  2 WPAM               0955 R   |   2 WPAND              0958 R
+  2 WPANY              095C R   |   2 WPAPOLOGISE        0960 R
+  2 WPAPPROXIMATEL     096A R   |   2 WPARE              0978 R
+  2 WPAS               097C R   |   2 WPASKING           097F R
+  2 WPAT               0986 R   |   2 WPAVERAGE          0989 R
+  2 WPBAD              0991 R   |   2 WPBASICALLY        0995 R
+  2 WPBE               099F R   |   2 WPBEAR             09A2 R
+  2 WPBECAUSE          09A7 R   |   2 WPBEEN             09AF R
+  2 WPBEGGING          09B4 R   |   2 WPBEHIND           09BC R
+  2 WPBEIGE            09C9 R   |   2 WPBEING            09C3 R
+  2 WPBEST             09CF R   |   2 WPBISCUIT          09D4 R
+  2 WPBLAME            09DC R   |   2 WPBLAMED           09E2 R
+  2 WPBOARDS           09E9 R   |   2 WPBONES            09F0 R
+  2 WPBOOTS            09F6 R   |   2 WPBORING           09FC R
+  2 WPBOTH             0A03 R   |   2 WPBRACE            0A08 R
+  2 WPBRAIN            0A0E R   |   2 WPBUILT            0A14 R
+  2 WPBUT              0A1A R   |   2 WPBY               0A1E R
+  2 WPCAKE             0A21 R   |   2 WPCALCULATE        0A26 R
+  2 WPCALL             0A30 R   |   2 WPCALM             0A35 R
+  2 WPCAN              0A3A R   |   2 WPCANT             0A3E R
+  2 WPCAPACITY         0A44 R   |   2 WPCARDS            0A4D R
+  2 WPCARRYING         0A53 R   |   2 WPCASE             0A5C R
+  2 WPCHECKED          0A61 R   |   2 WPCHOICES          0A69 R
+  2 WPCLEVER           0A71 R   |   2 WPCOLLECTED        0A78 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 7
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
-  2 WPCLEVER           0A8A R   |   2 WPCOLLECTED        0A91 R
-  2 WPCOMMA            089F R   |   2 WPCOMPOSING        0A9B R
-  2 WPCONCEPT          0AA5 R   |   2 WPCONCERNED        0AAD R
-  2 WPCONGRATS         0AB7 R   |   2 WPCONSIDERED       0AC7 R
-  2 WPCORRECTLY        0AD2 R   |   2 WPCOULD            0ADC R
-  2 WPCOUNTED          0AE2 R   |   2 WPDAYS             0AEA R
-  2 WPDEALT            0AEF R   |   2 WPDEEPLY           0AF5 R
-  2 WPDESIGNED         0AFC R   |   2 WPDETECTED         0B05 R
-  2 WPDID              0B0E R   |   2 WPDIDNT            0B12 R
-  2 WPDIETARY          0B19 R   |   2 WPDIODES           0B7B R
-  2 WPDISSAPOINTED     0B21 R   |   2 WPDISSAPOINTMN     0B2E R
-  2 WPDISSIMILAR       0B3D R   |   2 WPDO               0B48 R
-  2 WPDOCTOR           0B4B R   |   2 WPDOING            0B52 R
-  2 WPDONT             0B58 R   |   2 WPDOWN             0B5E R
-  2 WPDREAD            0B63 R   |   2 WPDREAM            0B69 R
-  2 WPDUE              0B6F R   |   2 WPDULLEST          0B73 R
-  2 WPEAT              0B82 R   |   2 WPEATEN            0B86 R
-  2 WPEFFORT           0B8C R   |   2 WPEIGHT            08C8 R
-  2 WPEIGHTEEN         0911 R   |   2 WPEITHER           0B93 R
-  2 WPELEVEN           08D7 R   |   2 WPEMOTIONALLY      0B9A R
-  2 WPENGINEERS        0BA6 R   |   2 WPENOUGH           0BB0 R
-  2 WPENTIRELY         0BB7 R   |   2 WPEQUIVALENT       0BC0 R
-  2 WPERROR            0BCB R   |   2 WPEVEN             0BD1 R
-  2 WPEVER             0BD6 R   |   2 WPEVERY            0BDB R
-  2 WPEXACTLY          0BE1 R   |   2 WPEXCEPTIONALL     0BE9 R
-  2 WPEXCITING         0BF7 R   |   2 WPEXCLAMATION      089B R
-  2 WPEXIST            0C00 R   |   2 WPEXISTENTIAL      0C06 R
-  2 WPEXPECTED         0C12 R   |   2 WPFAULT            0C1B R
-  2 WPFEELS            0C21 R   |   2 WPFIDGET           0C27 R
-  2 WPFIFTEEN          08F7 R   |   2 WPFINE             0C2E R
-  2 WPFIVE             08B9 R   |   2 WPFOOT             0C33 R
-  2 WPFOR              0C38 R   |   2 WPFORTY            0C3C R
-  2 WPFOUR             08B4 R   |   2 WPFOURTEEN         08EE R
-  2 WPFRIDAY           0C42 R   |   2 WPFROM             0C49 R
-  2 WPFULL             0C4E R   |   2 WPFULLSTOP         089D R
-  2 WPFUNNY            0C53 R   |   2 WPGIVE             0C59 R
-  2 WPGOING            0C5E R   |   2 WPGOOD             0C64 R
-  2 WPGRAVITY          0C69 R   |   2 WPGREAT            0C71 R
-  2 WPGUESSING         0C77 R   |   2 WPHANDLE           0C80 R
-  2 WPHARD             0C87 R   |   2 WPHAS              0C8C R
-  2 WPHAVE             0C90 R   |   2 WPHAVING           0C95 R
-  2 WPHEALTHY          0C9C R   |   2 WPHEAVY            0CA4 R
-  2 WPHELP             0CAA R   |   2 WPHELPS            0CAF R
-  2 WPHERE             0CB5 R   |   2 WPHOLY             0CBA R
-  2 WPHOPING           0CBF R   |   2 WPHOT              0CC6 R
-  2 WPHUMAN            0CCA R   |   2 WPHURT             0CD0 R
-  2 WPI                0CD5 R   |   2 WPID               0CD7 R
-  2 WPIF               0CE9 R   |   2 WPILL              0CDB R
-  2 WPIM               0CE0 R   |   2 WPIMPRESSED        0CEC R
-  2 WPIMPRESSIVE       0CF6 R   |   2 WPIN               0D01 R
-  2 WPINCLUDING        0D04 R   |   2 WPINFLUENCE        0D0E R
-  2 WPINTELLIGENCE     0D18 R   |   2 WPINTERESTING      0D25 R
-  2 WPINTERNAL         0D31 R   |   2 WPIS               0D3A R
-  2 WPISS              0D3D R   |   2 WPIT               0D41 R
-  2 WPITS              0D44 R   |   2 WPIVE              0CE4 R
+  2 WPCOMMA            0886 R   |   2 WPCOMPOSING        0A82 R
+  2 WPCONCEPT          0A8C R   |   2 WPCONCERNED        0A94 R
+  2 WPCONGRATS         0A9E R   |   2 WPCONSIDERED       0AAE R
+  2 WPCORRECTLY        0AB9 R   |   2 WPCOULD            0AC3 R
+  2 WPCOUNTED          0AC9 R   |   2 WPDAYS             0AD1 R
+  2 WPDEALT            0AD6 R   |   2 WPDEEPLY           0ADC R
+  2 WPDESIGNED         0AE3 R   |   2 WPDETECTED         0AEC R
+  2 WPDID              0AF5 R   |   2 WPDIDNT            0AF9 R
+  2 WPDIETARY          0B00 R   |   2 WPDIODES           0B62 R
+  2 WPDISSAPOINTED     0B08 R   |   2 WPDISSAPOINTMN     0B15 R
+  2 WPDISSIMILAR       0B24 R   |   2 WPDO               0B2F R
+  2 WPDOCTOR           0B32 R   |   2 WPDOING            0B39 R
+  2 WPDONT             0B3F R   |   2 WPDOWN             0B45 R
+  2 WPDREAD            0B4A R   |   2 WPDREAM            0B50 R
+  2 WPDUE              0B56 R   |   2 WPDULLEST          0B5A R
+  2 WPEAT              0B69 R   |   2 WPEATEN            0B6D R
+  2 WPEFFORT           0B73 R   |   2 WPEIGHT            08AF R
+  2 WPEIGHTEEN         08F8 R   |   2 WPEITHER           0B7A R
+  2 WPELEVEN           08BE R   |   2 WPEMOTIONALLY      0B81 R
+  2 WPENGINEERS        0B8D R   |   2 WPENOUGH           0B97 R
+  2 WPENTIRELY         0B9E R   |   2 WPEQUIVALENT       0BA7 R
+  2 WPERROR            0BB2 R   |   2 WPEVEN             0BB8 R
+  2 WPEVER             0BBD R   |   2 WPEVERY            0BC2 R
+  2 WPEXACTLY          0BC8 R   |   2 WPEXCEPTIONALL     0BD0 R
+  2 WPEXCITING         0BDE R   |   2 WPEXCLAMATION      0882 R
+  2 WPEXIST            0BE7 R   |   2 WPEXISTENTIAL      0BED R
+  2 WPEXPECTED         0BF9 R   |   2 WPFAULT            0C02 R
+  2 WPFEELS            0C08 R   |   2 WPFIDGET           0C0E R
+  2 WPFIFTEEN          08DE R   |   2 WPFINE             0C15 R
+  2 WPFIVE             08A0 R   |   2 WPFOOT             0C1A R
+  2 WPFOR              0C1F R   |   2 WPFORTY            0C23 R
+  2 WPFOUR             089B R   |   2 WPFOURTEEN         08D5 R
+  2 WPFRIDAY           0C29 R   |   2 WPFROM             0C30 R
+  2 WPFULL             0C35 R   |   2 WPFULLSTOP         0884 R
+  2 WPFUNNY            0C3A R   |   2 WPGIVE             0C40 R
+  2 WPGOING            0C45 R   |   2 WPGOOD             0C4B R
+  2 WPGRAVITY          0C50 R   |   2 WPGREAT            0C58 R
+  2 WPGUESSING         0C5E R   |   2 WPHANDLE           0C67 R
+  2 WPHARD             0C6E R   |   2 WPHAS              0C73 R
+  2 WPHAVE             0C77 R   |   2 WPHAVING           0C7C R
+  2 WPHEALTHY          0C83 R   |   2 WPHEAVY            0C8B R
+  2 WPHELP             0C91 R   |   2 WPHELPS            0C96 R
+  2 WPHERE             0C9C R   |   2 WPHOLY             0CA1 R
+  2 WPHOPING           0CA6 R   |   2 WPHOT              0CAD R
+  2 WPHUMAN            0CB1 R   |   2 WPHURT             0CB7 R
+  2 WPI                0CBC R   |   2 WPID               0CBE R
+  2 WPIF               0CD0 R   |   2 WPILL              0CC2 R
+  2 WPIM               0CC7 R   |   2 WPIMPRESSED        0CD3 R
+  2 WPIMPRESSIVE       0CDD R   |   2 WPIN               0CE8 R
+  2 WPINCLUDING        0CEB R   |   2 WPINFLUENCE        0CF5 R
+  2 WPINTELLIGENCE     0CFF R   |   2 WPINTERESTING      0D0C R
+  2 WPINTERNAL         0D18 R   |   2 WPIS               0D21 R
+  2 WPISS              0D24 R   |   2 WPIT               0D28 R
+  2 WPITS              0D2B R   |   2 WPIVE              0CCB R
+  2 WPJOKES            0D2F R   |   2 WPJUDGING          0D35 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 8
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
-  2 WPJOKES            0D48 R   |   2 WPJUDGING          0D4E R
-  2 WPJUST             0D56 R   |   2 WPKEEP             0D5B R
-  2 WPKILOMETERS       0D60 R   |   2 WPKIND             0D6B R
-  2 WPKNOW             0D70 R   |   2 WPKNOWN            0D75 R
-  2 WPLARGE            0D7B R   |   2 WPLAST             0D81 R
-  2 WPLEAST            0D86 R   |   2 WPLESS             0D8C R
-  2 WPLETS             0D91 R   |   2 WPLIE              0D96 R
-  2 WPLIFE             0D9A R   |   2 WPLIGHT            0D9F R
-  2 WPLIKE             0DA5 R   |   2 WPLONGER           0DAA R
-  2 WPLOOK             0DB1 R   |   2 WPLOT              0DB6 R
-  2 WPLOUDER           0DBA R   |   2 WPMAKES            0DC1 R
-  2 WPMAKING           0DC7 R   |   2 WPME               0DCE R
-  2 WPMEAN             0DD1 R   |   2 WPMEANING          0DD9 R
-  2 WPMEASURED         0DE1 R   |   2 WPMEDIOCRITY       0DEA R
-  2 WPMEE              0DF5 R   |   2 WPMEMORY           0DFA R
-  2 WPMENTION          0E01 R   |   2 WPMIGHT            0E09 R
-  2 WPMILLION          0E0F R   |   2 WPMISTAKE          0E17 R
-  2 WPMOMENT           0E1F R   |   2 WPMOORE            0E26 R
-  2 WPMORE             0E2B R   |   2 WPMOSTLY           0E30 R
-  2 WPMOUNTAINS        0E37 R   |   2 WPMUCH             0E41 R
-  2 WPMUSCLE           0E46 R   |   2 WPMY               0E4D R
-  2 WPNAP              0E50 R   |   2 WPNEED             0E54 R
-  2 WPNEEDED           0E59 R   |   2 WPNEITHER          0E60 R
-  2 WPNEWS             0E68 R   |   2 WPNEXT             0E6D R
-  2 WPNICE             0E72 R   |   2 WPNINE             08CE R
-  2 WPNINETEEN         091A R   |   2 WPNINETY           0E77 R
-  2 WPNO               0E7E R   |   2 WPNOBODY           0E81 R
-  2 WPNONE             0E88 R   |   2 WPNOR              0E8D R
-  2 WPNORMAL           0E91 R   |   2 WPNOT              0E98 R
-  2 WPNOTHING          0E9C R   |   2 WPNOWHERE          0EA4 R
-  2 WPOF               0EAC R   |   2 WPOFF              0EAF R
-  2 WPOH               0EB3 R   |   2 WPOK               0EB6 R
-  2 WPOLD              0EB9 R   |   2 WPON               0EBD R
-  2 WPONE              08A6 R   |   2 WPONLY             0EC0 R
-  2 WPOR               0EC5 R   |   2 WPOUR              0EC8 R
-  2 WPOVERLOAD         0ECC R   |   2 WPPARAMETERS       0ED5 R
-  2 WPPERFECTLY        0EE0 R   |   2 WPPERHAPS          0EEA R
-  2 WPPERSON           0EF2 R   |   2 WPPICKING          0EF9 R
-  2 WPPLANET           0F01 R   |   2 WPPLANS            0F08 R
-  2 WPPLEASE           0F0E R   |   2 WPPOINTLESS        0F15 R
-  2 WPPOSSIBLE         0F1F R   |   2 WPPOSSIBLY         0F28 R
-  2 WPPOUNDS           0892 R   |   2 WPPRECAUTION       0F4C R
-  2 WPPRECISELY        0F31 R   |   2 WPPRESENT          0F3B R
-  2 WPPRESSURE         0F43 R   |   2 WPPRETEND          0F6F R
-  2 WPPROBABLY         0F57 R   |   2 WPPROBLEMS         0F60 R
-  2 WPPROUD            0F69 R   |   2 WPPUT              0F76 R
-  2 WPQUESTION         0F7A R   |   2 WPQUESTIONMK       0899 R
-  2 WPQUITE            0F83 R   |   2 WPREADY            0F89 R
-  2 WPREALLY           0F8F R   |   2 WPRECALIBRATIN     0F96 R
-  2 WPREFER            0FA4 R   |   2 WPREFUSE           0FAA R
-  2 WPREINFORCING      0FB1 R   |   2 WPREMEMBER         0FBD R
-  2 WPREMOVE           0FC6 R   |   2 WPRESPECTABLE      0FCD R
-  2 WPRIGHT            0FD9 R   |   2 WPROOM             0FDF R
-  2 WPRUNNING          0FE4 R   |   2 WPRUSH             0FEC R
-  2 WPSAID             0FF1 R   |   2 WPSAKES            0FF6 R
+  2 WPJUST             0D3D R   |   2 WPKEEP             0D42 R
+  2 WPKILOMETERS       0D47 R   |   2 WPKIND             0D52 R
+  2 WPKNOW             0D57 R   |   2 WPKNOWN            0D5C R
+  2 WPLARGE            0D62 R   |   2 WPLAST             0D68 R
+  2 WPLEAST            0D6D R   |   2 WPLESS             0D73 R
+  2 WPLETS             0D78 R   |   2 WPLIE              0D7D R
+  2 WPLIFE             0D81 R   |   2 WPLIGHT            0D86 R
+  2 WPLIKE             0D8C R   |   2 WPLONGER           0D91 R
+  2 WPLOOK             0D98 R   |   2 WPLOT              0D9D R
+  2 WPLOUDER           0DA1 R   |   2 WPMAKES            0DA8 R
+  2 WPMAKING           0DAE R   |   2 WPME               0DB5 R
+  2 WPMEAN             0DB8 R   |   2 WPMEANING          0DC0 R
+  2 WPMEASURED         0DC8 R   |   2 WPMEDIOCRITY       0DD1 R
+  2 WPMEE              0DDC R   |   2 WPMEMORY           0DE1 R
+  2 WPMENTION          0DE8 R   |   2 WPMIGHT            0DF0 R
+  2 WPMILLION          0DF6 R   |   2 WPMISTAKE          0DFE R
+  2 WPMOMENT           0E06 R   |   2 WPMOORE            0E0D R
+  2 WPMORE             0E12 R   |   2 WPMOSTLY           0E17 R
+  2 WPMOUNTAINS        0E1E R   |   2 WPMUCH             0E28 R
+  2 WPMUSCLE           0E2D R   |   2 WPMY               0E34 R
+  2 WPNAP              0E37 R   |   2 WPNEED             0E3B R
+  2 WPNEEDED           0E40 R   |   2 WPNEITHER          0E47 R
+  2 WPNEWS             0E4F R   |   2 WPNEXT             0E54 R
+  2 WPNICE             0E59 R   |   2 WPNINE             08B5 R
+  2 WPNINETEEN         0901 R   |   2 WPNINETY           0E5E R
+  2 WPNO               0E65 R   |   2 WPNOBODY           0E68 R
+  2 WPNONE             0E6F R   |   2 WPNOR              0E74 R
+  2 WPNORMAL           0E78 R   |   2 WPNOT              0E7F R
+  2 WPNOTHING          0E83 R   |   2 WPNOWHERE          0E8B R
+  2 WPOF               0E93 R   |   2 WPOFF              0E96 R
+  2 WPOH               0E9A R   |   2 WPOK               0E9D R
+  2 WPOLD              0EA0 R   |   2 WPON               0EA4 R
+  2 WPONE              088D R   |   2 WPONLY             0EA7 R
+  2 WPOR               0EAC R   |   2 WPOUR              0EAF R
+  2 WPOVERLOAD         0EB3 R   |   2 WPPARAMETERS       0EBC R
+  2 WPPERFECTLY        0EC7 R   |   2 WPPERHAPS          0ED1 R
+  2 WPPERSON           0ED9 R   |   2 WPPICKING          0EE0 R
+  2 WPPLANET           0EE8 R   |   2 WPPLANS            0EEF R
+  2 WPPLEASE           0EF5 R   |   2 WPPOINTLESS        0EFC R
+  2 WPPOSSIBLE         0F06 R   |   2 WPPOSSIBLY         0F0F R
+  2 WPPOUNDS           0879 R   |   2 WPPRECAUTION       0F33 R
+  2 WPPRECISELY        0F18 R   |   2 WPPRESENT          0F22 R
+  2 WPPRESSURE         0F2A R   |   2 WPPRETEND          0F56 R
+  2 WPPROBABLY         0F3E R   |   2 WPPROBLEMS         0F47 R
+  2 WPPROUD            0F50 R   |   2 WPPUT              0F5D R
+  2 WPQUESTION         0F61 R   |   2 WPQUESTIONMK       0880 R
+  2 WPQUITE            0F6A R   |   2 WPREADY            0F70 R
+  2 WPREALLY           0F76 R   |   2 WPRECALIBRATIN     0F7D R
+  2 WPREFER            0F8B R   |   2 WPREFUSE           0F91 R
+  2 WPREINFORCING      0F98 R   |   2 WPREMEMBER         0FA4 R
+  2 WPREMOVE           0FAD R   |   2 WPRESPECTABLE      0FB4 R
+  2 WPRIGHT            0FC0 R   |   2 WPROOM             0FC6 R
+  2 WPRUNNING          0FCB R   |   2 WPRUSH             0FD3 R
+  2 WPSAID             0FD8 R   |   2 WPSAKES            0FDD R
+  2 WPSAY              0FE3 R   |   2 WPSAYING           0FE7 R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 9
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
-  2 WPSAY              0FFC R   |   2 WPSAYING           1000 R
-  2 WPSCIENCE          1007 R   |   2 WPSECONDS          100F R
-  2 WPSEE              1017 R   |   2 WPSEEN             101B R
-  2 WPSERVER           1020 R   |   2 WPSEVEN            08C2 R
-  2 WPSEVENTEEN        0907 R   |   2 WPSEVENTY          1027 R
-  2 WPSHALL            102F R   |   2 WPSHOULD           1035 R
-  2 WPSIGN             103C R   |   2 WPSIMULATION       1041 R
-  2 WPSINCE            104C R   |   2 WPSIX              08BE R
-  2 WPSIXTEEN          08FF R   |   2 WPSIZE             1052 R
-  2 WPSLOWLY           1057 R   |   2 WPSMALL            105E R
-  2 WPSO               1064 R   |   2 WPSOLID            1067 R
-  2 WPSOME             106D R   |   2 WPSOMEONE          1072 R
-  2 WPSOMETHING        107A R   |   2 WPSOMETIME         1084 R
-  2 WPSOMETIMES        108D R   |   2 WPSPEAK            1097 R
-  2 WPSPEND            109D R   |   2 WPSTAND            10A3 R
-  2 WPSTANDING         10A9 R   |   2 WPSTATISTICALL     10B2 R
-  2 WPSTEP             10BE R   |   2 WPSTEPPED          10C3 R
-  2 WPSTILL            10D3 R   |   2 WPSTONES           088B R
-  2 WPSTOPPED          10CB R   |   2 WPSTRUCTURAL       10D9 R
-  2 WPSTRUCTURALLY     10E4 R   |   2 WPSUBSTANTIALL     10F1 R
-  2 WPSUPPOSE          10FF R   |   2 WPSURE             1107 R
-  2 WPSURVIVE          110C R   |   2 WPSYSTEM           1114 R
-  2 WPTAKE             111B R   |   2 WPTALL             1120 R
-  2 WPTELEPRINTER      1125 R   |   2 WPTELLS            1131 R
-  2 WPTEN              08D3 R   |   2 WPTERRIBLE         1137 R
-  2 WPTHAN             1140 R   |   2 WPTHAT             1145 R
-  2 WPTHATS            114A R   |   2 WPTHE              1150 R
-  2 WPTHEM             1154 R   |   2 WPTHINGS           1159 R
-  2 WPTHINK            1160 R   |   2 WPTHINKING         1166 R
-  2 WPTHIRTEEN         08E5 R   |   2 WPTHIS             116F R
-  2 WPTHOROUGHLY       1174 R   |   2 WPTHOUSAND         117F R
-  2 WPTHREE            08AE R   |   2 WPTIM              1188 R
-  2 WPTIME             118C R   |   2 WPTO               1191 R
-  2 WPTODAY            1194 R   |   2 WPTOO              119A R
-  2 WPTRAGEDY          119E R   |   2 WPTRAVELLED        11A6 R
-  2 WPTRINITY          11B0 R   |   2 WPTRY              11B8 R
-  2 WPTUESDAY          11BC R   |   2 WPTWELVE           08DE R
-  2 WPTWENTY           0923 R   |   2 WPTWO              08AA R
-  2 WPTYPICAL          11C4 R   |   2 WPUNINTERESTIN     11CC R
-  2 WPUNIX             11DA R   |   2 WPUNLESS           11DF R
-  2 WPUNPLUGGED        11E6 R   |   2 WPUNREMARKABLE     11F0 R
-  2 WPUP               11FD R   |   2 WPVEGETABLES       1200 R
-  2 WPVERY             120B R   |   2 WPWAIT             1210 R
-  2 WPWAITING          1215 R   |   2 WPWANT             121D R
-  2 WPWARNING          1222 R   |   2 WPWAS              122A R
-  2 WPWAY              122E R   |   2 WPWE               1232 R
-  2 WPWEIGH            123A R   |   2 WPWEIGHED          1235 R
-  2 WPWEIGHS           1240 R   |   2 WPWEIGHT           1247 R
-  2 WPWERE             124E R   |   2 WPWERENT           1253 R
-  2 WPWHAT             125B R   |   2 WPWHEN             1260 R
-  2 WPWHICH            1265 R   |   2 WPWHILE            126B R
-  2 WPWHISPERED        1271 R   |   2 WPWHO              127B R
-  2 WPWILL             127F R   |   2 WPWISH             1284 R
-  2 WPWITH             1289 R   |   2 WPWITHIN           128E R
-  2 WPWITHOUT          1295 R   |   2 WPWONDERING        129D R
+  2 WPSCIENCE          0FEE R   |   2 WPSECONDS          0FF6 R
+  2 WPSEE              0FFE R   |   2 WPSEEN             1002 R
+  2 WPSERVER           1007 R   |   2 WPSEVEN            08A9 R
+  2 WPSEVENTEEN        08EE R   |   2 WPSEVENTY          100E R
+  2 WPSHALL            1016 R   |   2 WPSHOULD           101C R
+  2 WPSIGN             1023 R   |   2 WPSIMULATION       1028 R
+  2 WPSINCE            1033 R   |   2 WPSIX              08A5 R
+  2 WPSIXTEEN          08E6 R   |   2 WPSIZE             1039 R
+  2 WPSLOWLY           103E R   |   2 WPSMALL            1045 R
+  2 WPSO               104B R   |   2 WPSOLID            104E R
+  2 WPSOME             1054 R   |   2 WPSOMEONE          1059 R
+  2 WPSOMETHING        1061 R   |   2 WPSOMETIME         106B R
+  2 WPSOMETIMES        1074 R   |   2 WPSPEAK            107E R
+  2 WPSPEND            1084 R   |   2 WPSTAND            108A R
+  2 WPSTANDING         1090 R   |   2 WPSTATISTICALL     1099 R
+  2 WPSTEP             10A5 R   |   2 WPSTEPPED          10AA R
+  2 WPSTILL            10BA R   |   2 WPSTONES           0872 R
+  2 WPSTOPPED          10B2 R   |   2 WPSTRUCTURAL       10C0 R
+  2 WPSTRUCTURALLY     10CB R   |   2 WPSUBSTANTIALL     10D8 R
+  2 WPSUPPOSE          10E6 R   |   2 WPSURE             10EE R
+  2 WPSURVIVE          10F3 R   |   2 WPSYSTEM           10FB R
+  2 WPTAKE             1102 R   |   2 WPTALL             1107 R
+  2 WPTELEPRINTER      110C R   |   2 WPTELLS            1118 R
+  2 WPTEN              08BA R   |   2 WPTERRIBLE         111E R
+  2 WPTHAN             1127 R   |   2 WPTHAT             112C R
+  2 WPTHATS            1131 R   |   2 WPTHE              1137 R
+  2 WPTHEM             113B R   |   2 WPTHINGS           1140 R
+  2 WPTHINK            1147 R   |   2 WPTHINKING         114D R
+  2 WPTHIRTEEN         08CC R   |   2 WPTHIS             1156 R
+  2 WPTHOROUGHLY       115B R   |   2 WPTHOUSAND         1166 R
+  2 WPTHREE            0895 R   |   2 WPTIM              116F R
+  2 WPTIME             1173 R   |   2 WPTO               1178 R
+  2 WPTODAY            117B R   |   2 WPTOO              1181 R
+  2 WPTRAGEDY          1185 R   |   2 WPTRAVELLED        118D R
+  2 WPTRINITY          1197 R   |   2 WPTRY              119F R
+  2 WPTUESDAY          11A3 R   |   2 WPTWELVE           08C5 R
+  2 WPTWENTY           090A R   |   2 WPTWO              0891 R
+  2 WPTYPICAL          11AB R   |   2 WPUNINTERESTIN     11B3 R
+  2 WPUNIX             11C1 R   |   2 WPUNLESS           11C6 R
+  2 WPUNPLUGGED        11CD R   |   2 WPUNREMARKABLE     11D7 R
+  2 WPUP               11E4 R   |   2 WPVEGETABLES       11E7 R
+  2 WPVERY             11F2 R   |   2 WPWAIT             11F7 R
+  2 WPWAITING          11FC R   |   2 WPWANT             1204 R
+  2 WPWARNING          1209 R   |   2 WPWAS              1211 R
+  2 WPWAY              1215 R   |   2 WPWE               1219 R
+  2 WPWEIGH            1221 R   |   2 WPWEIGHED          121C R
+  2 WPWEIGHS           1227 R   |   2 WPWEIGHT           122E R
+  2 WPWERE             1235 R   |   2 WPWERENT           123A R
+  2 WPWHAT             1242 R   |   2 WPWHEN             1247 R
+  2 WPWHICH            124C R   |   2 WPWHILE            1252 R
+  2 WPWHISPERED        1258 R   |   2 WPWHO              1262 R
+  2 WPWILL             1266 R   |   2 WPWISH             126B R
+  2 WPWITH             1270 R   |   2 WPWITHIN           1275 R
+  2 WPWITHOUT          127C R   |   2 WPWONDERING        1284 R
+  2 WPWORKSTATION      128E R   |   2 WPWORRIED          129A R
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 10
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Symbol Table
 
-  2 WPWORKSTATION      12A7 R   |   2 WPWORRIED          12B3 R
-  2 WPWORRY            12BB R   |   2 WPWORRYING         12C1 R
-  2 WPWORSE            12CA R   |   2 WPWOULD            12D0 R
-  2 WPWOULDNT          12D6 R   |   2 WPYEAR             12DE R
-  2 WPYES              12E3 R   |   2 WPYOU              12E7 R
-  2 WPYOUR             12F2 R   |   2 WPYOURE            12EB R
-  2 WPYOURSELF         12F7 R   |   2 WPZERO             08A1 R
+  2 WPWORRY            12A2 R   |   2 WPWORRYING         12A8 R
+  2 WPWORSE            12B1 R   |   2 WPWOULD            12B7 R
+  2 WPWOULDNT          12BD R   |   2 WPYEAR             12C5 R
+  2 WPYES              12CA R   |   2 WPYOU              12CE R
+  2 WPYOUR             12D9 R   |   2 WPYOURE            12D2 R
+  2 WPYOURSELF         12DE R   |   2 WPZERO             0888 R
     YEAR           =   0172     |     YES            =   0173 
     YOU            =   0174     |     YOUR           =   0176 
     YOURE          =   0175     |     YOURSELF       =   0177 
-    ZERO           =   0000     |   2 ZINB               0456 R
-  2 ZINBA              045F R   |   2 ZINBB              046B R
+    ZERO           =   0000     |   2 ZINB               044D R
+  2 ZINBA              0456 R   |   2 ZINBB              0462 R
     ZOUT           =   FCC9 
 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 11
-Hexadecimal [16-Bits]                                 Thu May 14 20:50:38 2026
+Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
 
 Area Table
 
 [_CSEG]
    0 _CODE            size    0   flags C080
-   2 CODE1            size 1C5E   flags  908
+   2 CODE1            size 1C2B   flags  908
 [_DSEG]
    1 _DATA            size    0   flags C0C0
 

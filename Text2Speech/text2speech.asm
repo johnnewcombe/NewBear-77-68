@@ -4,6 +4,39 @@
 
                 .area   CODE1 (ABS)     ; absolute i.e. not relocatable
 
+; -----------------------------------------------------
+; Reserved memory
+; -----------------------------------------------------
+                 .org    0x0000
+
+T_Q:             .rmb     1       ; Temp storage for ZIN
+T_Z:             .rmb     2       ;   "     "     "  RDX
+T_X:             .rmb     2       ;   "     "     "  PR_WORD
+T_Y:             .rmb     2       ;   "     "     "  table pointer
+T_P:             .rmb     2       ;   "     "     "  PR_PHRASE
+T_W:             .rmb     2       ;   "     "     "  PR_WEIGHT
+T_TMP:           .rmb     2       ;   "     "     "  within subroutine
+TEMP:            .rmb     2       ; temp var (non subroutine use)
+T_WEIGHT:        .rmb     2       ; holds value of weight following a call to GETDATA
+
+; these are cleared at start up
+IDLE_COUNT:      .rmb     1       ; counts the number of empty measurement reports
+IDLE_MSG_ID:     .rmb     1       ; holds value of next idle message to use
+GREET_MSG_ID:    .rmb     1       ; holds value of next greeting message to use
+LIGHT_MSG_ID:    .rmb     1       ; holds value of next light weight message to use
+NORMAL_MSG_ID:   .rmb     1       ; holds value of next normal weight message to use
+HEAVY_MSG_ID:    .rmb     1       ; holds value of next heavy weight message to use
+SHEAVY_MSG_ID:   .rmb     1       ; holds value of next super heavy weight message to use
+PROCESSING_FLG:  .rmb     1       ; non-zero indicates that that a weight is being processed
+                                  ;   all following weight data is ignored until the next
+                                  ;   idle (0000h) data resets it.
+WORDS:           .rmb     1       ; number of words for the panel LED routines
+                                  ;  this is updated each time a word is transmitted.
+
+
+
+
+
                 .org    0x0200
 
 STACK           .equ    0x01FF
@@ -126,16 +159,16 @@ ML5:            JMP     MAINLOOP        ; no comments for less than light weight
 ; -----------------------------------------------------
 OVERLOADED:
                 JSR     STRING
-                .fcc    "ST: SOFL"
-                .fcb    0x0d,0x0a,0xff
+                .fcc    "ST:SOFL "
+                .fcb    0x20,0xff
                 LDX     #MTOOHEAVY1
                 JSR     PR_PHRASE
                 JSR     PR_CRB
                 JMP     MAINLOOP
 IERROR:
                 JSR     STRING
-                .fcc    "ST: IERR"
-                .fcb    0x0d,0x0a,0xff
+                .fcc    "ST:IERR "
+                .fcb    0x20,0xff
                 LDX     #MERROR
                 JSR     PR_PHRASE
                 JSR     PR_CRB
@@ -154,8 +187,8 @@ IDLE:   CLR     PROCESSING_FLG  ; clear the processing flag as no one
         JMP     MAINLOOP             ; nothing to do yet
 
 IDLE1:  JSR     STRING
-        .fcc    "ST: IMSG"
-        .fcb    0x0d,0x0a,0xff
+        .fcc    "ST:IMSG "
+        .fcb    0x20,0xff
         CLR     IDLE_COUNT      ; time to output an idle message so reset the count
         LDAA    IDLE_MSG_ID     ; get next Message ID
         CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
@@ -170,8 +203,8 @@ IDLE_OP:
 
 GREET:   ; output the greeting message
         JSR     STRING
-        .fcc    "ST: GMSG"
-        .fcb    0x0d,0x0a,0xff
+        .fcc    "ST:GMSG "
+        .fcb    0x20,0xff
         LDAA    GREET_MSG_ID    ; get next Message ID
         CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
         BNE     GREET_OP        ; still at valid id so output idle message
@@ -185,8 +218,8 @@ GREET_OP:
 
 LIGHTW:   ; output the lightweight message
         JSR     STRING
-        .fcc    "ST: LMSG"
-        .fcb    0x0d,0x0a,0xff
+        .fcc    "ST:LMSG "
+        .fcb    0x20,0xff
         LDAA    LIGHT_MSG_ID    ; get next Message ID
         CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
         BNE     LIGHT_OP        ; still at valid id so output idle message
@@ -200,8 +233,8 @@ LIGHT_OP:
 
 NORMALW: ; output the normal message
         JSR     STRING
-        .fcc    "ST: NMSG"
-        .fcb    0x0d,0x0a,0xff
+        .fcc    "ST:NMSG "
+        .fcb    0x20,0xff
         LDAA    NORMAL_MSG_ID   ; get next Message ID
         CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
         BNE     NORMAL_OP       ; still at valid id so output idle message
@@ -215,8 +248,8 @@ NORMAL_OP:
 
 HEAVYW:  ; output the heavy message
         JSR     STRING
-        .fcc    "ST: HMSG"
-        .fcb    0x0d,0x0a,0xff
+        .fcc    "ST:HMSG "
+        .fcb    0x20,0xff
         LDAA    HEAVY_MSG_ID    ; get next Message ID
         CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
         BNE     HEAVY_OP        ; still at valid id so output idle message
@@ -230,8 +263,8 @@ HEAVY_OP:
 
 SHEAVYW: ; output the superheavy message
         JSR     STRING
-        .fcc    "ST: SMSG"
-        .fcb    0x0d,0x0a,0xff
+        .fcc    "ST:SMSG "
+        .fcb    0x20,0xff
         LDAA    SHEAVY_MSG_ID   ; get next Message ID
         CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
         BNE     SHEAVY_OP       ; still at valid id so output idle message
@@ -270,11 +303,11 @@ GETDATA:
         JSR     RD_XB           ; read 4 hex characters into X
         STX     T_WEIGHT        ; store X
         JSR     STRING
-        .fcc    "DR: "
+        .fcc    "DR:"
         .fcb    0xff
         LDX     T_WEIGHT
         JSR     PRX             ; print the data
-        JSR    PR_CR
+        JSR    PRSP
         CLC
         LDAA    T_WEIGHT        ; get fist byte (stones)
         BEQ     GDDONE          ; idle message
@@ -421,7 +454,7 @@ PR_WEIGHT:
 ; -----------------------------------------------------
 PR_SPCB: PSHA
         LDAA    #0x20        ; Put space character in A
-        JSR     PR_A
+        ;JSR     PR_A
         JSR     PR_B        ; Print it
         PULA
         RTS                 ; RETURN
@@ -440,17 +473,6 @@ PR_CRB:     PSHA
             JSR     PR_A
 PR_CRB1:    JSR     PR_B        ; Print it
             PULA
-            RTS                 ; RETURN
-
-; -----------------------------------------------------
-; Prints a CR/LF to ACIA(a) A is preserved
-; -----------------------------------------------------
-PR_CR:     PSHA
-            LDAA    #0x0D        ; Put CHAR character in A
-            JSR     PR_A
-            LDAA    #0x0A
-            JSR     PR_A
-PR_CR1:    PULA
             RTS                 ; RETURN
 
 ; -----------------------------------------------------
@@ -503,33 +525,3 @@ PR_WORD:
 
                 .include    "words.asm"
                 .include    "phrases.asm"
-
-
-; -----------------------------------------------------
-; Reserved memory
-; -----------------------------------------------------
-
-T_Q:             .rmb     1       ; Temp storage for ZIN
-T_Z:             .rmb     2       ;   "     "     "  RDX
-T_X:             .rmb     2       ;   "     "     "  PR_WORD
-T_Y:             .rmb     2       ;   "     "     "  table pointer
-T_P:             .rmb     2       ;   "     "     "  PR_PHRASE
-T_W:             .rmb     2       ;   "     "     "  PR_WEIGHT
-T_TMP:           .rmb     2       ;   "     "     "  within subroutine
-TEMP:            .rmb     2       ; temp var (non subroutine use)
-T_WEIGHT:        .rmb     2       ; holds value of weight following a call to GETDATA
-
-; these are cleared at start up
-IDLE_COUNT:      .rmb     1       ; counts the number of empty measurement reports
-IDLE_MSG_ID:     .rmb     1       ; holds value of next idle message to use
-GREET_MSG_ID:    .rmb     1       ; holds value of next greeting message to use
-LIGHT_MSG_ID:    .rmb     1       ; holds value of next light weight message to use
-NORMAL_MSG_ID:   .rmb     1       ; holds value of next normal weight message to use
-HEAVY_MSG_ID:    .rmb     1       ; holds value of next heavy weight message to use
-SHEAVY_MSG_ID:   .rmb     1       ; holds value of next super heavy weight message to use
-PROCESSING_FLG:  .rmb     1       ; non-zero indicates that that a weight is being processed
-                                  ;   all following weight data is ignored until the next
-                                  ;   idle (0000h) data resets it.
-WORDS:           .rmb     1       ; number of words for the panel LED routines
-                                  ;  this is updated each time a word is transmitted.
-
