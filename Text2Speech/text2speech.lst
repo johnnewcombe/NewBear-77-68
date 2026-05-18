@@ -1,5 +1,5 @@
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 1
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -38,563 +38,571 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0019                      33 WORDS:           .rmb     1       ; number of words for the panel LED routines
                              34                                   ;  this is updated each time a word is transmitted.
                              35 
-                             36 
-                             37 
-                             38 
+                             36 ; TODO Have a lead character (invalid hex) on each packet from the scales
+                             37 ;   and either restart the receive sequence with an invalid hex or wait for the
+                             38 ;   start packet character (make it printable e.g. '@' or 'Z' etc.
                              39 
-   0200                      40                 .org    0x0200
-                             41 
-                     01FF    42 STACK           .equ    0x01FF
-                     F400    43 DATAA           .equ    0xF400          ; ACIA(a) Data register
-                     F401    44 CTRLA           .equ    0xF401          ; ACIA(a) Ctrl/Status
-                     F402    45 DATAB           .equ    0xF402          ; ACIA(b) Data register
-                     F403    46 CTRLB           .equ    0xF403          ; ACIA(b) Ctrl/Status
-                             47 
-                             48 ; MINIMON routines
-                     FC76    49 STRING          .equ    0xFC76          ; Prints a string.
-                     FC89    50 GETADD          .equ    0xFC89          ; Get Address, read 4 digit hex value.
-                     FCC9    51 ZOUT            .equ    0xFCC9          ; Print value in A as 2 hex digits.
-                     FE97    52 NEWLINE         .equ    0xFE97          ; Prints a new line.
-                     FF8F    53 START           .equ    0xFF8F          ; Restarts MniMon.
-                     FC0F    54 PR_A            .equ    0xFC0F          ; Print char in A to ACIA (a)
-                     FD2B    55 RD_A            .equ    0xFD2B          ; Read char from A
+                             40 
+                             41 ;LREAD   JSR     RD_CMD      ; Read+Echo, test for '.'
+                             42 ;        CMPA    #'S         ; Is it `S` ?
+                             43 ;        BNE     LREAD       ; No: Keep waiting for `S`
+                             44 ;        JSR     RD_CMD      ; Read+Echo, test for '.'
+                             45 
+                             46 
+   0200                      47                 .org    0x0200
+                             48 
+                     01FF    49 STACK           .equ    0x01FF
+                     F400    50 DATAA           .equ    0xF400          ; ACIA(a) Data register
+                     F401    51 CTRLA           .equ    0xF401          ; ACIA(a) Ctrl/Status
+                     F402    52 DATAB           .equ    0xF402          ; ACIA(b) Data register
+                     F403    53 CTRLB           .equ    0xF403          ; ACIA(b) Ctrl/Status
+                             54 
+                             55 ; MINIMON routines
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 2
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-                     FD4D    56 PRSP            .equ    0xFD4D          ; Print a space
-                     FC31    57 BINARY          .equ    0xFC31          ; Converts ASCII hex digits in A and B to binary?
-                     FC65    58 RD_X            .equ    0xFC65          ; Read 4 hex digits Value from ACIA(a) and put value into X.
-                     FC1D    59 VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
-                     FCBB    60 PRX             .equ    0xFCBB          ; print val in X as four hex digits
-                             61 
-                     F0FF    62 PANEL           .equ    0xF0FF          ; LEDs and switches
-                     0B00    63 DELAY_VAL       .EQU    0x0B00          ; Delay loop count - adjust to taste (16 BIT VALUE)
-                             64 
-                     002D    65 IDLE_TICS       .equ   45              ; ticks between idle messages (1 tic = 2 secs approx)
-                     000F    66 SHEAVY_WGHT     .equ    15              ; >= 15 stones
-                     000D    67 HEAVY_WGHT      .equ    13              ; >= 13 stones
-                     000A    68 NORM_WGHT       .equ    10              ; >= 10 stones
-                     0006    69 LIGHT_WGHT      .equ    6               ; >= 6 stones
-                     0014    70 TOO_HEAVY       .equ    20
-                             71 
-                             72 ; number of messages
-                     000D    73 GREET_MSG_CNT   .equ    13
-                     000A    74 LIGHT_MSG_CNT   .equ    10
-                     0015    75 NORM_MSG_CNT    .equ    21
-                     0012    76 HEAVY_MSG_CNT   .equ    18
-                     000A    77 SHEAVY_MSG_CNT  .equ    10
-                     0019    78 IDLE_MSG_CNT    .equ    25
+                     FC76    56 STRING          .equ    0xFC76          ; Prints a string.
+                     FC89    57 GETADD          .equ    0xFC89          ; Get Address, read 4 digit hex value.
+                     FCC9    58 ZOUT            .equ    0xFCC9          ; Print value in A as 2 hex digits.
+                     FE97    59 NEWLINE         .equ    0xFE97          ; Prints a new line.
+                     FF8F    60 START           .equ    0xFF8F          ; Restarts MniMon.
+                     FC0F    61 PR_A            .equ    0xFC0F          ; Print char in A to ACIA (a)
+                     FD2B    62 RD_A            .equ    0xFD2B          ; Read char from A
+                     FD4D    63 PRSP            .equ    0xFD4D          ; Print a space
+                     FC31    64 BINARY          .equ    0xFC31          ; Converts ASCII hex digits in A and B to binary?
+                     FC65    65 RD_X            .equ    0xFC65          ; Read 4 hex digits Value from ACIA(a) and put value into X.
+                     FC1D    66 VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
+                     FCBB    67 PRX             .equ    0xFCBB          ; print val in X as four hex digits
+                             68 
+                     F0FF    69 PANEL           .equ    0xF0FF          ; LEDs and switches
+                     0B00    70 DELAY_VAL       .equ    0x0B00          ; Delay loop count - adjust to taste (16 BIT VALUE)
+                     0040    71 ASC_STX         .equ    0x40            ; Start of Text
+                             72 
+                     002D    73 IDLE_TICS       .equ   45              ; ticks between idle messages (1 tic = 2 secs approx)
+                     000F    74 SHEAVY_WGHT     .equ    15              ; >= 15 stones
+                     000D    75 HEAVY_WGHT      .equ    13              ; >= 13 stones
+                     000A    76 NORM_WGHT       .equ    10              ; >= 10 stones
+                     0006    77 LIGHT_WGHT      .equ    6               ; >= 6 stones
+                     0014    78 TOO_HEAVY       .equ    20
                              79 
-   0200                      80 INIT:
-                             81                 ; set the stack
-   0200 8E 01 FF      [ 3]   82                 LDS     #STACK
-                             83 
-                             84                 ; clear the counters
-   0203 7F 00 11      [ 6]   85                 CLR     IDLE_COUNT
-   0206 7F 00 12      [ 6]   86                 CLR     IDLE_MSG_ID
-   0209 7F 00 13      [ 6]   87                 CLR     GREET_MSG_ID
-   020C 7F 00 14      [ 6]   88                 CLR     LIGHT_MSG_ID
-   020F 7F 00 15      [ 6]   89                 CLR     NORMAL_MSG_ID
-   0212 7F 00 16      [ 6]   90                 CLR     HEAVY_MSG_ID
-   0215 7F 00 17      [ 6]   91                 CLR     SHEAVY_MSG_ID
-   0218 7F 00 18      [ 6]   92                 CLR     PROCESSING_FLG
-   021B 7F 00 19      [ 6]   93                 CLR     WORDS
-   021E 7F F0 FF      [ 6]   94                 CLR     PANEL
-                             95 
-                             96                 ; initialise serial port B
-   0221 86 11         [ 2]   97                 LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
-   0223 B7 F4 03      [ 5]   98                 STAA    CTRLB           ;   ACIA.A
-                             99 
-   0226 BD FC 76      [ 9]  100                 JSR STRING
-   0229 49 20 53 70 65 61   101                 .fcc    "I Speak Your Weight (c) John Newcombe 2026"
+                             80 ; number of messages
+                     000D    81 GREET_MSG_CNT   .equ    13
+                     000A    82 LIGHT_MSG_CNT   .equ    10
+                     0015    83 NORM_MSG_CNT    .equ    21
+                     0012    84 HEAVY_MSG_CNT   .equ    18
+                     000A    85 SHEAVY_MSG_CNT  .equ    10
+                     0019    86 IDLE_MSG_CNT    .equ    25
+                             87 
+   0200                      88 INIT:
+                             89                 ; set the stack
+   0200 8E 01 FF      [ 3]   90                 LDS     #STACK
+                             91 
+                             92                 ; clear the counters
+   0203 7F 00 11      [ 6]   93                 CLR     IDLE_COUNT
+   0206 7F 00 12      [ 6]   94                 CLR     IDLE_MSG_ID
+   0209 7F 00 13      [ 6]   95                 CLR     GREET_MSG_ID
+   020C 7F 00 14      [ 6]   96                 CLR     LIGHT_MSG_ID
+   020F 7F 00 15      [ 6]   97                 CLR     NORMAL_MSG_ID
+   0212 7F 00 16      [ 6]   98                 CLR     HEAVY_MSG_ID
+   0215 7F 00 17      [ 6]   99                 CLR     SHEAVY_MSG_ID
+   0218 7F 00 18      [ 6]  100                 CLR     PROCESSING_FLG
+   021B 7F 00 19      [ 6]  101                 CLR     WORDS
+   021E 7F F0 FF      [ 6]  102                 CLR     PANEL
+                            103 
+                            104                 ; initialise serial port B
+   0221 86 11         [ 2]  105                 LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
+   0223 B7 F4 03      [ 5]  106                 STAA    CTRLB           ;   ACIA.A
+                            107 
+   0226 BD FC 76      [ 9]  108                 JSR STRING
+   0229 49 20 53 70 65 61   109                 .fcc    "I Speak Your Weight (c) John Newcombe 2026"
         6B 20 59 6F 75 72
+ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 3
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
+
+
+
         20 57 65 69 67 68
         74 20 28 63 29 20
         4A 6F 68 6E 20 4E
         65 77 63 6F 6D 62
         65 20 32 30 32 36
-   0253 0D 0A FF            102                 .Fcb    0x0d, 0x0a, 0xff
-                            103 
-                            104                 ; initialise the speach processor
-ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 3
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
-
-
-
-                            105                 ;   @R6 = excitability (Default=3)
-                            106                 ;   @W2 = speed (Default=3)
-                            107                 ;   @F8 = pitch center (Default=8)
-                            108                 ;   @V3 = one of six preset voices
-                            109                 ;   @K0 = male or non-male table
-                            110                 ;
-   0256 BD 04 0D      [ 9]  111                 JSR STRINGB
-   0259 40 52 36 40 57 32   112                 .fcc    "@R6@W2@F8@V3@K0"
+   0253 0D 0A FF            110                 .Fcb    0x0d, 0x0a, 0xff
+                            111 
+                            112                 ; initialise the speach processor
+                            113                 ;   @R6 = excitability (Default=3)
+                            114                 ;   @W2 = speed (Default=3)
+                            115                 ;   @F8 = pitch center (Default=8)
+                            116                 ;   @V3 = one of six preset voices
+                            117                 ;   @K0 = male or non-male table
+                            118                 ;
+   0256 BD 04 0D      [ 9]  119                 JSR STRINGB
+   0259 40 52 36 40 57 32   120                 .fcc    "@R6@W2@F8@V3@K0"
         40 46 38 40 56 33
         40 4B 30
-   0268 0D 0A FF            113                 .fcb    0x0d, 0x0a, 0xFF
-                            114 
-   026B                     115 MAINLOOP:
-                            116 ; -----------------------------------------------------
-                            117 ; Data arrives at port B as four hex characters
-                            118 ; -----------------------------------------------------
-   026B BD 03 EC      [ 9]  119                 JSR     GETDATA         ; value in T_WEIGHT, stones in A
-   026E 25 03         [ 4]  120                 BCS     ML1             ; is it invalid i.e. carry clear
-   0270 7E 02 EC      [ 3]  121                 JMP     IDLE
-   0273 7D 00 18      [ 6]  122 ML1:            TST     PROCESSING_FLG  ; are we already processing a weight
-   0276 26 F3         [ 4]  123                 BNE     MAINLOOP        ; flag non-zero so ignore everything that follows
-   0278 7C 00 18      [ 6]  124                 INC     PROCESSING_FLG  ; ignore any following data until we next idle
-   027B 81 14         [ 2]  125                 CMPA    #TOO_HEAVY      ; more that 20 is too heavy
-   027D 22 3B         [ 4]  126                 BHI     OVERLOADED
-   027F B6 00 10      [ 4]  127                 LDAA    T_WEIGHT+1      ; validate pounds
-   0282 81 0D         [ 2]  128                 CMPA    #13             ; invalid pounds
-   0284 22 4D         [ 4]  129                 BHI     IERROR          ; internal error
-   0286 BD 03 23      [ 9]  130                 JSR     GREET           ; send a greeting message
-                            131 
-                            132                 ; get the weight a second time, this should allow the scales time to settle
-   0289 BD 03 EC      [ 9]  133                 JSR     GETDATA
-                            134 
-                            135                 ; output "you weigh" maybe use a phrase rather than individual words
-   028C CE 1C 1B      [ 3]  136                 LDX     #MYOUWEIGH
-   028F BD 04 F7      [ 9]  137                 JSR     PR_PHRASE
-   0292 FE 00 0F      [ 5]  138                 LDX     T_WEIGHT        ; restore X
-   0295 BD 04 A7      [ 9]  139                 JSR     PR_WEIGHT       ; weight back X so output the weight
-                            140 
-                            141                 ; output a comments
-   0298 B6 00 0F      [ 4]  142                 LDAA    T_WEIGHT        ; stones
-   029B 81 0F         [ 2]  143                 CMPA    #SHEAVY_WGHT
-   029D 25 03         [ 4]  144                 BLO     ML2             ; not super heavy weight
-   029F 7E 03 B1      [ 3]  145                 JMP     SHEAVYW
-   02A2 81 0D         [ 2]  146 ML2:            CMPA    #HEAVY_WGHT
-   02A4 25 03         [ 4]  147                 BLO     ML3             ; not heavy weight
-   02A6 7E 03 8D      [ 3]  148                 JMP     HEAVYW
-   02A9 81 0A         [ 2]  149 ML3:            CMPA    #NORM_WGHT
-   02AB 25 03         [ 4]  150                 BLO     ML4             ; not normal weight
-   02AD 7E 03 69      [ 3]  151                 JMP     NORMALW
-   02B0 81 06         [ 2]  152 ML4:            CMPA    #LIGHT_WGHT
-   02B2 25 03         [ 4]  153                 BLO     ML5             ; not light weight
-   02B4 7E 03 45      [ 3]  154                 JMP     LIGHTW
-   02B7 7E 02 6B      [ 3]  155 ML5:            JMP     MAINLOOP        ; no comments for less than light weight
-                            156 
-                            157 ; -----------------------------------------------------
+   0268 0D 0A FF            121                 .fcb    0x0d, 0x0a, 0xFF
+                            122 
+   026B                     123 MAINLOOP:
+                            124 ; -----------------------------------------------------
+                            125 ; Data arrives at port B as four hex characters
+                            126 ; -----------------------------------------------------
+   026B BD 03 EC      [ 9]  127                 JSR     GETDATA         ; value in T_WEIGHT, stones in A
+   026E 25 03         [ 4]  128                 BCS     ML1             ; is it invalid i.e. carry clear
+   0270 7E 02 EC      [ 3]  129                 JMP     IDLE
+   0273 7D 00 18      [ 6]  130 ML1:            TST     PROCESSING_FLG  ; are we already processing a weight
+   0276 26 F3         [ 4]  131                 BNE     MAINLOOP        ; flag non-zero so ignore everything that follows
+   0278 7C 00 18      [ 6]  132                 INC     PROCESSING_FLG  ; ignore any following data until we next idle
+   027B 81 14         [ 2]  133                 CMPA    #TOO_HEAVY      ; more that 20 is too heavy
+   027D 22 3B         [ 4]  134                 BHI     OVERLOADED
+   027F B6 00 10      [ 4]  135                 LDAA    T_WEIGHT+1      ; validate pounds
+   0282 81 0D         [ 2]  136                 CMPA    #13             ; invalid pounds
+   0284 22 4D         [ 4]  137                 BHI     IERROR          ; internal error
+   0286 BD 03 23      [ 9]  138                 JSR     GREET           ; send a greeting message
+                            139 
+                            140                 ; get the weight a second time, this should allow the scales time to settle
+   0289 BD 03 EC      [ 9]  141                 JSR     GETDATA
+                            142 
+                            143                 ; output "you weigh" maybe use a phrase rather than individual words
+   028C CE 1C 1B      [ 3]  144                 LDX     #MYOUWEIGH
+   028F BD 04 F7      [ 9]  145                 JSR     PR_PHRASE
+   0292 FE 00 0F      [ 5]  146                 LDX     T_WEIGHT        ; restore X
+   0295 BD 04 A7      [ 9]  147                 JSR     PR_WEIGHT       ; weight back X so output the weight
+                            148 
+                            149                 ; output a comments
+   0298 B6 00 0F      [ 4]  150                 LDAA    T_WEIGHT        ; stones
+   029B 81 0F         [ 2]  151                 CMPA    #SHEAVY_WGHT
+   029D 25 03         [ 4]  152                 BLO     ML2             ; not super heavy weight
+   029F 7E 03 B1      [ 3]  153                 JMP     SHEAVYW
+   02A2 81 0D         [ 2]  154 ML2:            CMPA    #HEAVY_WGHT
+   02A4 25 03         [ 4]  155                 BLO     ML3             ; not heavy weight
+   02A6 7E 03 8D      [ 3]  156                 JMP     HEAVYW
+   02A9 81 0A         [ 2]  157 ML3:            CMPA    #NORM_WGHT
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 4
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-                            158 ; Over 20 stone so random heavy phrase to ports B
-                            159 ; -----------------------------------------------------
-   02BA                     160 OVERLOADED:
-   02BA BD FC 76      [ 9]  161                 JSR     STRING
-   02BD 53 54 3A 53 4F 46   162                 .fcc    "ST:SOFL "
+   02AB 25 03         [ 4]  158                 BLO     ML4             ; not normal weight
+   02AD 7E 03 69      [ 3]  159                 JMP     NORMALW
+   02B0 81 06         [ 2]  160 ML4:            CMPA    #LIGHT_WGHT
+   02B2 25 03         [ 4]  161                 BLO     ML5             ; not light weight
+   02B4 7E 03 45      [ 3]  162                 JMP     LIGHTW
+   02B7 7E 02 6B      [ 3]  163 ML5:            JMP     MAINLOOP        ; no comments for less than light weight
+                            164 
+                            165 ; -----------------------------------------------------
+                            166 ; Over 20 stone so random heavy phrase to ports B
+                            167 ; -----------------------------------------------------
+   02BA                     168 OVERLOADED:
+   02BA BD FC 76      [ 9]  169                 JSR     STRING
+   02BD 53 54 3A 53 4F 46   170                 .fcc    "ST:SOFL "
         4C 20
-   02C5 20 FF               163                 .fcb    0x20,0xff
-   02C7 CE 1C 0A      [ 3]  164                 LDX     #MTOOHEAVY1
-   02CA BD 04 F7      [ 9]  165                 JSR     PR_PHRASE
-   02CD BD 04 DD      [ 9]  166                 JSR     PR_CRB
-   02D0 7E 02 6B      [ 3]  167                 JMP     MAINLOOP
-   02D3                     168 IERROR:
-   02D3 BD FC 76      [ 9]  169                 JSR     STRING
-   02D6 53 54 3A 49 45 52   170                 .fcc    "ST:IERR "
+   02C5 20 FF               171                 .fcb    0x20,0xff
+   02C7 CE 1C 0A      [ 3]  172                 LDX     #MTOOHEAVY1
+   02CA BD 04 F7      [ 9]  173                 JSR     PR_PHRASE
+   02CD BD 04 DD      [ 9]  174                 JSR     PR_CRB
+   02D0 7E 02 6B      [ 3]  175                 JMP     MAINLOOP
+   02D3                     176 IERROR:
+   02D3 BD FC 76      [ 9]  177                 JSR     STRING
+   02D6 53 54 3A 49 45 52   178                 .fcc    "ST:IERR "
         52 20
-   02DE 20 FF               171                 .fcb    0x20,0xff
-   02E0 CE 1C 20      [ 3]  172                 LDX     #MERROR
-   02E3 BD 04 F7      [ 9]  173                 JSR     PR_PHRASE
-   02E6 BD 04 DD      [ 9]  174                 JSR     PR_CRB
-   02E9 7E 02 6B      [ 3]  175                 JMP     MAINLOOP
-                            176 
-                            177 ; we cycle thought idle message when no one is on the scales, data comes in a one
-                            178 ; second intervals so we simply increase the idle count until it's time to display
-                            179 ; the next idle message
-                            180 
-   02EC 7F 00 18      [ 6]  181 IDLE:   CLR     PROCESSING_FLG  ; clear the processing flag as no one
-                            182                                 ;   is standing on the scales
-   02EF 7C 00 11      [ 6]  183         INC     IDLE_COUNT      ; increase the idle count
-   02F2 B6 00 11      [ 4]  184         LDAA    IDLE_COUNT      ; see if idle count = max idle time
-   02F5 81 2D         [ 2]  185         CMPA    #IDLE_TICS      ; a data message appears every second
-   02F7 27 03         [ 4]  186         BEQ     IDLE1           ; not reached the max idle time
-   02F9 7E 02 6B      [ 3]  187         JMP     MAINLOOP             ; nothing to do yet
+   02DE 20 FF               179                 .fcb    0x20,0xff
+   02E0 CE 1C 20      [ 3]  180                 LDX     #MERROR
+   02E3 BD 04 F7      [ 9]  181                 JSR     PR_PHRASE
+   02E6 BD 04 DD      [ 9]  182                 JSR     PR_CRB
+   02E9 7E 02 6B      [ 3]  183                 JMP     MAINLOOP
+                            184 
+                            185 ; we cycle thought idle message when no one is on the scales, data comes in a one
+                            186 ; second intervals so we simply increase the idle count until it's time to display
+                            187 ; the next idle message
                             188 
-   02FC BD FC 76      [ 9]  189 IDLE1:  JSR     STRING
-   02FF 53 54 3A 49 4D 53   190         .fcc    "ST:IMSG "
+   02EC 7F 00 18      [ 6]  189 IDLE:   CLR     PROCESSING_FLG  ; clear the processing flag as no one
+                            190                                 ;   is standing on the scales
+   02EF 7C 00 11      [ 6]  191         INC     IDLE_COUNT      ; increase the idle count
+   02F2 B6 00 11      [ 4]  192         LDAA    IDLE_COUNT      ; see if idle count = max idle time
+   02F5 81 2D         [ 2]  193         CMPA    #IDLE_TICS      ; a data message appears every second
+   02F7 27 03         [ 4]  194         BEQ     IDLE1           ; not reached the max idle time
+   02F9 7E 02 6B      [ 3]  195         JMP     MAINLOOP             ; nothing to do yet
+                            196 
+   02FC BD FC 76      [ 9]  197 IDLE1:  JSR     STRING
+   02FF 53 54 3A 49 4D 53   198         .fcc    "ST:IMSG "
         47 20
-   0307 20 FF               191         .fcb    0x20,0xff
-   0309 7F 00 11      [ 6]  192         CLR     IDLE_COUNT      ; time to output an idle message so reset the count
-   030C B6 00 12      [ 4]  193         LDAA    IDLE_MSG_ID     ; get next Message ID
-   030F 81 19         [ 2]  194         CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
-   0311 26 04         [ 4]  195         BNE     IDLE_OP         ; still at valid id so output idle message
-   0313 7F 00 12      [ 6]  196         CLR     IDLE_MSG_ID     ; beyond last message so reset the current msg to zero
-   0316 4F            [ 2]  197         CLRA                    ; set currentid back to 0
-   0317                     198 IDLE_OP:
-   0317 7C 00 12      [ 6]  199         INC     IDLE_MSG_ID     ; set to next message for the next next time
-   031A CE 13 75      [ 3]  200         LDX     #IDLEPTR        ; A has phrase ID, set X to the base address
-   031D BD 03 D4      [ 9]  201         JSR     PHRASE_OUT
-   0320 7E 02 6B      [ 3]  202         JMP     MAINLOOP
-                            203 
-   0323                     204 GREET:   ; output the greeting message
-   0323 BD FC 76      [ 9]  205         JSR     STRING
-   0326 53 54 3A 47 4D 53   206         .fcc    "ST:GMSG "
-        47 20
-   032E 20 FF               207         .fcb    0x20,0xff
-   0330 B6 00 13      [ 4]  208         LDAA    GREET_MSG_ID    ; get next Message ID
+   0307 20 FF               199         .fcb    0x20,0xff
+   0309 7F 00 11      [ 6]  200         CLR     IDLE_COUNT      ; time to output an idle message so reset the count
+   030C B6 00 12      [ 4]  201         LDAA    IDLE_MSG_ID     ; get next Message ID
+   030F 81 19         [ 2]  202         CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
+   0311 26 04         [ 4]  203         BNE     IDLE_OP         ; still at valid id so output idle message
+   0313 7F 00 12      [ 6]  204         CLR     IDLE_MSG_ID     ; beyond last message so reset the current msg to zero
+   0316 4F            [ 2]  205         CLRA                    ; set currentid back to 0
+   0317                     206 IDLE_OP:
+   0317 7C 00 12      [ 6]  207         INC     IDLE_MSG_ID     ; set to next message for the next next time
+   031A CE 13 75      [ 3]  208         LDX     #IDLEPTR        ; A has phrase ID, set X to the base address
+   031D BD 03 D4      [ 9]  209         JSR     PHRASE_OUT
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 5
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-   0333 81 0D         [ 2]  209         CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
-   0335 26 04         [ 4]  210         BNE     GREET_OP        ; still at valid id so output idle message
-   0337 7F 00 13      [ 6]  211         CLR     GREET_MSG_ID    ; beyond last message so reset the current msg to zero
-   033A 4F            [ 2]  212         CLRA                    ; set currentid back to 0
-   033B                     213 GREET_OP:
-   033B 7C 00 13      [ 6]  214         INC     GREET_MSG_ID    ; set to next message for the next next time
-   033E CE 12 E7      [ 3]  215         LDX     #GREETPTR       ; A has phrase ID, set X to the base address
-   0341 BD 03 D4      [ 9]  216         JSR     PHRASE_OUT
-   0344 39            [ 5]  217         RTS
-                            218 
-   0345                     219 LIGHTW:   ; output the lightweight message
-   0345 BD FC 76      [ 9]  220         JSR     STRING
-   0348 53 54 3A 4C 4D 53   221         .fcc    "ST:LMSG "
+   0320 7E 02 6B      [ 3]  210         JMP     MAINLOOP
+                            211 
+   0323                     212 GREET:   ; output the greeting message
+   0323 BD FC 76      [ 9]  213         JSR     STRING
+   0326 53 54 3A 47 4D 53   214         .fcc    "ST:GMSG "
         47 20
-   0350 20 FF               222         .fcb    0x20,0xff
-   0352 B6 00 14      [ 4]  223         LDAA    LIGHT_MSG_ID    ; get next Message ID
-   0355 81 0A         [ 2]  224         CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
-   0357 26 04         [ 4]  225         BNE     LIGHT_OP        ; still at valid id so output idle message
-   0359 7F 00 14      [ 6]  226         CLR     LIGHT_MSG_ID    ; beyond last message so reset the current msg to zero
-   035C 4F            [ 2]  227         CLRA                    ; set currentid back to 0
-   035D                     228 LIGHT_OP:
-   035D 7C 00 14      [ 6]  229         INC     LIGHT_MSG_ID    ; set to next message for the next next time
-   0360 CE 13 01      [ 3]  230         LDX     #LIGHTPTR       ; A has phrase ID, set X to the base address
-   0363 BD 03 D4      [ 9]  231         JSR     PHRASE_OUT
-   0366 7E 02 6B      [ 3]  232         JMP     MAINLOOP
-                            233 
-   0369                     234 NORMALW: ; output the normal message
-   0369 BD FC 76      [ 9]  235         JSR     STRING
-   036C 53 54 3A 4E 4D 53   236         .fcc    "ST:NMSG "
+   032E 20 FF               215         .fcb    0x20,0xff
+   0330 B6 00 13      [ 4]  216         LDAA    GREET_MSG_ID    ; get next Message ID
+   0333 81 0D         [ 2]  217         CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
+   0335 26 04         [ 4]  218         BNE     GREET_OP        ; still at valid id so output idle message
+   0337 7F 00 13      [ 6]  219         CLR     GREET_MSG_ID    ; beyond last message so reset the current msg to zero
+   033A 4F            [ 2]  220         CLRA                    ; set currentid back to 0
+   033B                     221 GREET_OP:
+   033B 7C 00 13      [ 6]  222         INC     GREET_MSG_ID    ; set to next message for the next next time
+   033E CE 12 E7      [ 3]  223         LDX     #GREETPTR       ; A has phrase ID, set X to the base address
+   0341 BD 03 D4      [ 9]  224         JSR     PHRASE_OUT
+   0344 39            [ 5]  225         RTS
+                            226 
+   0345                     227 LIGHTW:   ; output the lightweight message
+   0345 BD FC 76      [ 9]  228         JSR     STRING
+   0348 53 54 3A 4C 4D 53   229         .fcc    "ST:LMSG "
         47 20
-   0374 20 FF               237         .fcb    0x20,0xff
-   0376 B6 00 15      [ 4]  238         LDAA    NORMAL_MSG_ID   ; get next Message ID
-   0379 81 15         [ 2]  239         CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
-   037B 26 04         [ 4]  240         BNE     NORMAL_OP       ; still at valid id so output idle message
-   037D 7F 00 15      [ 6]  241         CLR     NORMAL_MSG_ID   ; beyond last message so reset the current msg to zero
-   0380 4F            [ 2]  242         CLRA                    ; set currentid back to 0
-   0381                     243 NORMAL_OP:
-   0381 7C 00 15      [ 6]  244         INC     NORMAL_MSG_ID   ; set to next message for the next next time
-   0384 CE 13 15      [ 3]  245         LDX     #NORMALPTR      ; A has phrase ID, set X to the base address
-   0387 BD 03 D4      [ 9]  246         JSR     PHRASE_OUT
-   038A 7E 02 6B      [ 3]  247         JMP     MAINLOOP
-                            248 
-   038D                     249 HEAVYW:  ; output the heavy message
-   038D BD FC 76      [ 9]  250         JSR     STRING
-   0390 53 54 3A 48 4D 53   251         .fcc    "ST:HMSG "
+   0350 20 FF               230         .fcb    0x20,0xff
+   0352 B6 00 14      [ 4]  231         LDAA    LIGHT_MSG_ID    ; get next Message ID
+   0355 81 0A         [ 2]  232         CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
+   0357 26 04         [ 4]  233         BNE     LIGHT_OP        ; still at valid id so output idle message
+   0359 7F 00 14      [ 6]  234         CLR     LIGHT_MSG_ID    ; beyond last message so reset the current msg to zero
+   035C 4F            [ 2]  235         CLRA                    ; set currentid back to 0
+   035D                     236 LIGHT_OP:
+   035D 7C 00 14      [ 6]  237         INC     LIGHT_MSG_ID    ; set to next message for the next next time
+   0360 CE 13 01      [ 3]  238         LDX     #LIGHTPTR       ; A has phrase ID, set X to the base address
+   0363 BD 03 D4      [ 9]  239         JSR     PHRASE_OUT
+   0366 7E 02 6B      [ 3]  240         JMP     MAINLOOP
+                            241 
+   0369                     242 NORMALW: ; output the normal message
+   0369 BD FC 76      [ 9]  243         JSR     STRING
+   036C 53 54 3A 4E 4D 53   244         .fcc    "ST:NMSG "
         47 20
-   0398 20 FF               252         .fcb    0x20,0xff
-   039A B6 00 16      [ 4]  253         LDAA    HEAVY_MSG_ID    ; get next Message ID
-   039D 81 12         [ 2]  254         CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
-   039F 26 04         [ 4]  255         BNE     HEAVY_OP        ; still at valid id so output idle message
-   03A1 7F 00 16      [ 6]  256         CLR     HEAVY_MSG_ID    ; beyond last message so reset the current msg to zero
-   03A4 4F            [ 2]  257         CLRA                    ; set currentid back to 0
-   03A5                     258 HEAVY_OP:
-   03A5 7C 00 16      [ 6]  259         INC     HEAVY_MSG_ID    ; set to next message for the next next time
-   03A8 CE 13 3F      [ 3]  260         LDX     #HEAVYPTR       ; A has phrase ID, set X to the base address
+   0374 20 FF               245         .fcb    0x20,0xff
+   0376 B6 00 15      [ 4]  246         LDAA    NORMAL_MSG_ID   ; get next Message ID
+   0379 81 15         [ 2]  247         CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
+   037B 26 04         [ 4]  248         BNE     NORMAL_OP       ; still at valid id so output idle message
+   037D 7F 00 15      [ 6]  249         CLR     NORMAL_MSG_ID   ; beyond last message so reset the current msg to zero
+   0380 4F            [ 2]  250         CLRA                    ; set currentid back to 0
+   0381                     251 NORMAL_OP:
+   0381 7C 00 15      [ 6]  252         INC     NORMAL_MSG_ID   ; set to next message for the next next time
+   0384 CE 13 15      [ 3]  253         LDX     #NORMALPTR      ; A has phrase ID, set X to the base address
+   0387 BD 03 D4      [ 9]  254         JSR     PHRASE_OUT
+   038A 7E 02 6B      [ 3]  255         JMP     MAINLOOP
+                            256 
+   038D                     257 HEAVYW:  ; output the heavy message
+   038D BD FC 76      [ 9]  258         JSR     STRING
+   0390 53 54 3A 48 4D 53   259         .fcc    "ST:HMSG "
+        47 20
+   0398 20 FF               260         .fcb    0x20,0xff
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 6
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-   03AB BD 03 D4      [ 9]  261         JSR     PHRASE_OUT
-   03AE 7E 02 6B      [ 3]  262         JMP     MAINLOOP
-                            263 
-   03B1                     264 SHEAVYW: ; output the superheavy message
-   03B1 BD FC 76      [ 9]  265         JSR     STRING
-   03B4 53 54 3A 53 4D 53   266         .fcc    "ST:SMSG "
+   039A B6 00 16      [ 4]  261         LDAA    HEAVY_MSG_ID    ; get next Message ID
+   039D 81 12         [ 2]  262         CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
+   039F 26 04         [ 4]  263         BNE     HEAVY_OP        ; still at valid id so output idle message
+   03A1 7F 00 16      [ 6]  264         CLR     HEAVY_MSG_ID    ; beyond last message so reset the current msg to zero
+   03A4 4F            [ 2]  265         CLRA                    ; set currentid back to 0
+   03A5                     266 HEAVY_OP:
+   03A5 7C 00 16      [ 6]  267         INC     HEAVY_MSG_ID    ; set to next message for the next next time
+   03A8 CE 13 3F      [ 3]  268         LDX     #HEAVYPTR       ; A has phrase ID, set X to the base address
+   03AB BD 03 D4      [ 9]  269         JSR     PHRASE_OUT
+   03AE 7E 02 6B      [ 3]  270         JMP     MAINLOOP
+                            271 
+   03B1                     272 SHEAVYW: ; output the superheavy message
+   03B1 BD FC 76      [ 9]  273         JSR     STRING
+   03B4 53 54 3A 53 4D 53   274         .fcc    "ST:SMSG "
         47 20
-   03BC 20 FF               267         .fcb    0x20,0xff
-   03BE B6 00 17      [ 4]  268         LDAA    SHEAVY_MSG_ID   ; get next Message ID
-   03C1 81 0A         [ 2]  269         CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
-   03C3 26 04         [ 4]  270         BNE     SHEAVY_OP       ; still at valid id so output idle message
-   03C5 7F 00 17      [ 6]  271         CLR     SHEAVY_MSG_ID   ; beyond last message so reset the current msg to zero
-   03C8 4F            [ 2]  272         CLRA                    ; set currentid back to 0
-   03C9                     273 SHEAVY_OP:
-   03C9 7C 00 17      [ 6]  274         INC     SHEAVY_MSG_ID   ; set to next message for the next next time
-   03CC CE 13 61      [ 3]  275         LDX     #SHEAVYPTR      ; A has phrase ID, set X to the base address
-   03CF 8D 03         [ 8]  276         BSR     PHRASE_OUT
-   03D1 7E 02 6B      [ 3]  277         JMP     MAINLOOP
-                            278 
-   03D4                     279 PHRASE_OUT:
-                            280 
-   03D4 48            [ 2]  281         ASLA                    ; multiply A by 2 as each pointer is two bytes
-   03D5 BD 04 86      [ 9]  282         JSR     ADX             ; now have the correct pointer value in X
-                            283 
-                            284 ; get address of message in X from the pointer in X
-   03D8 A6 00         [ 5]  285         LDAA    0,X             ;  get high byte of word pointed to by X
-   03DA E6 01         [ 5]  286         LDAB    1,X             ;  get low byte of word pointed to by X
-   03DC B7 00 0D      [ 5]  287         STAA    TEMP
-   03DF F7 00 0E      [ 5]  288         STAB    TEMP+1
-   03E2 FE 00 0D      [ 5]  289         LDX     TEMP
-   03E5 BD 04 F7      [ 9]  290         JSR     PR_PHRASE       ; output idle message
-   03E8 BD 04 DD      [ 9]  291         JSR     PR_CRB          ; CR/LF
-   03EB 39            [ 5]  292         RTS
-                            293 
-                            294 ;END:     JMP     MAINLOOP  ;START   ; all done
-                            295 
-                            296 ;--------------------------------------------------------------
-                            297 ; Gets the weight data from the scales and rerurns with carry
-                            298 ; set if a valid reading, carry clear otherwise. A valid weight
-                            299 ; reading resets the idle count. Data received is stored in
-                            300 ; T_WEIGHT and MSB in A.
-                            301 ;--------------------------------------------------------------
-   03EC                     302 GETDATA:
-   03EC BD 04 78      [ 9]  303         JSR     RD_XB           ; read 4 hex characters into X
-   03EF FF 00 0F      [ 6]  304         STX     T_WEIGHT        ; store X
-   03F2 BD FC 76      [ 9]  305         JSR     STRING
-   03F5 44 52 3A            306         .fcc    "DR:"
-   03F8 FF                  307         .fcb    0xff
-   03F9 FE 00 0F      [ 5]  308         LDX     T_WEIGHT
-   03FC BD FC BB      [ 9]  309         JSR     PRX             ; print the data
-   03FF BD FD 4D      [ 9]  310         JSR    PRSP
-   0402 0C            [ 2]  311         CLC
-   0403 B6 00 0F      [ 4]  312         LDAA    T_WEIGHT        ; get fist byte (stones)
-   0406 27 04         [ 4]  313         BEQ     GDDONE          ; idle message
-   0408 7F 00 2D      [ 6]  314         CLR     IDLE_TICS       ; not an idle message so reset the idle counter
+   03BC 20 FF               275         .fcb    0x20,0xff
+   03BE B6 00 17      [ 4]  276         LDAA    SHEAVY_MSG_ID   ; get next Message ID
+   03C1 81 0A         [ 2]  277         CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
+   03C3 26 04         [ 4]  278         BNE     SHEAVY_OP       ; still at valid id so output idle message
+   03C5 7F 00 17      [ 6]  279         CLR     SHEAVY_MSG_ID   ; beyond last message so reset the current msg to zero
+   03C8 4F            [ 2]  280         CLRA                    ; set currentid back to 0
+   03C9                     281 SHEAVY_OP:
+   03C9 7C 00 17      [ 6]  282         INC     SHEAVY_MSG_ID   ; set to next message for the next next time
+   03CC CE 13 61      [ 3]  283         LDX     #SHEAVYPTR      ; A has phrase ID, set X to the base address
+   03CF 8D 03         [ 8]  284         BSR     PHRASE_OUT
+   03D1 7E 02 6B      [ 3]  285         JMP     MAINLOOP
+                            286 
+   03D4                     287 PHRASE_OUT:
+                            288 
+   03D4 48            [ 2]  289         ASLA                    ; multiply A by 2 as each pointer is two bytes
+   03D5 BD 04 86      [ 9]  290         JSR     ADX             ; now have the correct pointer value in X
+                            291 
+                            292 ; get address of message in X from the pointer in X
+   03D8 A6 00         [ 5]  293         LDAA    0,X             ;  get high byte of word pointed to by X
+   03DA E6 01         [ 5]  294         LDAB    1,X             ;  get low byte of word pointed to by X
+   03DC B7 00 0D      [ 5]  295         STAA    TEMP
+   03DF F7 00 0E      [ 5]  296         STAB    TEMP+1
+   03E2 FE 00 0D      [ 5]  297         LDX     TEMP
+   03E5 BD 04 F7      [ 9]  298         JSR     PR_PHRASE       ; output idle message
+   03E8 BD 04 DD      [ 9]  299         JSR     PR_CRB          ; CR/LF
+   03EB 39            [ 5]  300         RTS
+                            301 
+                            302 ;END:     JMP     MAINLOOP  ;START   ; all done
+                            303 
+                            304 ;--------------------------------------------------------------
+                            305 ; Gets the weight data from the scales and rerurns with carry
+                            306 ; set if a valid reading, carry clear otherwise. A valid weight
+                            307 ; reading resets the idle count. Data received is stored in
+                            308 ; T_WEIGHT and MSB in A.
+                            309 ;--------------------------------------------------------------
+   03EC                     310 GETDATA:
+   03EC BD 04 78      [ 9]  311         JSR     RD_XB           ; read 4 hex characters into X
+   03EF FF 00 0F      [ 6]  312         STX     T_WEIGHT        ; store X
+   03F2 BD FC 76      [ 9]  313         JSR     STRING
+   03F5 44 52 3A            314         .fcc    "DR:"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 7
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-   040B 0D            [ 2]  315         SEC                     ; non idle message return with carry set
-   040C 39            [ 5]  316 GDDONE:  RTS
-                            317 
-                            318 ; -----------------------------------------------------
-                            319 ; Print string FOLLOWING JSR ( terminated by 0xFF ) to
-                            320 ; ACIA(b) and ACIA(b)
-                            321 ; -----------------------------------------------------
-   040D 30            [ 4]  322 STRINGB: TSX             ; Get loc. of return addr to X
-   040E EE 00         [ 6]  323          LDX     0,X     ; Get return addr to X
-   0410 09            [ 4]  324          DEX             ; Point to byte before
-   0411 08            [ 4]  325 STRB1:   INX             ; Point to next byte
-   0412 A6 00         [ 5]  326          LDAA    0,X     ; Get byte to be printed
-   0414 81 FF         [ 2]  327          CMPA    #0xFF    ; End-string ?
-   0416 27 0E         [ 4]  328          BEQ     ENDSTR  ; Yes: Go to finish up
-   0418 F6 F0 FF      [ 4]  329          LDAB    PANEL
-   041B C5 01         [ 2]  330          BITB     #1
-   041D 27 03         [ 4]  331          BEQ     STRB    ; panel switch 0 is debug and copies data to A
-   041F BD FC 0F      [ 9]  332          JSR     PR_A    ; Print the byte to ACIA(a) (A is maintained)
-                            333                          ;  DEBUG depending on panel data switch zero
-   0422 8D 46         [ 8]  334 STRB:    BSR     PR_B    ; Print the byte to ACIA(b)
-   0424 20 EB         [ 4]  335          BRA     STRB1   ; Go back for next byte
-   0426 31            [ 4]  336 ENDSTR:  INS             ; Clean up stack...
-   0427 31            [ 4]  337          INS             ;  ( pop off the return addr )
-   0428 6E 01         [ 4]  338          JMP     1,X     ; Jump back to caller (RETURN)
-                            339 
-                            340 ; -----------------------------------------------------
-                            341 ; Prints a string pointed to by X
-                            342 ; -----------------------------------------------------
-   042A A6 00         [ 5]  343 STRINGBX:   LDAA    0,X         ; get char
-   042C 81 FF         [ 2]  344             CMPA    #0xFF        ; is character NULL?
-   042E 27 0F         [ 4]  345             BEQ     DONEB       ; yes, end of string
-   0430 F6 F0 FF      [ 4]  346             LDAB    PANEL
-   0433 C5 01         [ 2]  347             BITB    #1
-   0435 27 03         [ 4]  348             BEQ     STRBX       ; panel switch 0 is debug and copies data to A
-   0437 BD FC 0F      [ 9]  349             JSR     PR_A        ; Print the byte to ACIA(a) (A is maintained)
-   043A 8D 2E         [ 8]  350 STRBX:      BSR     PR_B        ; Print the byte to ACIA(b)
-   043C 08            [ 4]  351             INX
-   043D 20 EB         [ 4]  352             BRA     STRINGBX
-   043F 39            [ 5]  353 DONEB:      RTS
-                            354 
-                            355 ; -----------------------------------------------------
-                            356 ; Reads a character from ACIA(b) into A
-                            357 ; -----------------------------------------------------
-   0440 B6 F4 03      [ 4]  358 RD_B:   LDAA    CTRLB       ; Get ACIA.A status byte
-   0443 85 01         [ 2]  359         BITA    #01         ; Is byte ready in DATAb
-   0445 27 F9         [ 4]  360         BEQ     RD_B        ; No: Try again
-   0447 B6 F4 02      [ 4]  361         LDAA    DATAB       ; Get the data byte to A
-                            362         ;STAA     PANEL
-   044A 84 7F         [ 2]  363         ANDA    #0x7F        ; Mask off parity bit if it exists
-   044C 39            [ 5]  364         RTS                 ; RETURN
-                            365 
-                            366 ; -----------------------------------------------------
-                            367 ; Reads 2 hex ascii characters and saves them the
-                            368 ; byte value to A e.g. "0F" received is stored to A as
-                            369 ; 15d.
+   03F8 FF                  315         .fcb    0xff
+   03F9 FE 00 0F      [ 5]  316         LDX     T_WEIGHT
+   03FC BD FC BB      [ 9]  317         JSR     PRX             ; print the data
+   03FF BD FD 4D      [ 9]  318         JSR    PRSP
+   0402 0C            [ 2]  319         CLC
+   0403 B6 00 0F      [ 4]  320         LDAA    T_WEIGHT        ; get fist byte (stones)
+   0406 27 04         [ 4]  321         BEQ     GDDONE          ; idle message
+   0408 7F 00 2D      [ 6]  322         CLR     IDLE_TICS       ; not an idle message so reset the idle counter
+   040B 0D            [ 2]  323         SEC                     ; non idle message return with carry set
+   040C 39            [ 5]  324 GDDONE:  RTS
+                            325 
+                            326 ; -----------------------------------------------------
+                            327 ; Print string FOLLOWING JSR ( terminated by 0xFF ) to
+                            328 ; ACIA(b) and ACIA(b)
+                            329 ; -----------------------------------------------------
+   040D 30            [ 4]  330 STRINGB: TSX             ; Get loc. of return addr to X
+   040E EE 00         [ 6]  331          LDX     0,X     ; Get return addr to X
+   0410 09            [ 4]  332          DEX             ; Point to byte before
+   0411 08            [ 4]  333 STRB1:   INX             ; Point to next byte
+   0412 A6 00         [ 5]  334          LDAA    0,X     ; Get byte to be printed
+   0414 81 FF         [ 2]  335          CMPA    #0xFF    ; End-string ?
+   0416 27 0E         [ 4]  336          BEQ     ENDSTR  ; Yes: Go to finish up
+   0418 F6 F0 FF      [ 4]  337          LDAB    PANEL
+   041B C5 01         [ 2]  338          BITB     #1
+   041D 27 03         [ 4]  339          BEQ     STRB    ; panel switch 0 is debug and copies data to A
+   041F BD FC 0F      [ 9]  340          JSR     PR_A    ; Print the byte to ACIA(a) (A is maintained)
+                            341                          ;  DEBUG depending on panel data switch zero
+   0422 8D 46         [ 8]  342 STRB:    BSR     PR_B    ; Print the byte to ACIA(b)
+   0424 20 EB         [ 4]  343          BRA     STRB1   ; Go back for next byte
+   0426 31            [ 4]  344 ENDSTR:  INS             ; Clean up stack...
+   0427 31            [ 4]  345          INS             ;  ( pop off the return addr )
+   0428 6E 01         [ 4]  346          JMP     1,X     ; Jump back to caller (RETURN)
+                            347 
+                            348 ; -----------------------------------------------------
+                            349 ; Prints a string pointed to by X
+                            350 ; -----------------------------------------------------
+   042A A6 00         [ 5]  351 STRINGBX:   LDAA    0,X         ; get char
+   042C 81 FF         [ 2]  352             CMPA    #0xFF        ; is character NULL?
+   042E 27 0F         [ 4]  353             BEQ     DONEB       ; yes, end of string
+   0430 F6 F0 FF      [ 4]  354             LDAB    PANEL
+   0433 C5 01         [ 2]  355             BITB    #1
+   0435 27 03         [ 4]  356             BEQ     STRBX       ; panel switch 0 is debug and copies data to A
+   0437 BD FC 0F      [ 9]  357             JSR     PR_A        ; Print the byte to ACIA(a) (A is maintained)
+   043A 8D 2E         [ 8]  358 STRBX:      BSR     PR_B        ; Print the byte to ACIA(b)
+   043C 08            [ 4]  359             INX
+   043D 20 EB         [ 4]  360             BRA     STRINGBX
+   043F 39            [ 5]  361 DONEB:      RTS
+                            362 
+                            363 ; -----------------------------------------------------
+                            364 ; Reads a character from ACIA(b) into A
+                            365 ; -----------------------------------------------------
+   0440 B6 F4 03      [ 4]  366 RD_B:   LDAA    CTRLB       ; Get ACIA.A status byte
+   0443 85 01         [ 2]  367         BITA    #01         ; Is byte ready in DATAb
+   0445 27 F9         [ 4]  368         BEQ     RD_B        ; No: Try again
+   0447 B6 F4 02      [ 4]  369         LDAA    DATAB       ; Get the data byte to A
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 8
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-                            370 ; This version ignores non-hex characters
-                            371 ; -----------------------------------------------------
-   044D 8D F1         [ 8]  372 ZINB:   BSR     RD_B    ; Read a character
-   044F BD FC 1D      [ 9]  373         JSR     VHEX    ; Is it a hex character ?
-   0452 24 02         [ 4]  374         BCC     ZINBA   ; No: go to print `?`
-   0454 86 FF         [ 2]  375         LDAA    #0xFF
-   0456 B7 00 00      [ 5]  376 ZINBA:  STAA    T_Q     ; Yes: Save Acc.A
-   0459 8D E5         [ 8]  377         BSR     RD_B    ; Read 2nd character
-   045B BD FC 1D      [ 9]  378         JSR     VHEX    ; Is it a hex character ?
-   045E 24 02         [ 4]  379         BCC     ZINBB   ; No: go to print `?`
-   0460 86 FF         [ 2]  380         LDAA    #0xFF
-   0462 16            [ 2]  381 ZINBB:  TAB             ; Yes: Put it into Acc.B
-   0463 B6 00 00      [ 4]  382         LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
-   0466 BD FC 31      [ 9]  383         JSR     BINARY  ; Convert A:B to binary
-   0469 39            [ 5]  384         RTS             ; RETURN
-                            385 
-                            386 ; -----------------------------------------------------
-                            387 ; Print character in A to ACIA(b)
-                            388 ; -----------------------------------------------------
-   046A F6 F4 03      [ 4]  389 PR_B:    LDAB    CTRLB   ; Get ACIA(a) status byte
-   046D C5 02         [ 2]  390         BITB    #02     ; Is it busy ?
-   046F 27 F9         [ 4]  391         BEQ     PR_B    ; Yes: Try again
-   0471 B7 F4 02      [ 5]  392         STAA    DATAB   ;  No: Send data
-   0474 B7 F0 FF      [ 5]  393         STAA    PANEL
-   0477 39            [ 5]  394 PRB_END: RTS             ; RETURN
-                            395 
+                            370         ;STAA     PANEL
+   044A 84 7F         [ 2]  371         ANDA    #0x7F        ; Mask off parity bit if it exists
+   044C 39            [ 5]  372         RTS                 ; RETURN
+                            373 
+                            374 ; -----------------------------------------------------
+                            375 ; Reads 2 hex ascii characters and saves them the
+                            376 ; byte value to A e.g. "0F" received is stored to A as
+                            377 ; 15d.
+                            378 ; This version ignores non-hex characters
+                            379 ; -----------------------------------------------------
+   044D 8D F1         [ 8]  380 ZINB:   BSR     RD_B    ; Read a character
+   044F BD FC 1D      [ 9]  381         JSR     VHEX    ; Is it a hex character ?
+   0452 24 02         [ 4]  382         BCC     ZINBA   ; No: go to print `?`
+   0454 86 FF         [ 2]  383         LDAA    #0xFF
+   0456 B7 00 00      [ 5]  384 ZINBA:  STAA    T_Q     ; Yes: Save Acc.A
+   0459 8D E5         [ 8]  385         BSR     RD_B    ; Read 2nd character
+   045B BD FC 1D      [ 9]  386         JSR     VHEX    ; Is it a hex character ?
+   045E 24 02         [ 4]  387         BCC     ZINBB   ; No: go to print `?`
+   0460 86 FF         [ 2]  388         LDAA    #0xFF
+   0462 16            [ 2]  389 ZINBB:  TAB             ; Yes: Put it into Acc.B
+   0463 B6 00 00      [ 4]  390         LDAA    T_Q     ; Retrieve 1st hex char to Acc.A
+   0466 BD FC 31      [ 9]  391         JSR     BINARY  ; Convert A:B to binary
+   0469 39            [ 5]  392         RTS             ; RETURN
+                            393 
+                            394 ; -----------------------------------------------------
+                            395 ; Print character in A to ACIA(b)
                             396 ; -----------------------------------------------------
-                            397 ; Read 4 hex digits and put value into X
-                            398 ; -----------------------------------------------------
-   0478 8D D3         [ 8]  399 RD_XB:   BSR     ZINB    ; Read 2 digit hex value into A
-   047A B7 00 01      [ 5]  400         STAA    T_Z     ; Save byte (most significant)
-   047D 8D CE         [ 8]  401         BSR     ZINB    ; Read 2 digit hex value into A
-   047F B7 00 02      [ 5]  402         STAA    T_Z+1   ; Save byte (least significant)
-   0482 FE 00 01      [ 5]  403         LDX     T_Z     ; Load full 4 hex value into X
-   0485 39            [ 5]  404         RTS             ; RETURN
-                            405 
+   046A F6 F4 03      [ 4]  397 PR_B:    LDAB    CTRLB   ; Get ACIA(a) status byte
+   046D C5 02         [ 2]  398         BITB    #02     ; Is it busy ?
+   046F 27 F9         [ 4]  399         BEQ     PR_B    ; Yes: Try again
+   0471 B7 F4 02      [ 5]  400         STAA    DATAB   ;  No: Send data
+   0474 B7 F0 FF      [ 5]  401         STAA    PANEL
+   0477 39            [ 5]  402 PRB_END: RTS             ; RETURN
+                            403 
+                            404 ; -----------------------------------------------------
+                            405 ; Read 4 hex digits and put value into X
                             406 ; -----------------------------------------------------
-                            407 ; Adds A to X and leaves the result in X, A is
-                            408 ; preserved.
-                            409 ; -----------------------------------------------------
-   0486 36            [ 4]  410 ADX:     PSHA
-   0487 FF 00 0B      [ 6]  411         STX     T_TMP
-   048A BB 00 0C      [ 4]  412         ADDA    T_TMP+1   ; add A to low byte
-   048D B7 00 0C      [ 5]  413         STAA    T_TMP+1
-   0490 B6 00 0B      [ 4]  414         LDAA    T_TMP     ; get high byte
-   0493 89 00         [ 2]  415         ADCA    #0      ; add carry only
-   0495 B7 00 0B      [ 5]  416         STAA    T_TMP
-   0498 FE 00 0B      [ 5]  417         LDX     T_TMP
-   049B 32            [ 4]  418         PULA
-   049C 39            [ 5]  419         RTS
-                            420 
-                            421 ; -----------------------------------------------------
-                            422 ; Loads X with A, A is preserved.
-                            423 ; -----------------------------------------------------
-   049D B7 00 0C      [ 5]  424 TAX:    STAA    T_TMP+1       ; store A as low byte of X
+   0478 8D D3         [ 8]  407 RD_XB:   BSR     ZINB    ; Read 2 digit hex value into A
+   047A B7 00 01      [ 5]  408         STAA    T_Z     ; Save byte (most significant)
+   047D 8D CE         [ 8]  409         BSR     ZINB    ; Read 2 digit hex value into A
+   047F B7 00 02      [ 5]  410         STAA    T_Z+1   ; Save byte (least significant)
+   0482 FE 00 01      [ 5]  411         LDX     T_Z     ; Load full 4 hex value into X
+   0485 39            [ 5]  412         RTS             ; RETURN
+                            413 
+                            414 ; -----------------------------------------------------
+                            415 ; Adds A to X and leaves the result in X, A is
+                            416 ; preserved.
+                            417 ; -----------------------------------------------------
+   0486 36            [ 4]  418 ADX:     PSHA
+   0487 FF 00 0B      [ 6]  419         STX     T_TMP
+   048A BB 00 0C      [ 4]  420         ADDA    T_TMP+1   ; add A to low byte
+   048D B7 00 0C      [ 5]  421         STAA    T_TMP+1
+   0490 B6 00 0B      [ 4]  422         LDAA    T_TMP     ; get high byte
+   0493 89 00         [ 2]  423         ADCA    #0      ; add carry only
+   0495 B7 00 0B      [ 5]  424         STAA    T_TMP
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                    Page 9
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-   04A0 7F 00 0B      [ 6]  425         CLR     T_TMP         ; zero the high byte
-   04A3 FE 00 0B      [ 5]  426         LDX     T_TMP         ; load X
-   04A6 39            [ 5]  427         RTS
+   0498 FE 00 0B      [ 5]  425         LDX     T_TMP
+   049B 32            [ 4]  426         PULA
+   049C 39            [ 5]  427         RTS
                             428 
                             429 ; -----------------------------------------------------
-                            430 ; Prints the message " n stones n pounds"
-                            431 ; place stones in MSB of X and pound in LSB
-                            432 ; -----------------------------------------------------
-   04A7                     433 PR_WEIGHT:
-                            434 
-   04A7 FF 00 09      [ 6]  435         STX     T_W
-   04AA B6 00 09      [ 4]  436         LDAA    T_W
-   04AD BD 04 9D      [ 9]  437         JSR     TAX
-   04B0 BD 05 19      [ 9]  438         JSR     PR_WORD         ; n
-   04B3 BD 04 D5      [ 9]  439         JSR     PR_SPCB
-   04B6 CE 01 2B      [ 3]  440         LDX     #STONES
-   04B9 BD 05 19      [ 9]  441         JSR     PR_WORD         ; "stones"
-   04BC BD 04 D5      [ 9]  442         JSR     PR_SPCB
-   04BF B6 00 0A      [ 4]  443         LDAA    T_W+1            ; Load high byte of X into Accumulator A
-   04C2 BD 04 9D      [ 9]  444         JSR     TAX
-   04C5 BD 05 19      [ 9]  445         JSR     PR_WORD         ; n
-   04C8 CE 00 F5      [ 3]  446         LDX     #POUNDS
-   04CB BD 04 D5      [ 9]  447         JSR     PR_SPCB
-   04CE BD 05 19      [ 9]  448         JSR     PR_WORD         ; "pounds"
-   04D1 BD 04 DD      [ 9]  449         JSR     PR_CRB
-   04D4 39            [ 5]  450         RTS
-                            451 
-                            452 ; -----------------------------------------------------
-                            453 ; Prints a space on both consoles (preserves A)
-                            454 ; -----------------------------------------------------
-   04D5 36            [ 4]  455 PR_SPCB: PSHA
-   04D6 86 20         [ 2]  456         LDAA    #0x20        ; Put space character in A
-                            457         ;JSR     PR_A
-   04D8 BD 04 6A      [ 9]  458         JSR     PR_B        ; Print it
-   04DB 32            [ 4]  459         PULA
-   04DC 39            [ 5]  460         RTS                 ; RETURN
-                            461 
+                            430 ; Loads X with A, A is preserved.
+                            431 ; -----------------------------------------------------
+   049D B7 00 0C      [ 5]  432 TAX:    STAA    T_TMP+1       ; store A as low byte of X
+   04A0 7F 00 0B      [ 6]  433         CLR     T_TMP         ; zero the high byte
+   04A3 FE 00 0B      [ 5]  434         LDX     T_TMP         ; load X
+   04A6 39            [ 5]  435         RTS
+                            436 
+                            437 ; -----------------------------------------------------
+                            438 ; Prints the message " n stones n pounds"
+                            439 ; place stones in MSB of X and pound in LSB
+                            440 ; -----------------------------------------------------
+   04A7                     441 PR_WEIGHT:
+                            442 
+   04A7 FF 00 09      [ 6]  443         STX     T_W
+   04AA B6 00 09      [ 4]  444         LDAA    T_W
+   04AD BD 04 9D      [ 9]  445         JSR     TAX
+   04B0 BD 05 19      [ 9]  446         JSR     PR_WORD         ; n
+   04B3 BD 04 D5      [ 9]  447         JSR     PR_SPCB
+   04B6 CE 01 2B      [ 3]  448         LDX     #STONES
+   04B9 BD 05 19      [ 9]  449         JSR     PR_WORD         ; "stones"
+   04BC BD 04 D5      [ 9]  450         JSR     PR_SPCB
+   04BF B6 00 0A      [ 4]  451         LDAA    T_W+1            ; Load high byte of X into Accumulator A
+   04C2 BD 04 9D      [ 9]  452         JSR     TAX
+   04C5 BD 05 19      [ 9]  453         JSR     PR_WORD         ; n
+   04C8 CE 00 F5      [ 3]  454         LDX     #POUNDS
+   04CB BD 04 D5      [ 9]  455         JSR     PR_SPCB
+   04CE BD 05 19      [ 9]  456         JSR     PR_WORD         ; "pounds"
+   04D1 BD 04 DD      [ 9]  457         JSR     PR_CRB
+   04D4 39            [ 5]  458         RTS
+                            459 
+                            460 ; -----------------------------------------------------
+                            461 ; Prints a space on both consoles (preserves A)
                             462 ; -----------------------------------------------------
-                            463 ; Prints a CRLF on both consoles (preserves A)
-                            464 ; -----------------------------------------------------
-   04DD 36            [ 4]  465 PR_CRB:     PSHA
-   04DE 86 0D         [ 2]  466             LDAA    #0x0D        ; Put CHAR character in A
-   04E0 BD FC 0F      [ 9]  467             JSR     PR_A
-   04E3 BD 04 6A      [ 9]  468             JSR     PR_B        ; Print it
-   04E6 86 0A         [ 2]  469             LDAA    #0x0A
-   04E8 F6 F0 FF      [ 4]  470             LDAB     PANEL
-   04EB C5 01         [ 2]  471             BITB    #1
-   04ED 27 03         [ 4]  472             BEQ     PR_CRB1
-   04EF BD FC 0F      [ 9]  473             JSR     PR_A
-   04F2 BD 04 6A      [ 9]  474 PR_CRB1:    JSR     PR_B        ; Print it
-   04F5 32            [ 4]  475             PULA
-   04F6 39            [ 5]  476             RTS                 ; RETURN
-                            477 
-                            478 ; -----------------------------------------------------
-                            479 ; Outputs a phrase from the memory location in X
+   04D5 36            [ 4]  463 PR_SPCB: PSHA
+   04D6 86 20         [ 2]  464         LDAA    #0x20        ; Put space character in A
+                            465         ;JSR     PR_A
+   04D8 BD 04 6A      [ 9]  466         JSR     PR_B        ; Print it
+   04DB 32            [ 4]  467         PULA
+   04DC 39            [ 5]  468         RTS                 ; RETURN
+                            469 
+                            470 ; -----------------------------------------------------
+                            471 ; Prints a CRLF on both consoles (preserves A)
+                            472 ; -----------------------------------------------------
+   04DD 36            [ 4]  473 PR_CRB:     PSHA
+   04DE 86 0D         [ 2]  474             LDAA    #0x0D        ; Put CHAR character in A
+   04E0 BD FC 0F      [ 9]  475             JSR     PR_A
+   04E3 BD 04 6A      [ 9]  476             JSR     PR_B        ; Print it
+   04E6 86 0A         [ 2]  477             LDAA    #0x0A
+   04E8 F6 F0 FF      [ 4]  478             LDAB     PANEL
+   04EB C5 01         [ 2]  479             BITB    #1
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 10
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-                            480 ; -----------------------------------------------------
-   04F7                     481 PR_PHRASE:
-                            482 
-   04F7 A6 00         [ 5]  483 PR_PH1:  LDAA    0,X         ; get high byte of word
-   04F9 E6 01         [ 5]  484         LDAB    1,X         ; get low byte
-   04FB 81 FF         [ 2]  485         CMPA    #0xFF        ; check high byte
-   04FD 27 19         [ 4]  486         BEQ     PR_PH2      ; high byte is 0xFF so we're done
-   04FF FF 00 05      [ 6]  487 PR_PH3:  STX     T_Y         ; save table pointer
-   0502 B7 00 07      [ 5]  488         STAA    T_P
-   0505 F7 00 08      [ 5]  489         STAB    T_P+1
-   0508 FE 00 07      [ 5]  490         LDX     T_P         ; X now points to the word
-   050B BD 05 19      [ 9]  491         JSR     PR_WORD
-   050E BD 04 D5      [ 9]  492         JSR     PR_SPCB
-   0511 FE 00 05      [ 5]  493         LDX     T_Y         ; restore table pointer
-   0514 08            [ 4]  494         INX                 ; move to next entry
-   0515 08            [ 4]  495         INX                 ; (2 bytes per entry)
-   0516 20 DF         [ 4]  496         BRA     PR_PH1
-   0518 39            [ 5]  497 PR_PH2:  RTS
-                            498 
-                            499 ; -----------------------------------------------------
-                            500 ; Outputs a word based on value in X
-                            501 ; -----------------------------------------------------
-   0519                     502 PR_WORD:
-   0519 FF 00 03      [ 6]  503             STX     T_X             ; use ASL and ROL to multiply by 2 (pointer is 2 bytes wide)
-   051C 78 00 04      [ 6]  504             ASL     T_X+1           ; shift low byte left, bit 7 goes to carry
-   051F 79 00 03      [ 6]  505             ROL     T_X             ; rotate high byte left, carry in from low byte
-   0522 FE 00 03      [ 5]  506             LDX     T_X
-   0525 FF 00 03      [ 6]  507             STX     T_X             ; Stash X
-   0528 B6 00 03      [ 4]  508             LDAA    T_X             ; High byte of X
-   052B F6 00 04      [ 4]  509             LDAB    T_X+1           ; Low byte of X
-   052E CB 52         [ 2]  510             ADDB    #<WORDPTR    ; Add low byte of WORDPTR address
-   0530 89 05         [ 2]  511             ADCA    #>WORDPTR    ; Add high byte of WORDPTR address + carry
-   0532 B7 00 03      [ 5]  512             STAA    T_X             ; T_X has the address of the pointer NOT the word
-   0535 F7 00 04      [ 5]  513             STAB    T_X+1
-   0538 FE 00 03      [ 5]  514             LDX     T_X             ; X has the address of the pointer NOT the word
-                            515 
-   053B A6 00         [ 5]  516             LDAA    0,X             ; get the hi byte of the word
-   053D B7 00 03      [ 5]  517             STAA    T_X
-   0540 A6 01         [ 5]  518             LDAA    1,X             ; get the low byte of the word
-   0542 B7 00 04      [ 5]  519             STAA    T_X+1
-   0545 FE 00 03      [ 5]  520             LDX     T_X             ; X now has address of the word
-   0548 BD 04 2A      [ 9]  521             JSR     STRINGBX        ; output the word
-   054B 7C 00 19      [ 6]  522             INC     WORDS
-   054E BD FD 4D      [ 9]  523             JSR     PRSP
-   0551 39            [ 5]  524             RTS
-                            525 
+   04ED 27 03         [ 4]  480             BEQ     PR_CRB1
+   04EF BD FC 0F      [ 9]  481             JSR     PR_A
+   04F2 BD 04 6A      [ 9]  482 PR_CRB1:    JSR     PR_B        ; Print it
+   04F5 32            [ 4]  483             PULA
+   04F6 39            [ 5]  484             RTS                 ; RETURN
+                            485 
+                            486 ; -----------------------------------------------------
+                            487 ; Outputs a phrase from the memory location in X
+                            488 ; -----------------------------------------------------
+   04F7                     489 PR_PHRASE:
+                            490 
+   04F7 A6 00         [ 5]  491 PR_PH1:  LDAA    0,X         ; get high byte of word
+   04F9 E6 01         [ 5]  492         LDAB    1,X         ; get low byte
+   04FB 81 FF         [ 2]  493         CMPA    #0xFF        ; check high byte
+   04FD 27 19         [ 4]  494         BEQ     PR_PH2      ; high byte is 0xFF so we're done
+   04FF FF 00 05      [ 6]  495 PR_PH3:  STX     T_Y         ; save table pointer
+   0502 B7 00 07      [ 5]  496         STAA    T_P
+   0505 F7 00 08      [ 5]  497         STAB    T_P+1
+   0508 FE 00 07      [ 5]  498         LDX     T_P         ; X now points to the word
+   050B BD 05 19      [ 9]  499         JSR     PR_WORD
+   050E BD 04 D5      [ 9]  500         JSR     PR_SPCB
+   0511 FE 00 05      [ 5]  501         LDX     T_Y         ; restore table pointer
+   0514 08            [ 4]  502         INX                 ; move to next entry
+   0515 08            [ 4]  503         INX                 ; (2 bytes per entry)
+   0516 20 DF         [ 4]  504         BRA     PR_PH1
+   0518 39            [ 5]  505 PR_PH2:  RTS
+                            506 
+                            507 ; -----------------------------------------------------
+                            508 ; Outputs a word based on value in X
+                            509 ; -----------------------------------------------------
+   0519                     510 PR_WORD:
+   0519 FF 00 03      [ 6]  511             STX     T_X             ; use ASL and ROL to multiply by 2 (pointer is 2 bytes wide)
+   051C 78 00 04      [ 6]  512             ASL     T_X+1           ; shift low byte left, bit 7 goes to carry
+   051F 79 00 03      [ 6]  513             ROL     T_X             ; rotate high byte left, carry in from low byte
+   0522 FE 00 03      [ 5]  514             LDX     T_X
+   0525 FF 00 03      [ 6]  515             STX     T_X             ; Stash X
+   0528 B6 00 03      [ 4]  516             LDAA    T_X             ; High byte of X
+   052B F6 00 04      [ 4]  517             LDAB    T_X+1           ; Low byte of X
+   052E CB 52         [ 2]  518             ADDB    #<WORDPTR    ; Add low byte of WORDPTR address
+   0530 89 05         [ 2]  519             ADCA    #>WORDPTR    ; Add high byte of WORDPTR address + carry
+   0532 B7 00 03      [ 5]  520             STAA    T_X             ; T_X has the address of the pointer NOT the word
+   0535 F7 00 04      [ 5]  521             STAB    T_X+1
+   0538 FE 00 03      [ 5]  522             LDX     T_X             ; X has the address of the pointer NOT the word
+                            523 
+   053B A6 00         [ 5]  524             LDAA    0,X             ; get the hi byte of the word
+   053D B7 00 03      [ 5]  525             STAA    T_X
+   0540 A6 01         [ 5]  526             LDAA    1,X             ; get the low byte of the word
+   0542 B7 00 04      [ 5]  527             STAA    T_X+1
+   0545 FE 00 03      [ 5]  528             LDX     T_X             ; X now has address of the word
+   0548 BD 04 2A      [ 9]  529             JSR     STRINGBX        ; output the word
+   054B 7C 00 19      [ 6]  530             INC     WORDS
+   054E BD FD 4D      [ 9]  531             JSR     PRSP
+   0551 39            [ 5]  532             RTS
+                            533 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 11
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-                            526                 .include    "words.asm"
+                            534                 .include    "words.asm"
                               1 ; -----------------------------------------------------
                               2 ; Word pointer table (max words 256)
                               3 ; Set X to the pointer ID and call PR_WORD
@@ -650,7 +658,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                      0021    53 ALWAYS          .equ     33
                      0022    54 AM              .equ     34
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 12
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -710,7 +718,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                      0054   108 COUNTED         .equ     84
                             109 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 13
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -770,7 +778,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                      0085   163 FUNNY           .equ     133
                             164 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 14
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -830,7 +838,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                      00B2   218 KNOWN           .equ     178
                             219 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 15
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -890,7 +898,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                      00E1   273 OFF             .equ     225
                      00E2   274 OH              .equ     226
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 16
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -950,7 +958,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                      0110   328 SAYING          .equ     272
                      0111   329 SCIENCE         .equ     273
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 17
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1010,7 +1018,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                      0145   383 TIME            .equ     325
                      0146   384 TO              .equ     326
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 18
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1070,7 +1078,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                      0174   438 YOU             .equ     372
                      0175   439 YOURE           .equ     373
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 19
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1130,7 +1138,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                             493 
                             494 ; Symbols
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 20
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1190,7 +1198,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    05DA 0A 35               548          .fdb    WPCALM
    05DC 0A 3A               549          .fdb    WPCAN
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 21
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1250,7 +1258,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0640 0B DE               603          .fdb    WPEXCITING
    0642 0B E7               604          .fdb    WPEXIST
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 22
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1310,7 +1318,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    069E 0D 21               658          .fdb    WPIS
    06A0 0D 24               659          .fdb    WPISS
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 23
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1370,7 +1378,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    06F8 0E 37               713          .fdb    WPNAP
    06FA 0E 3B               714          .fdb    WPNEED
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 24
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1430,7 +1438,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0756 0F 76               768          .fdb    WPREALLY
    0758 0F 8B               769          .fdb    WPREFER
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 25
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1490,7 +1498,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    07BC 11 07               823          .fdb    WPTALL
    07BE 11 0C               824          .fdb    WPTELEPRINTER
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 26
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1550,7 +1558,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    081E 12 66               878          .fdb    WPWILL
    0820 12 6B               879          .fdb    WPWISH
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 27
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1610,7 +1618,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    087F FF                  933                  .fcb     0xFF
                             934 
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 28
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1670,7 +1678,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         65 65 6E
    08F7 FF                  984                  .fcb     0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 29
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1730,7 +1738,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    097E FF                 1029                  .fcb    0xFF
    097F 61 73 6B 69 6E 67  1030 WPASKING:         .fcc    "asking"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 30
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1790,7 +1798,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0A08 62 72 61 63 65     1079 WPBRACE:          .fcc    "brace"
    0A0D FF                 1080                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 31
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1850,7 +1858,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         6E 65 64
    0A9D FF                 1126                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 32
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1910,7 +1918,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0B3F 64 6F 6E 27 74     1168 WPDONT:           .fcc    "don't"
    0B44 FF                 1169                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 33
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -1970,7 +1978,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0BDE 65 78 63 69 74 69  1215 WPEXCITING:       .fcc    "exciting"
         6E 67
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 34
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2030,7 +2038,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
                            1265 ; -----------------------------------------------------
    0C67 68 61 6E 64 6C 65  1266 WPHANDLE:         .fcc    "handle"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 35
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2090,7 +2098,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0CEB 69 6E 63 6C 75 64  1317 WPINCLUDING:      .fcc    "including"
         69 6E 67
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 36
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2150,7 +2158,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0D72 FF                 1365                  .fcb    0xFF
    0D73 6C 65 73 73        1366 WPLESS:           .fcc    "less"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 37
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2210,7 +2218,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         65
    0E05 FF                 1414                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 38
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2270,7 +2278,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         65
    0E92 FF                 1465                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 39
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2330,7 +2338,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0F0F 70 6F 73 73 69 62  1512 WPPOSSIBLY:       .fcc    "possibly"
         6C 79
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 40
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2390,7 +2398,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    0FAC FF                 1555                  .fcb    0xFF
    0FAD 72 65 6D 6F 76 65  1556 WPREMOVE:         .fcc    "remove"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 41
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2450,7 +2458,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    1044 FF                 1604                  .fcb    0xFF
    1045 73 6D 61 6C 6C     1605 WPSMALL:          .fcc    "small"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 42
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2510,7 +2518,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    10ED FF                 1646                  .fcb    0xFF
    10EE 73 75 72 65        1647 WPSURE:           .fcc    "sure"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 43
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2570,7 +2578,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    1180 FF                 1695                  .fcb    0xFF
    1181 74 6F 6F           1696 WPTOO:            .fcc    "too"
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 44
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2630,7 +2638,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    1204 77 61 6E 74        1739 WPWANT:           .fcc    "want"
    1208 FF                 1740                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 45
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2690,7 +2698,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         64
    12A1 FF                 1788                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 46
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2723,11 +2731,11 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         6C 66
    12E6 FF                 1813                  .fcb    0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 47
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
-                            527                 .include    "phrases.asm"
+                            535                 .include    "phrases.asm"
                               1 ; -----------------------------------------------------
                               2 ; Phrase Pointers to the categorised phases
                               3 ; -----------------------------------------------------
@@ -2783,7 +2791,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    1331 16 B4                53               .fdb     MNORM15
    1333 16 C7                54               .fdb     MNORM16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 48
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2843,7 +2851,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    1391 1A D9               108               .fdb     MIDLE15
    1393 1A F0               109               .fdb     MIDLE16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 49
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2903,7 +2911,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         01 46 00 2D 00 1C
         00 16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 50
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -2963,7 +2971,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
    1547 FF                  165             .fcb     0xFF
    1548 00 9E 00 DE 00 18   166 MLIGHT7:     .fdb     IM,NOT,A,DOCTOR,COMMA,BUT,IM,QUITE,WORRIED,FULLSTOP
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 51
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -3023,7 +3031,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         00 A6 00 17 01 22
         00 9A 01 30 00 15
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 52
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -3083,7 +3091,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         00 16
    1725 FF                  216             .fcb     0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 53
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -3143,7 +3151,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         00 15 00 AA 01 13
         00 D0 01 6F 00 16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 54
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -3203,7 +3211,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         00 16
    18E4 FF                  272             .fcb     0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 55
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -3263,7 +3271,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         01 3C 00 84 01 5F
         00 E0 00 D2 00 A4
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 56
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -3323,7 +3331,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         00 16
    1AC1 FF                  317             .fcb     0xFF
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 57
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 
@@ -3383,7 +3391,7 @@ Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
         00 9A 00 8E 01 88
         01 8B 00 16
 ASxxxx Assembler V05.50.5  (Motorola 6800/6802/6808)                   Page 58
-Hexadecimal [16-Bits]                                 Sat May 16 08:06:54 2026
+Hexadecimal [16-Bits]                                 Mon May 18 22:16:39 2026
 
 
 

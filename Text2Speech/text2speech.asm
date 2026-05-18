@@ -33,8 +33,15 @@ PROCESSING_FLG:  .rmb     1       ; non-zero indicates that that a weight is bei
 WORDS:           .rmb     1       ; number of words for the panel LED routines
                                   ;  this is updated each time a word is transmitted.
 
+; TODO Have a lead character (invalid hex) on each packet from the scales
+;   and either restart the receive sequence with an invalid hex or wait for the
+;   start packet character (make it printable e.g. '@' or 'Z' etc.
 
 
+;LREAD   JSR     RD_CMD      ; Read+Echo, test for '.'
+;        CMPA    #'S         ; Is it `S` ?
+;        BNE     LREAD       ; No: Keep waiting for `S`
+;        JSR     RD_CMD      ; Read+Echo, test for '.'
 
 
                 .org    0x0200
@@ -60,7 +67,8 @@ VHEX            .equ    0xFC1D          ; Checks that A contains a HEX character
 PRX             .equ    0xFCBB          ; print val in X as four hex digits
 
 PANEL           .equ    0xF0FF          ; LEDs and switches
-DELAY_VAL       .EQU    0x0B00          ; Delay loop count - adjust to taste (16 BIT VALUE)
+DELAY_VAL       .equ    0x0B00          ; Delay loop count - adjust to taste (16 BIT VALUE)
+ASC_STX         .equ    0x40            ; Start of Text
 
 IDLE_TICS       .equ   45              ; ticks between idle messages (1 tic = 2 secs approx)
 SHEAVY_WGHT     .equ    15              ; >= 15 stones
