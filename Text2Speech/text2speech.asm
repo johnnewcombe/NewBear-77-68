@@ -32,17 +32,7 @@ PROCESSING_FLG:  .rmb     1       ; non-zero indicates that that a weight is bei
                                   ;   idle (0000h) data resets it.
 WORDS:           .rmb     1       ; number of words for the panel LED routines
                                   ;  this is updated each time a word is transmitted.
-
-; TODO Have a lead character (invalid hex) on each packet from the scales
-;   and either restart the receive sequence with an invalid hex or wait for the
-;   start packet character (make it printable e.g. '@' or 'Z' etc.
-
-
-;LREAD   JSR     RD_CMD      ; Read+Echo, test for '.'
-;        CMPA    #'S         ; Is it `S` ?
-;        BNE     LREAD       ; No: Keep waiting for `S`
-;        JSR     RD_CMD      ; Read+Echo, test for '.'
-
+RND:            .rmb      1
 
                 .org    0x0200
 
@@ -105,9 +95,25 @@ INIT:
                 LDAA    #0x11           ; 8 Data, No Parity, 2 Stop Bits
                 STAA    CTRLB           ;   ACIA.A
 
-                JSR STRING
-                .fcc    "I Speak Your Weight (c) John Newcombe 2026"
-                .Fcb    0x0d, 0x0a, 0xff
+                ;JSR     CLS
+                ;JSR     STRING
+                ;.Fcb    0x0d,0x0a,0x0a
+                ;.fcc    "             M.A.R.V.I.N"
+                ;.Fcb    0x0d, 0x0a, 0x0a
+                ;.fcc    "Machine for the Analytical Reasoning of"
+                ;.fcb    0x0d, 0x0a
+                ;.fcc    "  Vague Instructions and Nomenclature"
+                ;.fcb    0x0d,0x0a,0x0a
+                ;.fcc    "PAUSED..."
+                ;.fcb    0xff
+
+                ; press any key (use this for syncronisation of the incomming data
+                ;JSR     RD_A
+
+                ;JSR     STRING
+                ;.Fcb    0x0d
+                ;.fcc    "RUNNING..."
+                ;.fcb    0x0d,0x0a,0x0a,0xff
 
                 ; initialise the speach processor
                 ;   @R6 = excitability (Default=3)
@@ -120,13 +126,16 @@ INIT:
                 .fcc    "@R6@W2@F8@V3@K0"
                 .fcb    0x0d, 0x0a, 0xFF
 
-MAINLOOP:
-; -----------------------------------------------------
-; Data arrives at port B as four hex characters
-; -----------------------------------------------------
+MAINLOOP:       LDAA    RND             ; make the panel lights do something
+                STAA    PANEL           ;  give us a heartbeat of sorts
+
+                ; -----------------------------------------------------
+                ; Data arrives at port B as four hex characters
+                ; -----------------------------------------------------
                 JSR     GETDATA         ; value in T_WEIGHT, stones in A
                 BCS     ML1             ; is it invalid i.e. carry clear
                 JMP     IDLE
+
 ML1:            TST     PROCESSING_FLG  ; are we already processing a weight
                 BNE     MAINLOOP        ; flag non-zero so ignore everything that follows
                 INC     PROCESSING_FLG  ; ignore any following data until we next idle
@@ -194,9 +203,9 @@ IDLE:   CLR     PROCESSING_FLG  ; clear the processing flag as no one
         BEQ     IDLE1           ; not reached the max idle time
         JMP     MAINLOOP             ; nothing to do yet
 
-IDLE1:  JSR     STRING
-        .fcc    "ST:IMSG "
-        .fcb    0x20,0xff
+IDLE1:  ;JSR     STRING
+        ;.fcc    "ST:IMSG "
+        ;.fcb    0x20,0xff
         CLR     IDLE_COUNT      ; time to output an idle message so reset the count
         LDAA    IDLE_MSG_ID     ; get next Message ID
         CMPA    #IDLE_MSG_CNT   ; are we beyond the end of the list
@@ -210,9 +219,9 @@ IDLE_OP:
         JMP     MAINLOOP
 
 GREET:   ; output the greeting message
-        JSR     STRING
-        .fcc    "ST:GMSG "
-        .fcb    0x20,0xff
+        ;JSR     STRING
+        ;.fcc    "ST:GMSG "
+        ;.fcb    0x20,0xff
         LDAA    GREET_MSG_ID    ; get next Message ID
         CMPA    #GREET_MSG_CNT  ; are we beyond the end of the list
         BNE     GREET_OP        ; still at valid id so output idle message
@@ -225,9 +234,9 @@ GREET_OP:
         RTS
 
 LIGHTW:   ; output the lightweight message
-        JSR     STRING
-        .fcc    "ST:LMSG "
-        .fcb    0x20,0xff
+        ;JSR     STRING
+        ;.fcc    "ST:LMSG "
+        ;.fcb    0x20,0xff
         LDAA    LIGHT_MSG_ID    ; get next Message ID
         CMPA    #LIGHT_MSG_CNT  ; are we beyond the end of the list
         BNE     LIGHT_OP        ; still at valid id so output idle message
@@ -240,9 +249,9 @@ LIGHT_OP:
         JMP     MAINLOOP
 
 NORMALW: ; output the normal message
-        JSR     STRING
-        .fcc    "ST:NMSG "
-        .fcb    0x20,0xff
+        ;JSR     STRING
+        ;.fcc    "ST:NMSG "
+        ;.fcb    0x20,0xff
         LDAA    NORMAL_MSG_ID   ; get next Message ID
         CMPA    #NORM_MSG_CNT   ; are we beyond the end of the list
         BNE     NORMAL_OP       ; still at valid id so output idle message
@@ -255,9 +264,9 @@ NORMAL_OP:
         JMP     MAINLOOP
 
 HEAVYW:  ; output the heavy message
-        JSR     STRING
-        .fcc    "ST:HMSG "
-        .fcb    0x20,0xff
+        ;JSR     STRING
+        ;.fcc    "ST:HMSG "
+        ;.fcb    0x20,0xff
         LDAA    HEAVY_MSG_ID    ; get next Message ID
         CMPA    #HEAVY_MSG_CNT  ; are we beyond the end of the list
         BNE     HEAVY_OP        ; still at valid id so output idle message
@@ -270,9 +279,9 @@ HEAVY_OP:
         JMP     MAINLOOP
 
 SHEAVYW: ; output the superheavy message
-        JSR     STRING
-        .fcc    "ST:SMSG "
-        .fcb    0x20,0xff
+        ;JSR     STRING
+        ;.fcc    "ST:SMSG "
+        ;.fcb    0x20,0xff
         LDAA    SHEAVY_MSG_ID   ; get next Message ID
         CMPA    #SHEAVY_MSG_CNT ; are we beyond the end of the list
         BNE     SHEAVY_OP       ; still at valid id so output idle message
@@ -302,6 +311,20 @@ PHRASE_OUT:
 ;END:     JMP     MAINLOOP  ;START   ; all done
 
 ;--------------------------------------------------------------
+; Simulates a form feed to clear the screen
+;--------------------------------------------------------------
+CLS:    LDAA    #0x0d
+        JSR     PR_A            ; output carriage return
+        LDAB    #16             ; 16 line feeds
+        LDAA    #0x0a
+CLS1:   PSHB                    ; save counter
+        JSR     PR_A            ; output to console
+        PULB                    ; restore counter
+        DECB
+        BNE     CLS1            ; repeat
+        RTS
+
+;--------------------------------------------------------------
 ; Gets the weight data from the scales and rerurns with carry
 ; set if a valid reading, carry clear otherwise. A valid weight
 ; reading resets the idle count. Data received is stored in
@@ -310,12 +333,8 @@ PHRASE_OUT:
 GETDATA:
         JSR     RD_XB           ; read 4 hex characters into X
         STX     T_WEIGHT        ; store X
-        JSR     STRING
-        .fcc    "DR:"
-        .fcb    0xff
-        LDX     T_WEIGHT
-        JSR     PRX             ; print the data
-        JSR    PRSP
+        ;JSR     PRX             ; print the data
+        ;JSR    PRSP
         CLC
         LDAA    T_WEIGHT        ; get fist byte (stones)
         BEQ     GDDONE          ; idle message
@@ -363,12 +382,12 @@ DONEB:      RTS
 ; -----------------------------------------------------
 ; Reads a character from ACIA(b) into A
 ; -----------------------------------------------------
-RD_B:   LDAA    CTRLB       ; Get ACIA.A status byte
+RD_B:   INC     RND         ; use this loop to create a random number
+        LDAA    CTRLB       ; Get ACIA.A status byte
         BITA    #01         ; Is byte ready in DATAb
         BEQ     RD_B        ; No: Try again
         LDAA    DATAB       ; Get the data byte to A
-        ;STAA     PANEL
-        ANDA    #0x7F        ; Mask off parity bit if it exists
+        ANDA    #0x7F       ; Mask off parity bit if it exists
         RTS                 ; RETURN
 
 ; -----------------------------------------------------

@@ -1,7 +1,7 @@
 NAME=text2speech
 #ASSEMBLER=../Tools/as6800
 CCS19 = ../Tools/ccs19
-VERSION = 1.0.12
+VERSION = 1.0.18
 
 # consider using one of the cross compilers located in
 #  /home/john/Dropbox/Repositories/asxv5p50p5/asxv5pxx/asxmak/linux/exe
@@ -26,8 +26,12 @@ build:
 	echo -n "" > $(NAME).ptp
 	cat  $(NAME).bin >> $(NAME).ptp
 
+
+
+install: build
 	cp $(NAME).s19 ../Releases/$(NAME)_$(VERSION).s19
-	srec_info ../Releases/$(NAME).s19
+	chmod 0444 ../Releases/$(NAME)_$(VERSION).s19
+	srec_info ../Releases/$(NAME)_$(VERSION).s19
 
 clean:
 	rm $(NAME).lst
@@ -39,4 +43,5 @@ clean:
 	rm $(NAME).sym
 	rm $(NAME).hlr
 	rm $(NAME).rel
+	rm -f ../Releases/$(NAME)_$(VERSION).s19
 
